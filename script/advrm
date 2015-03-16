@@ -1,0 +1,82 @@
+#!/bin/bash
+COMMAND=0
+SCRIPT=$0
+#!/bin/bash
+INSTALLPATH=/usr/local/advtty
+CONFIGFILE=$INSTALLPATH/advttyd.conf
+cleanUp()
+{
+sed '/^$/d' $CONFIGFILE > $INSTALLPTATH/advttyd.tmp
+sort -g $INSTALLPTATH/advttyd.tmp > $INSTALLPATH/advttyd.conf	
+rm $INSTALLPTATH/advttyd.tmp -f
+}
+
+MINOR='[[:digit:]]+'
+ADDRESS='[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+'
+PORT='[[:digit:]]+'
+TYPE='[[:digit:]]+'
+HASARG=
+
+usage()
+{
+cat << EOF
+usage: $0 options
+
+This script lists Removes devices specific that are mounted to local service.
+
+OPTIONS:
+   -h      Show this message
+   -t      Remove local serial ports mounted to specific type
+   -a      Remove local serial ports mounted to specific address
+   -p      Remove local serial ports mounted to specific remote port
+   -m      Remove local serial port according to minor number
+
+Example:
+	$0 -t 1525
+	$0 -a 10.0.0.1
+	$0 -t 1522 -p 1
+	$0 -m 0
+
+EOF
+}
+
+while getopts “ht:a:p:m:” OPTION
+do
+     case $OPTION in
+         h)
+             usage
+             exit 1
+             ;;
+         t)
+	     TYPE=$OPTARG
+	     HASARG=1
+             ;;
+         a)
+             ADDRESS=$OPTARG
+	     HASARG=1
+             ;;
+         p)
+             PORT=$OPTARG
+	     HASARG=1
+             ;;
+         m)
+             MINOR=$OPTARG
+	     HASARG=1
+             ;;
+         ?)
+	     usage
+	     exit 
+	     ;;
+     esac
+done
+
+if [ $HASARG -eq 1 ]
+then
+	PATERN="$MINOR[[:space:]]+$TYPE[[:space:]]+$ADDRESS[[:space:]]+$PORT"
+	sed -i -r /$PATERN/d $CONFIGFILE
+	cleanUp
+	echo "you should now reset the local deamon using \"advman\""
+else
+	usage
+fi
+

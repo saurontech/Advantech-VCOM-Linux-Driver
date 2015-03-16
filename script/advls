@@ -1,0 +1,71 @@
+#!/bin/bash
+COMMAND=0
+SCRIPT=$0
+INSTALLPATH=/usr/local/advtty
+#!/bin/bash
+CONFIGFILE=$INSTALLPATH/advttyd.conf
+cleanUp()
+{
+sed '/^$/d' $CONFIGFILE > $INSTALLPTATH/advttyd.tmp
+sort -g $INSTALLPTATH/advttyd.tmp > $INSTALLPATH/advttyd.conf	
+rm $INSTALLPTATH/advttyd.tmp -f
+}
+
+MINOR='[[:digit:]]+'
+#Guider:: add IP4 & IPv6 pattern
+#ADDRESS='[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+'
+ADDRESS='(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))|(((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?)+'
+PORT='[[:digit:]]+'
+TYPE='[[:digit:]]+'
+
+usage()
+{
+cat << EOF
+usage: $0 options
+
+This script lists server devices that are mounted to local service.
+
+OPTIONS:
+   -h      Show this message
+   -t      Show local serial ports mounted to specific type
+   -a      Show local serial ports mounted to specific address
+   -p      Show local serial ports mounted to specific remote port
+   -m      Show local serial port according to minor number
+
+Example:
+	$0 -t 1525
+	$0 -a 10.0.0.1
+	$0 -t 1522 -p 1
+
+EOF
+}
+
+while getopts “ht:a:p:m:” OPTION
+do
+     case $OPTION in
+         h)
+             usage
+             exit 1
+             ;;
+         t)
+	     TYPE=$OPTARG
+             ;;
+         a)
+             ADDRESS=$OPTARG
+             ;;
+         p)
+             PORT=$OPTARG
+             ;;
+         m)
+             MINOR=$OPTARG
+             ;;
+         ?)
+	     ;;
+     esac
+done
+
+PATERN="$MINOR[[:space:]]+$TYPE[[:space:]]+$ADDRESS[[:space:]]+$PORT"
+cleanUp
+cat $CONFIGFILE|egrep "$PATERN"
+ 
+
