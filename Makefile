@@ -8,12 +8,11 @@ clean:
 	make clean -C ./initd
 
 install:
-#	make install -C ./driver
-	mkdir /usr/local/advtty
+	install -d /usr/local/advtty
+	cp ./driver/advvcom.ko /usr/local/advtty/
 	cp ./daemon/vcomd /usr/local/advtty/
 	cp ./initd/advttyd /usr/local/advtty/ 
 	cp ./config/advttyd.conf /usr/local/advtty/
-	cp ./readme.txt  /usr/local/advtty/
 	cp ./Makefile  /usr/local/advtty/
 	cp ./script/advls /usr/local/advtty/
 	cp ./script/advadd /usr/local/advtty/
@@ -23,10 +22,10 @@ install:
 	chmod 111 /usr/local/advtty/advadd
 	chmod 111 /usr/local/advtty/advrm
 	chmod 111 /usr/local/advtty/advman
-	ln -s /usr/local/advtty/advls /sbin/advls
-	ln -s /usr/local/advtty/advrm /sbin/advrm
-	ln -s /usr/local/advtty/advadd /sbin/advadd
-	ln -s /usr/local/advtty/advman /sbin/advman
+	ln -sf /usr/local/advtty/advls /sbin/advls
+	ln -sf /usr/local/advtty/advrm /sbin/advrm
+	ln -sf /usr/local/advtty/advadd /sbin/advadd
+	ln -sf /usr/local/advtty/advman /sbin/advman
 
 uninstall:
 	rm -Rf /usr/local/advtty

@@ -143,7 +143,7 @@ int main(int argc, char **argv)
 	
 	/* detect parameter */                                                             
 	if(startup(argc, argv, &port) == -1)
-        	return 0;
+        return 0;
 	
 	sprintf(filename, "/proc/vcom/advproc%d", port.ttyid);
 	port.fd = open(filename, O_RDWR);
@@ -162,13 +162,9 @@ int main(int argc, char **argv)
 	}
 
 	port.sk	= -1;
-	port.devid = 0x1322;
-	port.port = 2;
 	vc_buf_setup(&port, VC_BUF_TX);
 	vc_buf_setup(&port, VC_BUF_RX);
 	vc_buf_setup(&port, VC_BUF_ATTR);
-	port.ip_ptr = "172.17.8.120";
-
 	port_ops = vc_netdown_ops.init(&port);
 
 	while(1){
