@@ -281,12 +281,8 @@ struct adv_vcom * adv_main_init(int port)
 	struct adv_vcom * vcomdata;
 	char filename[128];
 
-	printk("%s(%d)\n", __func__, __LINE__);
 	sprintf(filename, "advproc%d", port);
 	vcomdata = kmalloc(sizeof(struct adv_vcom), GFP_KERNEL);
-
-
-//	printk("port %d vcomdata = %x\n", port, vcomdata);
 
 	vcomdata->tx.head = 0;
 	vcomdata->tx.tail = 0;
@@ -336,7 +332,6 @@ int adv_main_release(int port)
 {
 	struct adv_vcom * vcomdata;
 	
-	printk("%s(%d)\n", __func__, __LINE__);
 	list_for_each_entry(vcomdata, &vcom_list, list){
 		if(vcomdata->attr.index == port){
 //			printk("found port %d at addr 0x%x\n", port, vcomdata);
@@ -379,7 +374,6 @@ int adv_vcom_init(void)
 	proc_root = proc_mkdir_mode("vcom", 0777, 0);
 	adv_uart_register();
 	
-	printk("%s(%d)\n", __func__, __LINE__);
 	for(i = 0; i < VCOM_PORTS; i++){
 		data = adv_main_init(i);
 		adv_uart_init(data, i);
@@ -391,7 +385,7 @@ int adv_vcom_init(void)
 void adv_vcom_exit(void)
 {
 	int i;
-	printk("%s(%d)\n", __func__, __LINE__);
+
 	for(i = 0; i < VCOM_PORTS; i++){
 		adv_uart_rm_port(i);
 		adv_main_release(i);

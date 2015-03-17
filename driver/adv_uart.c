@@ -57,9 +57,6 @@ static void adv_uart_stop_tx(struct uart_port *port)
 	struct adv_uart_port * adv_port;
 	struct ring_buf * tx;
 
-	
-	printk("%s(%d)\n", __func__, __LINE__);
-
 	adv_port = (struct adv_uart_port *)port;
 	tx = adv_port->tx;
 
@@ -94,9 +91,6 @@ static void adv_uart_stop_rx(struct uart_port *port)
 {
 	struct adv_uart_port * adv_port;
 	struct ring_buf * rx;
-
-	
-	printk("%s(%d)\n", __func__, __LINE__);
 
 	adv_port = (struct adv_uart_port *)port;
 	rx = adv_port->rx;
@@ -231,8 +225,6 @@ static unsigned int adv_uart_tx_empty(struct uart_port *port)
 	struct ring_buf * tx;
 	int empty;
 	
-	printk("%s(%d)\n", __func__, __LINE__);
-
 	adv_port = (struct adv_uart_port *)port;
 	tx = adv_port->tx;
 
@@ -301,8 +293,6 @@ int adv_uart_startup(struct uart_port *port)
 	struct adv_port_info * info = &attr->_attr;
 	struct ring_buf * rx;
 
-	printk("%s(%d)\n", __func__, __LINE__);
-
 	rx = up->rx;
 
 	mutex_lock(&attr->lock);
@@ -323,7 +313,6 @@ static void adv_uart_shutdown(struct uart_port *port)
 	struct adv_port_att * attr = up->attr;
 	struct adv_port_info * info = &attr->_attr;
 
-	printk("%s(%d)\n", __func__, __LINE__);
 	mutex_lock(&attr->lock);
 	info->is_open = 0;	
 	mutex_unlock(&attr->lock);
@@ -342,13 +331,11 @@ adv_uart_set_termios(struct uart_port *port, struct ktermios *termios,
 	struct adv_port_att * adv_attr = up->attr;
 	struct adv_port_info * attr = &adv_attr->_attr;
 
-	printk("%s(%d)\n", __func__, __LINE__);
 	
 	mutex_lock(&adv_attr->lock);
 
 	attr->baud = uart_get_baud_rate(port, termios, old, 50, 921600);//port->uartclk);
 //	uart_update_timeout();
-	printk("baud rate at %d\n", attr->baud);
 
 	switch (termios->c_cflag & CSIZE) {
 		case CS5:
@@ -410,7 +397,6 @@ adv_uart_set_termios(struct uart_port *port, struct ktermios *termios,
 static int
 adv_uart_ioctl(struct uart_port *port, unsigned int cmd, unsigned long arg)
 {
-	printk("%s(%d)\n", __func__, __LINE__);
 //	printk("cmd %x arg %x\n", cmd, arg);
 //	dump_stack();
 	return -ENOIOCTLCMD;
