@@ -40,15 +40,27 @@ void adv_uart_xmit(struct uart_port *);
 void adv_uart_update_xmit(struct uart_port *port)
 {
 	struct adv_uart_port * up = (struct adv_uart_port *)port;
-	struct ring_buf * tx = up->rx;
-	
+	struct ring_buf * tx = up->tx;
+	struct adv_port_att * attr = up->attr;
+	struct adv_port_info * info = &attr->_attr;
+	int is_open;
 	
 	spin_lock(&port->lock);
-	mutex_lock(&(tx->lock));
-	if(is_rb_empty(*tx)){
-		adv_uart_xmit(port);
+
+	mutex_unlock(&(attr->lock));
+	is_open = info->is_open;
+	mutex_unlock(&(attr->lock));
+
+	if(is_open){
+		mutex_lock(&(tx->lock));
+		if(is_rb_empty(*tx)){
+			adv_uart_xmit(port);
+		}
+		mutex_unlock(&(tx->lock));
+
+		uart_write_wakeup(port);
 	}
-	mutex_unlock(&(tx->lock));
+
 	spin_unlock(&port->lock);
 }
 
@@ -224,7 +236,7 @@ static unsigned int adv_uart_tx_empty(struct uart_port *port)
 	struct adv_uart_port * adv_port;
 	struct ring_buf * tx;
 	int empty;
-	
+
 	adv_port = (struct adv_uart_port *)port;
 	tx = adv_port->tx;
 
@@ -387,6 +399,8 @@ adv_uart_set_termios(struct uart_port *port, struct ktermios *termios,
 	}
 	
 	mutex_unlock(&adv_attr->lock);
+
+	uart_update_timeout(port, termios->c_cflag, attr->baud);
 
 	if(waitqueue_active(&adv_attr->wait)){
 		wake_up_interruptible(&adv_attr->wait);
