@@ -211,6 +211,9 @@ struct vc_ops * vc_netdown_init(struct vc_attr *attr)
 	attr->xmit_pending = 0;
 	attr->pre_ops = 0;
 	memset(&(attr->eki), 0, sizeof(struct adv_port_info));
+	update_eki_attr(attr, stop, ADV_STOP_UNDEF);
+	update_eki_attr(attr, flowctl, ADV_FLOW_UNDEF);
+	update_eki_attr(attr, pair, ADV_PAIR_UNDEF);
 //	printf("eki_is_open = %x\n", eki_p(attr, is_open));
 	return ADV_THIS;
 }

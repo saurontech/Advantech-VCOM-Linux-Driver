@@ -6,15 +6,18 @@
 #define ADV_PAIR_EVEN		2
 #define ADV_PAIR_MARK		3
 #define ADV_PAIR_SPACE		4
+#define ADV_PAIR_UNDEF		5
 
 #define ADV_FLOW_NONE		0
 #define ADV_FLOW_XONXOFF	1
 #define ADV_FLOW_RTSCTS		2
 #define ADV_FLOW_DTSDTR		3
+#define ADV_FLOW_UNDEF		4
 
 #define ADV_STOP_1		0
 //#define ADV_STOP_1P5		1
 #define ADV_STOP_2		2
+#define ADV_STOP_UNDEF		3
 
 #define ADV_MS_LE        0x001
 #define ADV_MS_DTR       0x002

@@ -471,6 +471,9 @@ struct vc_ops * vc_common_close(struct vc_attr * attr, struct vc_ops * current)
 	packet = (struct vc_proto_packet *)pbuf;
 
 	update_eki_attr(attr, is_open, 0);
+	update_eki_attr(attr, stop, ADV_STOP_UNDEF);
+	update_eki_attr(attr, flowctl, ADV_FLOW_UNDEF);
+	update_eki_attr(attr, pair, ADV_PAIR_UNDEF);
 
 	plen = vc_pack_close(packet, attr->tid, sizeof(pbuf));
 	if(plen == 0){
