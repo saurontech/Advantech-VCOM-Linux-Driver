@@ -144,13 +144,13 @@ static int _set_ms(struct vc_attr *attr, char * pbuf, int buflen, unsigned int m
 		packet = (struct vc_proto_packet *)&pbuf[plen];
 		switch(step){
 		case 0:
-			if((eki_ms & ADV_MS_RTS) != (uart_ms & ADV_MS_RTS)){
+			if((eki_ms & ADV_MS_RTS) == (uart_ms & ADV_MS_RTS)){
 				break;
 			}
 			if(uart_ms & ADV_MS_RTS){
-				len = vc_pack_setrts(packet, attr->tid, buflen);
+				len = vc_pack_setrts(packet, attr->tid, buflen - plen);
 			}else{
-				len = vc_pack_clrrts(packet, attr->tid, buflen);
+				len = vc_pack_clrrts(packet, attr->tid, buflen - plen);
 			}
 			break;
 		case 1:
@@ -158,9 +158,9 @@ static int _set_ms(struct vc_attr *attr, char * pbuf, int buflen, unsigned int m
 				break;
 			}
 			if(uart_ms & ADV_MS_DTR){
-				len = vc_pack_setdtr(packet, attr->tid, buflen);
+				len = vc_pack_setdtr(packet, attr->tid, buflen - plen);
 			}else{
-				len = vc_pack_clrdtr(packet, attr->tid, buflen);
+				len = vc_pack_clrdtr(packet, attr->tid, buflen - plen);
 			}
 			break;
 		default:
@@ -173,6 +173,7 @@ static int _set_ms(struct vc_attr *attr, char * pbuf, int buflen, unsigned int m
 		}
 
 		plen += len;
+		attr->tid++;
 	}
 
 	return 0;

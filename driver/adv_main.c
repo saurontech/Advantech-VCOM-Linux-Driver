@@ -152,7 +152,7 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	case ADVVCOM_IOCSMCTRL:
 		ret = __get_user(tmp, (int __user *)arg);
 		mutex_lock(&(data->attr.lock));
-		data->attr.mctrl = ret;
+		data->attr.mctrl = tmp;
 		mutex_unlock(&(data->attr.lock));
 		break;
 

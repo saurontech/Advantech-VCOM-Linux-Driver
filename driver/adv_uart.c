@@ -254,18 +254,20 @@ static unsigned int adv_uart_get_mctrl(struct uart_port *port)
 	unsigned int status;
 
 	status = 0;
-	if(attr->mctrl | ADV_MS_CTS){
+	mutex_lock(&attr->lock);
+	if(attr->mctrl & ADV_MS_CTS){
 		status |= TIOCM_CTS;
 	}
-	if(attr->mctrl | ADV_MS_DSR){
+	if(attr->mctrl & ADV_MS_DSR){
 		status |= TIOCM_DSR;
 	}
-	if(attr->mctrl | ADV_MS_CAR){
+	if(attr->mctrl & ADV_MS_CAR){
 		status |= TIOCM_CAR;
 	}
-	if(attr->mctrl | ADV_MS_RI){
+	if(attr->mctrl & ADV_MS_RI){
 		status |= TIOCM_RI;
 	}
+	mutex_unlock(&attr->lock);
 
 	return status;
 }
@@ -419,12 +421,12 @@ adv_uart_ioctl(struct uart_port *port, unsigned int cmd, unsigned long arg)
 
 static void adv_uart_release_port(struct uart_port *port)
 {
-	printk("%s(%d)\n", __func__, __LINE__);	
+//	printk("%s(%d)\n", __func__, __LINE__);	
 }
 
 static int adv_uart_request_port(struct uart_port *port)
 {
-	printk("%s(%d)\n", __func__, __LINE__);
+//	printk("%s(%d)\n", __func__, __LINE__);
 	return 0;
 }
 

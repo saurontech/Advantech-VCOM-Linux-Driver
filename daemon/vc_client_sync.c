@@ -69,6 +69,68 @@ static struct vc_ops * vc_sync_error(struct vc_attr * attr, char * str, int num)
 	return vc_netdown_ops.init(attr);
 }
 
+static int _sync_ms(struct vc_attr *attr)
+{
+	char pbuf[1024];
+	char * dbg_msg;
+	unsigned int uart_ms;
+	int plen;
+	int step;
+	int buflen;
+	struct vc_proto_packet * packet;
+
+	uart_ms = attr_p(attr, ms);
+	buflen = sizeof(pbuf);
+	step = 0;
+	dbg_msg = "NONE";
+	while(1){
+		plen = 0;
+		packet = (struct vc_proto_packet *)pbuf;
+		switch(step){
+		case 0:
+			dbg_msg = "int RTS";
+			if(uart_ms & ADV_MS_RTS){
+				plen = vc_pack_setrts(packet, attr->tid, buflen);
+			}else{
+				plen = vc_pack_clrrts(packet, attr->tid, buflen);
+			}
+			break;
+		case 1:
+			dbg_msg = "init DTR";
+			if(uart_ms & ADV_MS_DTR){
+				plen = vc_pack_setdtr(packet, attr->tid, buflen);
+			}else{
+				plen = vc_pack_clrdtr(packet, attr->tid, buflen);
+			}
+			break;
+		default:
+			return 0;
+		}
+
+		if(plen <= 0){
+			printf("failed to create %s\n", dbg_msg);
+			return -1;
+		}
+
+		if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
+			printf("cannot send %s\n", dbg_msg);
+			return -1;
+		}
+
+		if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
+			printf("failed to  send %s\n", dbg_msg);
+			return -1;
+		}
+		
+		step++;
+		attr->tid++;
+	}
+
+	printf("%s(%d) should never go here\n", __func__, __LINE__);
+	return -1;
+}
+
+
 static int _sync_event(struct vc_attr * attr)
 {
 	char pbuf[1024];
@@ -189,9 +251,14 @@ static int _sync_queue(struct vc_attr * attr)
 static struct vc_ops * vc_sync_init(struct vc_attr * attr)
 {
 	struct vc_ops * nxt;
+	
+	if(_sync_ms(attr)){
+		printf("failed to sync ms\n");
+		return vc_netdown_ops.init(attr);
+	}
 
 	if(_sync_event(attr)){
-		printf("failed to sync\n");
+		printf("failed to sync event\n");
 		return vc_netdown_ops.init(attr);
 	}
 
@@ -199,6 +266,7 @@ static struct vc_ops * vc_sync_init(struct vc_attr * attr)
 		printf("failed to sync queue\n");
 		return vc_netdown_ops.init(attr);
 	}
+
 
 	nxt = attr->pre_ops;
 	attr->pre_ops = 0;
@@ -235,7 +303,8 @@ static struct vc_ops * vc_sync_recv(struct vc_attr * attr, char *buf, int len)
 		{
 			unsigned int modem;
 
-			modem = ntohl(pbuf->attach.uint32.uint);
+//			modem = ntohl(pbuf->attach.uint32.uint); bug
+			modem = pbuf->attach.uint32.uint;
 			if(ioctl(attr->fd, ADVVCOM_IOCSMCTRL, &modem)){
 				printf("ioctl(mctrl) failed\n");
 				return vc_netdown_ops.init(attr);

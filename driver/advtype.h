@@ -19,20 +19,14 @@
 #define ADV_STOP_2		2
 #define ADV_STOP_UNDEF		3
 
-#define ADV_MS_LE        0x001
-#define ADV_MS_DTR       0x002
-#define ADV_MS_RTS       0x004
-#define ADV_MS_ST        0x008
-#define ADV_MS_SR        0x010
-#define ADV_MS_CTS       0x020
-#define ADV_MS_CAR       0x040
-#define ADV_MS_RNG       0x080
-#define ADV_MS_DSR       0x100
-#define ADV_MS_CD        ADV_MS_CAR
+#define ADV_MS_DTR	0x002
+#define ADV_MS_RTS	0x004
+#define ADV_MS_CTS	0x010
+#define ADV_MS_DSR	0x020
+#define ADV_MS_RNG	0x040
+#define ADV_MS_CAR	0x080
+#define ADV_MS_DCD	ADV_MS_CAR
 #define ADV_MS_RI        ADV_MS_RNG
-#define ADV_MS_OUT1      0x2000
-#define ADV_MS_OUT2      0x4000
-#define ADV_MS_LOOP      0x8000
 
 struct adv_port_info{
 	int is_open;
