@@ -491,5 +491,5 @@ struct vc_ops * vc_common_close(struct vc_attr * attr, struct vc_ops * current)
 
 	attr->tid++;
 
-	return current;
+	return vc_netdown_ops.init(attr);
 }
