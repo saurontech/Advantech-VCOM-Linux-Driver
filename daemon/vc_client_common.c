@@ -126,17 +126,15 @@ struct vc_ops * vc_common_xmit(struct vc_attr * attr, struct vc_ops * current)
 }
 
 
-static int _set_ms(struct vc_attr *attr, char * pbuf, int buflen, unsigned int ms)
+static int _set_ms(struct vc_attr *attr, char * pbuf, int buflen, unsigned int uart_ms)
 {
 	unsigned int eki_ms;
-	unsigned int uart_ms;
 	int plen;
 	int len;
 	int step;
 	struct vc_proto_packet * packet;
 
 	eki_ms = eki_p(attr, ms);
-	uart_ms = attr_p(attr, ms);
 	step = 0;
 	plen = 0;
 	while(1){

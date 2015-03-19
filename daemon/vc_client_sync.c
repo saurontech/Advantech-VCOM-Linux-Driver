@@ -69,17 +69,15 @@ static struct vc_ops * vc_sync_error(struct vc_attr * attr, char * str, int num)
 	return vc_netdown_ops.init(attr);
 }
 
-static int _sync_ms(struct vc_attr *attr)
+static int _sync_ms(struct vc_attr *attr, unsigned int uart_ms)
 {
 	char pbuf[1024];
 	char * dbg_msg;
-	unsigned int uart_ms;
 	int plen;
 	int step;
 	int buflen;
 	struct vc_proto_packet * packet;
 
-	uart_ms = attr_p(attr, ms);
 	buflen = sizeof(pbuf);
 	step = 0;
 	dbg_msg = "NONE";
@@ -251,11 +249,15 @@ static int _sync_queue(struct vc_attr * attr)
 static struct vc_ops * vc_sync_init(struct vc_attr * attr)
 {
 	struct vc_ops * nxt;
+	unsigned int uart_ms;
 	
-	if(_sync_ms(attr)){
+	uart_ms = attr_p(attr, ms);
+	
+	if(_sync_ms(attr, uart_ms)){
 		printf("failed to sync ms\n");
 		return vc_netdown_ops.init(attr);
 	}
+	update_eki_attr(attr, ms, uart_ms);
 
 	if(_sync_event(attr)){
 		printf("failed to sync event\n");
