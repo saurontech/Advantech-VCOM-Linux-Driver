@@ -16,6 +16,7 @@ struct vc_attr{
 	struct vc_ops * pre_ops;
 	void * mbase;
 	char * ip_ptr;
+	char * ip_red;
 	struct adv_port_info eki;
 //	struct adv_port_info proc;
 	struct adv_port_info * attr;

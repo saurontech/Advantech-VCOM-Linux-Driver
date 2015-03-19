@@ -88,44 +88,46 @@ void log_write(const char *msg)
 /* add by Phil : to Detect parameter (-1/-t/-d/-a/-p/-r) */
 int startup(int argc, char **argv, struct vc_attr *port)
 {
-    char *addr;
-    char ch;
-    if(argc < 2) {
-        printf("Usage : ./vcomd -l 'log name' -t 'tty ID' -d 'device model' -a 'IP address' -p 'device port'\n");
-        return -1;
-    }
-    while((ch = getopt(argc, argv, "l:t:d:a:p:r:")) != -1)  {
-        switch(ch)  {                                                                  
-        case 'l':
-            printf("open log file : %s ...\n", optarg);
-            log_open(optarg);
-            break;
-        case 't':            
-            sscanf(optarg, "%d", &(port->ttyid));
-            printf("setting tty ID : %d ...\n", port->ttyid);
-            break;
-        case 'd':
-            sscanf(optarg, "%hx", &(port->devid));                                      
-            printf("setting device model : %x ...\n", port->devid);
-            break;
-        case 'a':  
-            addr = optarg;
-            port->ip_ptr = addr;
-            printf("setting IP addr : %s ...\n", port->ip_ptr);
-            break;
-        case 'p':
-            sscanf(optarg, "%d", &(port->port));
-            printf("setting device port : %d ...\n", port->port);
-            break;  
-        case 'r':
-            printf("setting second IP addr, NOT FINISH ...\n");
-            break;
-        default:
-            printf("Usage : ./vcomd -l 'log name' -t 'tty ID' -d 'device model' -a 'IP address' -p 'device port'\n");
-            return -1;
-        }
-    }
-    return 0;
+	char *addr;
+	char ch;
+	if(argc < 2) {
+		printf("Usage : ./vcomd -l 'log name' -t 'tty ID' -d 'device model' -a 'IP address' -p 'device port'\n");
+		return -1;
+	}
+	while((ch = getopt(argc, argv, "l:t:d:a:p:r:")) != -1)  {
+		switch(ch)  {                                                                  
+			case 'l':
+				printf("open log file : %s ...\n", optarg);
+				log_open(optarg);
+				break;
+			case 't':            
+				sscanf(optarg, "%d", &(port->ttyid));
+				printf("setting tty ID : %d ...\n", port->ttyid);
+				break;
+			case 'd':
+				sscanf(optarg, "%hx", &(port->devid));                                      
+				printf("setting device model : %x ...\n", port->devid);
+				break;
+			case 'a':  
+				addr = optarg;
+				port->ip_ptr = addr;
+				printf("setting IP addr : %s ...\n", port->ip_ptr);
+				break;
+			case 'p':
+				sscanf(optarg, "%d", &(port->port));
+				printf("setting device port : %d ...\n", port->port);
+				break;  
+			case 'r':
+				addr = optarg;
+				port->ip_red = addr;
+				printf("setting RIP addr : %s ...\n", port->ip_red);
+				break;
+			default:
+				printf("Usage : ./vcomd -l 'log name' -t 'tty ID' -d 'device model' -a 'IP address' -p 'device port'\n");
+				return -1;
+		}
+	}
+	return 0;
 }
 
 int main(int argc, char **argv)
@@ -141,7 +143,8 @@ int main(int argc, char **argv)
 	unsigned int intflags;
 	char filename[64];
 	
-	/* detect parameter */                                                             
+	/* detect parameter */
+	port.ip_red = 0;
 	if(startup(argc, argv, &port) == -1)
         return 0;
 	

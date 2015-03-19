@@ -25,21 +25,16 @@ extern struct vc_ops vc_pause_ops;
 extern struct vc_ops vc_netup_ops;
 struct vc_ops vc_netdown_ops;
 
-int vc_connect(struct vc_attr * attr)
+
+int _create_sklist(int * sklist, int maxlen, char * addr, 
+	fd_set * rfds, int *retlen, int *retmax)
 {
-	struct addrinfo hints;
-        struct addrinfo *result, *ptr;
-//	struct sockaddr	saddr_ptr;
-	struct timeval tv;
-	fd_set rfds;
-	char * addr = attr->ip_ptr;
-	int ret;
-	int sklist[VC_MAX_SKNUM];
 	int sknum;
-//	int skarg;
 	int sk;
 	int skmax;
-	int i;
+	int ret;
+	struct addrinfo hints;
+        struct addrinfo *result, *ptr;
 
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
@@ -55,14 +50,16 @@ int vc_connect(struct vc_attr * attr)
 
 	skmax = sk = -1;
 	sknum = 0;
-	FD_ZERO(&rfds);
 
 	for (ptr = result; ptr != NULL; ptr = ptr->ai_next){
-		printf("sknum = %d\n", sknum);
 		if(ptr->ai_family != AF_INET && 
 			ptr->ai_family != AF_INET6){
 			printf("unkown ai_family\n");
 			continue;
+		}
+
+		if(sknum >= maxlen){
+			break;
 		}
 
 		sklist[sknum] = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
@@ -95,7 +92,7 @@ int vc_connect(struct vc_attr * attr)
 			printf("setting skmax to %d\n", skmax);
 		}
 
-		FD_SET(sklist[sknum], &rfds);
+		FD_SET(sklist[sknum], rfds);
 		sknum++;
 
 		if(sk >= 0)
@@ -104,26 +101,61 @@ int vc_connect(struct vc_attr * attr)
 
 	freeaddrinfo(result);
 
+	*retlen = sknum;
+	*retmax = skmax;
+
+	return sk;
+
+}
+
+int vc_connect(struct vc_attr * attr)
+{
+//	struct addrinfo hints;
+//	struct addrinfo *result, *ptr;
+//	struct sockaddr	saddr_ptr;
+	struct timeval tv;
+	fd_set rfds;
+	char * addr = attr->ip_ptr;
+	int ret;
+	int sklist[VC_MAX_SKNUM];
+	int sknum;
+//	int skarg;
+	int sk;
+	int skmax;
+	int i;
+	int max;
+	
+	FD_ZERO(&rfds);
+
+	sk = _create_sklist(sklist, VC_MAX_SKNUM, addr, &rfds, &sknum, &skmax);
+	if(sk < 0 && attr->ip_red > 0){
+		addr = attr->ip_red;
+		sk = _create_sklist(&sklist[sknum], (VC_MAX_SKNUM - sknum), 
+					addr, &rfds, &ret, &max);
+		sknum += ret;
+		if(max > skmax){
+			skmax = max;
+		}
+	}
+
 	do{
 		if(sk >= 0){
-			printf("already connected\n");
+//			printf("already connected\n");
 			break;
 		}
 
 		tv.tv_sec = 10;
 		tv.tv_usec = 0;
 
-		printf("ready to select on connect\n");
 		ret = select(skmax + 1, 0, &rfds, 0, &tv);
 		if(ret <= 0){
-			printf("no socket returned\n");
+			printf("connection timeout\n");
 			break;
 		}
 
 		for( i = 0; i < sknum; i++){
 			if(FD_ISSET(sklist[i], &rfds)){
 				sk = sklist[i];
-				printf("sk is set to %d\n", sk);
 				break;
 			}
 		}
@@ -131,14 +163,14 @@ int vc_connect(struct vc_attr * attr)
 
 	for(i = 0; i < sknum; i++){
 		if(sklist[i] != sk){
-			printf("closing socket %d != %d(sk)\n", sklist[i], sk);
+//			printf("closing socket %d != %d(sk)\n", sklist[i], sk);
 			close(sklist[i]);
 		}
 	}
 
 	if(sk >= 0){
 		int enable = 1;
-		printf("set %d to blocking mode\n", sk);
+//		printf("set %d to blocking mode\n", sk);
 		vc_config_sock(sk, VC_SKOPT_BLOCK, 0);
 		setsockopt(sk, IPPROTO_TCP, TCP_NODELAY, &enable, sizeof(enable));
 	}
