@@ -26,6 +26,26 @@ extern struct vc_ops vc_netup_ops;
 struct vc_ops vc_netdown_ops;
 
 
+int _sock_err(int sk)
+{
+	socklen_t len;
+	int arg;
+
+	len = sizeof(int);
+
+	if (getsockopt(sk, SOL_SOCKET, SO_ERROR, (void*)(&arg), &len) < 0){
+		printf("failed to get socket error\n");
+		return -1;
+	}
+	if(arg){
+		printf("Socket ERR: %s\n", strerror(arg));
+		return -1;
+	}
+
+	return 0;
+}
+
+
 int _create_sklist(int * sklist, int maxlen, char * addr, 
 	fd_set * rfds, int *retlen, int *retmax)
 {
@@ -83,13 +103,13 @@ int _create_sklist(int * sklist, int maxlen, char * addr,
 			continue;
 		}else if(ret == 0){
 			sk = sklist[sknum];
-			printf("connected successfully on %d\n", sk);
+//			printf("connected successfully on %d\n", sk);
 		}
 
 		
 		if(sklist[sknum] > skmax){
 			skmax = sklist[sknum];
-			printf("setting skmax to %d\n", skmax);
+//			printf("setting skmax to %d\n", skmax);
 		}
 
 		FD_SET(sklist[sknum], rfds);
@@ -155,6 +175,9 @@ int vc_connect(struct vc_attr * attr)
 
 		for( i = 0; i < sknum; i++){
 			if(FD_ISSET(sklist[i], &rfds)){
+				if(_sock_err(sklist[i])){
+					continue;
+				}
 				sk = sklist[i];
 				break;
 			}
