@@ -141,7 +141,11 @@ int main(int argc, char **argv)
 	int maxfd;
 	int ret;
 	unsigned int intflags;
+	unsigned int lrecv;
 	char filename[64];
+	
+	const unsigned int psec = VC_PULL_PSEC;
+	const unsigned int pusec = VC_PULL_PUSEC;
 	
 	/* detect parameter */
 	port.ip_red = 0;
@@ -169,11 +173,12 @@ int main(int argc, char **argv)
 	vc_buf_setup(&port, VC_BUF_RX);
 	vc_buf_setup(&port, VC_BUF_ATTR);
 	port_ops = vc_netdown_ops.init(&port);
+	lrecv = 0;
 
 	while(1){
 
-		tv.tv_sec = 10;
-		tv.tv_usec = 0;
+		tv.tv_sec = psec;
+		tv.tv_usec = pusec;
 
 		FD_ZERO(&rfds);
 		FD_ZERO(&wfds);
@@ -236,7 +241,16 @@ int main(int argc, char **argv)
 		}
 
 		if(FD_ISSET(port.sk, &rfds)){
+			lrecv = 0;
 			port_ops = vc_recv_desp(&port, port_ops);
+		}else if(port.sk >= 0){
+			unsigned int used = VC_TIME_USED(tv);
+			lrecv += (used > 0)?used:1;
+			if(lrecv > VC_PULL_TIME){
+				port_ops = port_ops->err(&port, "PROTO timeout", 0);
+				printf("lrecv = %u\n", lrecv);
+				lrecv = 0;
+			}
 		}
 
 		if(FD_ISSET(port.fd, &rfds)){
