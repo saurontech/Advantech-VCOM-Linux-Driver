@@ -17,6 +17,8 @@
 #include "vcom_proto.h"
 #include "vcom.h"
 
+
+#define RBUF_SIZE	4096
 static int log_fd = -1;
 struct vc_ops * vc_recv_desp(struct vc_attr *port, struct vc_ops * port_ops)
 {
@@ -24,7 +26,7 @@ struct vc_ops * vc_recv_desp(struct vc_attr *port, struct vc_ops * port_ops)
 	int hdr_len;
 	int packet_len;
 	unsigned short cmd;
-	static char buf[4096];
+	static char buf[RBUF_SIZE];
 	struct vc_proto_hdr * hdr;
 
 	hdr_len = sizeof(struct vc_proto_hdr) + sizeof(struct vc_attach_param);
@@ -49,6 +51,9 @@ struct vc_ops * vc_recv_desp(struct vc_attr *port, struct vc_ops * port_ops)
 	if( packet_len < 0){
 		return port_ops->err(port, "Wrong VCOM len", packet_len);
 	}else if(packet_len > 0){
+		if(packet_len > (RBUF_SIZE - hdr_len)){
+			return port_ops->err(port, "payload is too long", packet_len);
+		}
 		len = recv(port->sk, &buf[hdr_len], packet_len, 0);
 		if(len != packet_len)
 			return port_ops->err(port, "VCOM len miss-match", len);
@@ -56,6 +61,7 @@ struct vc_ops * vc_recv_desp(struct vc_attr *port, struct vc_ops * port_ops)
 
 	return try_ops3(port_ops, recv, port, buf, hdr_len + packet_len);
 }
+#undef RBUF_SIZE
 
 int log_open(char *log_name)
 {
