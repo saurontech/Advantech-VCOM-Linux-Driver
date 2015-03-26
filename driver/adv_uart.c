@@ -130,7 +130,7 @@ void adv_uart_recv_chars(struct uart_port *port)
 	int rx_l, rx_ll, rx_hd;
 	char * rx_base = (char *)rx->data;
 
-	mutex_unlock(&(attr->lock));
+	mutex_lock(&(attr->lock));
 	throttled = attr->throttled;
 	mutex_unlock(&(attr->lock));
 	if(throttled){
@@ -449,7 +449,7 @@ void adv_uart_throttle(struct uart_port *port)
 	adv_port = (struct adv_uart_port *)port;
 	attr = adv_port->attr;
 
-	mutex_unlock(&(attr->lock));
+	mutex_lock(&(attr->lock));
 	attr->throttled = 1;
 	mutex_unlock(&(attr->lock));
 
@@ -466,7 +466,7 @@ void adv_uart_unthrottle(struct uart_port *port)
 	adv_port = (struct adv_uart_port *)port;
 	attr = adv_port->attr;
 
-	mutex_unlock(&(attr->lock));
+	mutex_lock(&(attr->lock));
 	attr->throttled = 0;
 	mutex_unlock(&(attr->lock));
 	
