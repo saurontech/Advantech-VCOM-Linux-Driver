@@ -47,7 +47,7 @@ void adv_uart_update_xmit(struct uart_port *port)
 	
 	spin_lock(&port->lock);
 
-	mutex_unlock(&(attr->lock));
+	mutex_lock(&(attr->lock));
 	is_open = info->is_open;
 	mutex_unlock(&(attr->lock));
 
