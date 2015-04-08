@@ -85,16 +85,17 @@ startDeamon()
 
 stopDeamon()
 {
-	COUNT=`ps -A|grep $DEAMON -c`
-	while [ $COUNT -gt 0 ]
-	do
-		PID=`ps -A|grep $DEAMON |sed -r s/^[[:space:]]*//g|sed  -r s/"[[:space:]]+.+[[:space:]]+[[:digit:]]+:[[:digit:]]+:[[:digit:]]+[[:space:]]+$DEAMON"/""/g | sed '/^[ \t]*$/d'|head -n 1`
-
-		echo "killing $DEAMON $PID"
-
-		kill -9 $PID
-		COUNT=`ps -A|grep $DEAMON -c`
-	done
+#	COUNT=`ps -A|grep $DEAMON -c`
+#	while [ $COUNT -gt 0 ]
+#	do
+#		PID=`ps -A|grep $DEAMON |sed -r s/^[[:space:]]*//g|sed  -r s/"[[:space:]]+.+[[:space:]]+[[:digit:]]+:[[:digit:]]+:[[:digit:]]+[[:space:]]+$DEAMON"/""/g | sed '/^[ \t]*$/d'|head -n 1`
+#
+#		echo "killing $DEAMON $PID"
+#
+#		kill -9 $PID
+#		COUNT=`ps -A|grep $DEAMON -c`
+#	done
+	killall -s 9 $DEAMON
 	if [ $KERNEL = "2.4" ] 
 	then
         	rm -rf /dev/vttyAP*
