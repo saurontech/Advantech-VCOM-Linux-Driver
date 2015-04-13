@@ -7,9 +7,11 @@ ifeq ($(DEBUG),y)
 else
   DEBFLAGS = -O2
 endif
-
+ifndef $(LDDINC)                                                                
+  LDDINC:=$(shell pwd)
+endif
 ccflags-y += $(DEBFLAGS)
-#ccflags-y += -I$(LDDINC)
+ccflags-y += -I$(LDDINC)
 
 TARGET = advvcom
 
