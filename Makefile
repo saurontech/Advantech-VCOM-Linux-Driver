@@ -47,6 +47,6 @@ install_dkms: install_daemon
 	dkms install -m $(MODNAME) -v $(VERSION)
 
 uninstall_dkms: uninstall
-	dkms uninstall -m $(MODNAME) -v $(VERSION)
+	-dkms uninstall -m $(MODNAME) -v $(VERSION)
 	dkms remove -m $(MODNAME) -v $(VERSION) --all
 	rm -rf /usr/src/$(MODNAME)-$(VERSION)
