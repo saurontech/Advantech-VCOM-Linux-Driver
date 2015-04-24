@@ -8,6 +8,12 @@
 #define VC_PULL_PUSEC	(VC_PULL_TIME % 1000000)
 
 #define VC_TIME_USED(a)	(VC_PULL_TIME - (a.tv_sec * 1000000 + a.tv_usec));
+#define STACK_MAX 10
+struct stk_vc{
+    int top;
+    /* a pointer array which all point to 'strcut vc_ops' */
+    struct vc_ops *stk_stat[STACK_MAX];
+};
 
 struct vc_attr{
 	int fd;
@@ -18,12 +24,11 @@ struct vc_attr{
 	unsigned int port;
 	unsigned int tid;
 	unsigned short devid;
-	struct vc_ops * pre_ops;
+	struct stk_vc stk;
 	void * mbase;
 	char * ip_ptr;
 	char * ip_red;
 	struct adv_port_info eki;
-//	struct adv_port_info proc;
 	struct adv_port_info * attr;
 	struct ring_buf tx;
 	struct ring_buf rx;
@@ -32,7 +37,6 @@ struct vc_attr{
 #define ATTR_DIFF 1
 #define attr_p(a, b)	(((a)->attr[(a)->attr_ptr]).b)
 #define eki_p(a, b)	((a)->eki.b)
-//#define proc_p(a, b)	((a)->proc.b)
 
 #define check_attr_stat(a, b)	(attr_p(a, b) == eki_p(a, b)?ATTR_SAME:ATTR_DIFF)
 
@@ -50,16 +54,82 @@ struct vc_ops{
 	struct vc_ops * (*pause)(struct vc_attr *);
 	struct vc_ops * (*resume)(struct vc_attr *);
 	struct vc_ops * (*event)(struct vc_attr *, struct timeval *, fd_set *r, fd_set *w, fd_set *e);
+	char * (*name)(void);
 };
 
 #define try_ops(a, b, c)	(((a)->b > 0)?(a)->b(c):a)
 #define try_ops2(a, b, c, d)	(((a)->b > 0)?(a)->b(c, d):a)
 #define try_ops3(a, b, c, d, e)	(((a)->b > 0)?(a)->b(c, d, e):a)
 #define try_ops5(a, b, c, d, e, f, g)	(((a)->b > 0)?(a)->b(c, d, e, f, g):a)
+extern struct vc_ops vc_netdown_ops;
+extern struct vc_ops vc_netup_ops;
 
+/* 
+ *	state machine stack
+ */
+#define stk_full(a)	((a)->top>=STACK_MAX-1? 1:0)
+#define stk_empty(a) ((a)->top<0? 1:0)
+#define stk_bot(a) ((a)->top<=0? 1:0)
+static inline int stk_push(struct stk_vc *stk, struct vc_ops *current)
+{	
+	if(stk_full(stk)){
+		printf("stack full\n");
+		return -1;
+	}else{
+		stk->top += 1;
+		stk->stk_stat[stk->top] = current;
+	}
+	return 0;
+}
+	
+static inline int stk_pop(struct stk_vc *stk)
+{
+	if(stk_empty(stk)){
+		printf("stack empty\n");
+		return -1;
+	}else{
+		stk->top -= 1;
+	}
+	return 0;
+}
 
+static inline int stk_excp(struct stk_vc *stk)	
+{
+	if(stk_bot(stk)){
+		printf("at the bottom of stack now\n");
+		return -1;
+	}else{
+		printf("stack exception !!\n");
+		stk->top = 0;
+	}
+	return 0;
+}		
 
+static inline int stk_rpls(struct stk_vc *stk, struct vc_ops *current)
+{
+	stk->stk_stat[stk->top] = current;
+	return 0;
+}
 
+static inline struct vc_ops * stk_curnt(struct stk_vc *stk)	
+{
+	if(stk_empty(stk)){
+		printf("no state in stack\n");
+		exit(0);
+	}
+	return stk->stk_stat[stk->top];
+}
+	
+static inline int stk_restart(struct stk_vc *stk)
+{
+	if(stk_bot(stk)){
+		printf("at the bottom of stack now, should not call this func ...\n");
+		return -1;
+	}
+	stk->top = 0;
+	return 0;
+}
+	
 static inline int __vc_sock_enblock(int sk, int enable)
 {
 	int skarg;
@@ -135,12 +205,6 @@ static inline int __set_sockaddr_port(struct addrinfo *info, unsigned short port
 
 	return 0;
 }
-
-
-
-extern struct vc_ops vc_netdown_ops;
-extern struct vc_ops vc_netup_ops;
-
 #define FD_RD_RDY	1
 #define FD_WR_RDY	2
 #define FD_EX_RDY	4

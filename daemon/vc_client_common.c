@@ -18,63 +18,70 @@
 #include "vcom_proto_cmd.h"
 #include "vcom_proto_ioctl.h"
 #include "vcom.h"
-
+#include "vc_client_netup.h"
+#include "vc_client_netdown.h"
 #include "vc_client_sync.h"
+//#include "vcom_debug.h"
 
-extern struct vc_ops vc_netdown_ops;
-
-struct vc_ops * vc_common_open(struct vc_attr * attr, struct vc_ops *current)
+struct vc_ops * vc_common_open(struct vc_attr * attr)
 {
 	int port;
 	int plen;
 	unsigned short devid;
 	char pbuf[1024];
 	struct vc_proto_packet * packet;
+	struct stk_vc *stk;
 
 	packet = (struct vc_proto_packet *)pbuf;
 	port = attr->port;
+	stk = &attr->stk;
 	devid = attr->devid;
 	plen = vc_pack_open(packet, 0x001, devid, port, sizeof(pbuf));
 
 	if(plen == 0){
-		printf("cannot create open packet");
+		printf("cannot create open packet\n");
 		close(attr->sk);
 		attr->sk = -1;
-		return vc_netdown_ops.init(attr);
+		stk_excp(stk);
+		return stk_curnt(stk)->init(attr);
+
 	}
 	if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
 		printf("not ready to send\n");
 		close(attr->sk);
 		attr->sk = -1;
-		return vc_netdown_ops.init(attr);
+		stk_excp(stk);
+		return stk_curnt(stk)->init(attr);
 	}
 	if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
 		printf("send failed\n");
 		close(attr->sk);
 		attr->sk = -1;
-		return vc_netdown_ops.init(attr);
+		stk_excp(stk);
+		return stk_curnt(stk)->init(attr);
 	}
 
 	attr->tid++;
 	
 	update_eki_attr(attr, is_open, 1);
-	
-	return vc_sync_jmp(attr, current);
+	stk_push(stk, &vc_sync_ops);	
+	return stk_curnt(stk)->init(attr);
 }
 
-
-struct vc_ops * vc_common_xmit(struct vc_attr * attr, struct vc_ops * current)
+struct vc_ops * vc_common_xmit(struct vc_attr * attr)
 {
 
 #define XMIT_LEN	1024
 	char pbuf[XMIT_LEN + sizeof(struct vc_proto_hdr) + 
 		sizeof(struct vc_attach_param)];
 	struct vc_proto_packet * packet;
+	struct stk_vc * stk;
 	int llen = get_rb_llength(attr->rx);
 	int len = get_rb_length(attr->rx);
 	int plen;
 	char * ptr;
 	
+	stk = &attr->stk;
 	packet = (struct vc_proto_packet *)pbuf;
 
 	if(llen > XMIT_LEN){
@@ -101,30 +108,29 @@ struct vc_ops * vc_common_xmit(struct vc_attr * attr, struct vc_ops * current)
 	
 	if(plen <= 0){
 		printf("plen = %d\n", plen);
-		return vc_netdown_ops.init(attr);
+		stk_excp(stk);
+		return stk_curnt(stk)->init(attr);
 	}
 
 	if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
 		printf("%s(%d)\n", __func__, __LINE__);
 		close(attr->sk);
 		attr->sk = -1;
-		return vc_netdown_ops.init(attr);
+		stk_excp(stk);
+        return stk_curnt(stk)->init(attr);
 	}
 	if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
 		printf("%s(%d)\n", __func__, __LINE__);
 		close(attr->sk);
 		attr->sk = -1;
-		return vc_netdown_ops.init(attr);
+		stk_excp(stk);
+		return stk_curnt(stk)->init(attr);
 	}
-
 	attr->xmit_pending = len;
 	attr->tid++;
 	
-	
-
-	return current;
+	return stk_curnt(stk);
 }
-
 
 static int _set_ms(struct vc_attr *attr, char * pbuf, int buflen, unsigned int uart_ms)
 {
@@ -196,13 +202,15 @@ static int vc_check_comset(struct vc_attr * attr)
 	return 1;
 }
 
-struct vc_ops * vc_common_ioctl(struct vc_attr * attr, struct vc_ops *current)
+struct vc_ops * vc_common_ioctl(struct vc_attr * attr)
 {
 	char pbuf[1024];
 	int plen;
 	int loop_count;
 	struct vc_proto_packet * packet;
+	struct stk_vc * stk;
 
+	stk = &attr->stk;
 	packet = (struct vc_proto_packet *)pbuf;
 
 	loop_count = 15;
@@ -258,22 +266,23 @@ struct vc_ops * vc_common_ioctl(struct vc_attr * attr, struct vc_ops *current)
 
 		if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
 			printf("%s(%d)\n", __func__, __LINE__);
-			return vc_netdown_ops.init(attr);
+			stk_excp(stk);
+  	        return stk_curnt(stk)->init(attr);
 		}
 		if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
 			printf("%s(%d)\n", __func__, __LINE__);
-			return vc_netdown_ops.init(attr);
+			stk_excp(stk);
+            return stk_curnt(stk)->init(attr);
 		}
 
 		attr->tid++;
 	}while(--loop_count > 0);
-	
-	return current;
+
+	return stk_curnt(stk);
 }
 
 struct _ioctl_data{
 	struct vc_attr * attr;
-	struct vc_ops * this;
 };
 
 static int check_ioctl_ret(struct vc_proto_packet *pbuf,
@@ -282,14 +291,28 @@ static int check_ioctl_ret(struct vc_proto_packet *pbuf,
 	
 	struct _ioctl_data *data = (struct _ioctl_data *)in;
 	struct vc_attr * attr = data->attr;
-	struct vc_ops * current = data->this;
-	struct vc_ops * ret_ops;
+	struct stk_vc * stk;
 	unsigned int status;
 	unsigned int subcmd;
 
+	stk = &attr->stk;
 	status = ntohl(pbuf->attach.param.p1);
 	subcmd = ntohl(pbuf->attach.param.p2);
-
+	
+	switch(status){
+        case STATUS_SUCCESS:
+            break;
+        case STATUS_INVALID_PARAMETER:
+            printf("cmd %x invalid param\n", subcmd);
+            return -1;
+        case STATUS_DEVICE_BUSY:
+            printf("cmd %x device busy\n", subcmd);
+            return -1;
+        default:
+            printf("recv ioctl cmd %x status %x\n", subcmd, status);
+            return -1;
+	}
+	
 	switch(subcmd){
 		case VCOM_IOCTL_SET_BAUD_RATE:
 		case VCOM_IOCTL_SET_LINE_CONTROL:
@@ -304,10 +327,8 @@ static int check_ioctl_ret(struct vc_proto_packet *pbuf,
 		case VCOM_IOCTL_WAIT_ON_MASK:
 		case VCOM_IOCTL_GET_MODEMSTATUS:
 		case VCOM_IOCTL_SET_WAIT_MASK:
-			ret_ops = vc_sync_jmp_recv(attr, current, (char *)pbuf, buflen);
-			if(ret_ops != current){
-				return -1;
-			}
+			stk_push(stk, &vc_sync_ops);
+			stk_curnt(stk)->recv(attr, (char *)pbuf, buflen);
 			break;
 		default:
 			printf("recv ioctl cmd %x status %x\n", subcmd, status);
@@ -315,35 +336,23 @@ static int check_ioctl_ret(struct vc_proto_packet *pbuf,
 			/*to do return*/
 			break;
 	}
-
-	switch(status){
-		case STATUS_SUCCESS:
-			break;
-		case STATUS_INVALID_PARAMETER:
-			printf("cmd %x invalid param\n", subcmd);
-			return -1;
-		case STATUS_DEVICE_BUSY:
-			printf("cmd %x device busy\n", subcmd);
-			return -1;
-		default:
-			printf("recv ioctl cmd %x status %x\n", subcmd, status);
-			return -1;
-	}
-
 	return 0;
 }
 
+struct vc_ops * vc_common_recv(struct vc_attr * attr, char *buf, int len)
 
-struct vc_ops * vc_common_recv(struct vc_attr * attr, struct vc_ops * current,
-				char *buf, int len)
 {
 	struct vc_proto_packet * packet;
+	struct stk_vc * stk;
 	unsigned int cmd;
 
 	packet = (struct vc_proto_packet *)buf;
+	stk = &attr->stk;
+
 	if (len < sizeof(packet->hdr)){
 		printf("packet not long enough to form a hdr\n");
-		return vc_netdown_ops.init(attr);
+		stk_excp(stk);
+        return stk_curnt(stk)->init(attr);
 	}
 
 	cmd = ntohs(packet->hdr.cmd);
@@ -355,7 +364,8 @@ struct vc_ops * vc_common_recv(struct vc_attr * attr, struct vc_ops * current,
 		unsigned int port = attr->port;
 		if(vc_check_open(packet, devid, port, len)){
 			printf("open() packet check failed\n");
-			return vc_netdown_ops.init(attr);
+			stk_excp(stk);
+	        return stk_curnt(stk)->init(attr);
 		}
 		break;
 	}
@@ -363,11 +373,11 @@ struct vc_ops * vc_common_recv(struct vc_attr * attr, struct vc_ops * current,
 	{
 		struct _ioctl_data data = {
 			.attr = attr,
-			.this = current,
 		};
 		if(vc_check_ioctl(packet, len, &check_ioctl_ret, (void *)&data)){
 			printf("ioctl() packet check failed\n");
-			return vc_netdown_ops.init(attr);	
+			stk_excp(stk);
+	        return stk_curnt(stk)->init(attr);
 		}
 		break;
 	}
@@ -381,12 +391,14 @@ struct vc_ops * vc_common_recv(struct vc_attr * attr, struct vc_ops * current,
 		char * ptr;
 		if(vc_check_recv(packet, &datalen, len)){
 			printf("cmd_read check failed\n");
-			return vc_netdown_ops.init(attr);
+			stk_excp(stk);
+	        return stk_curnt(stk)->init(attr);
 		}
 
 		if(room < datalen){
 			printf("data over flow\n");
-			return vc_netdown_ops.init(attr);
+			stk_excp(stk);
+	        return stk_curnt(stk)->init(attr);
 		}
 		ptr = &(tx->mbase[tail]);
 		
@@ -418,7 +430,8 @@ struct vc_ops * vc_common_recv(struct vc_attr * attr, struct vc_ops * current,
 			printf("write command busy\n");
 		}else{
 			printf("write command failed\n");
-			return vc_netdown_ops.init(attr);
+			stk_excp(stk);
+        	return stk_curnt(stk)->init(attr);
 		}
 		break;
 	}
@@ -429,7 +442,7 @@ struct vc_ops * vc_common_recv(struct vc_attr * attr, struct vc_ops * current,
 	default:
 		printf("unknown cmd %x\n", packet->hdr.cmd);		
 	}
-	return current;
+	return stk_curnt(stk);
 }
 
 
@@ -461,12 +474,14 @@ void vc_common_purge(struct vc_attr * attr, unsigned int pflags)
 	return;
 }
 
-struct vc_ops * vc_common_close(struct vc_attr * attr, struct vc_ops * current)
+struct vc_ops * vc_common_close(struct vc_attr * attr)
 {
 	char pbuf[1024];
 	int plen;
 	struct vc_proto_packet * packet;
-
+	struct stk_vc * stk;
+	
+	stk = &attr->stk;
 	packet = (struct vc_proto_packet *)pbuf;
 
 	update_eki_attr(attr, is_open, 0);
@@ -477,19 +492,22 @@ struct vc_ops * vc_common_close(struct vc_attr * attr, struct vc_ops * current)
 	plen = vc_pack_close(packet, attr->tid, sizeof(pbuf));
 	if(plen == 0){
 		printf("failed to create purge packet\n");
-		return vc_netdown_ops.init(attr);
+		stk_excp(stk);
+        return stk_curnt(stk)->init(attr);
 	}
 
 	if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
 		printf("cannot send purge\n");
-		return vc_netdown_ops.init(attr);
+		stk_excp(stk);
+        return stk_curnt(stk)->init(attr);
 	}
 	if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
 		printf("failed to send purge\n");
-		return vc_netdown_ops.init(attr);
+		stk_excp(stk);
+        return stk_curnt(stk)->init(attr);
 	}
 
-	attr->tid++;
-
-	return vc_netdown_ops.init(attr);
+	attr->tid++;	
+	stk_restart(stk);
+	return stk_curnt(stk)->init(attr);
 }

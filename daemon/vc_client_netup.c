@@ -18,12 +18,13 @@
 #include "vcom_proto_cmd.h"
 #include "vcom_proto_ioctl.h"
 #include "vcom.h"
-
+//#include "vcom_debug.h" 
+#include "vc_client_netdown.h"
+#include "vc_client_pause.h"
 #include "vc_client_idle.h"
+
 #include "vc_client_common.h"
 
-extern struct vc_ops vc_netdown_ops;
-extern struct vc_ops vc_pause_ops;
 struct vc_ops vc_netup_ops;
 
 #define ADV_THIS	(&vc_netup_ops)
@@ -40,7 +41,7 @@ static struct vc_ops * vc_netup_event(struct vc_attr * attr,
 
 struct vc_ops * vc_netup_xmit(struct vc_attr * attr)
 {
-	return vc_common_xmit(attr, ADV_THIS);
+	return vc_common_xmit(attr);
 }
 
 struct vc_ops * vc_netup_close(struct vc_attr * attr)
@@ -48,40 +49,42 @@ struct vc_ops * vc_netup_close(struct vc_attr * attr)
 	vc_buf_clear(attr, ADV_CLR_RX|ADV_CLR_TX);
 	vc_common_purge(attr, 0x0000000f);
 
-//	return vc_netdown_ops.init(attr);
-	return vc_common_close(attr, ADV_THIS);
+	return vc_common_close(attr);
 }
 
 struct vc_ops * vc_netup_open(struct vc_attr * attr)
 {
 //	printf("%s(%d)\n", __func__, __LINE__);
-	
-	return vc_common_open(attr, ADV_THIS);
+	return vc_common_open(attr);
 }
 
 struct vc_ops * vc_netup_error(struct vc_attr * attr, char * str, int num)
 {
-	printf("%s: %s(%d)\n", __func__, str, num);
+	struct stk_vc * stk;
 
-	return vc_netdown_ops.init(attr);
+	stk = &attr->stk;
+	printf("%s: %s(%d)\n", __func__, str, num);
+	stk_excp(stk);
+
+	return stk_curnt(stk)->init(attr);
 }
 
 struct vc_ops * vc_netup_init(struct vc_attr * attr)
 {
-//	update_eki_attr(attr, is_open, 1);
 	vc_buf_update(attr, VC_BUF_RX);
 	vc_buf_update(attr, VC_BUF_TX);
+
 	return ADV_THIS;
 }
 
 struct vc_ops * vc_netup_ioctl(struct vc_attr * attr)
 {
-	return vc_common_ioctl(attr, ADV_THIS);
+	return vc_common_ioctl(attr);
 }
 
 struct vc_ops * vc_netup_recv(struct vc_attr * attr, char *buf, int len)
 {
-	return vc_common_recv(attr, ADV_THIS, buf, len);
+	return vc_common_recv(attr, buf, len);
 }
 
 static int _pause_queue(struct vc_attr * attr)
@@ -113,21 +116,34 @@ static int _pause_queue(struct vc_attr * attr)
 	return 0;
 }
 
-
 struct vc_ops * vc_netup_pause(struct vc_attr * attr)
 {
+	struct stk_vc * stk;
+
+	stk = &attr->stk;
 	if(_pause_queue(attr) < 0){
 		printf("queue free size = 0 failed\n");
-		return vc_netdown_ops.init(attr);
+		stk_excp(stk);
+		return stk_curnt(stk)->init(attr);	
 	}
+	stk_rpls(stk, &vc_pause_ops);
 
-	return vc_pause_ops.init(attr);
+	return stk_curnt(stk)->init(attr);
 }
-
 
 struct vc_ops * vc_netup_poll(struct vc_attr * attr)
 {
-	return vc_idle_jmp(attr, ADV_THIS);
+	struct stk_vc * stk;
+	
+	stk = &attr->stk;
+	stk_push(stk, &vc_idle_ops);
+
+	return stk_curnt(stk)->init(attr);
+}
+
+char * vc_netup_name(void)
+{
+	return "Net Up";
 }
 
 #undef ADV_THIS
@@ -143,4 +159,5 @@ struct vc_ops vc_netup_ops = {
 	.poll = vc_netup_poll,
 	.pause = vc_netup_pause,
 	.event = vc_netup_event,
+	.name = vc_netup_name,
 };

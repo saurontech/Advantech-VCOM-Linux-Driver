@@ -18,55 +18,42 @@
 #include "vcom_proto_cmd.h"
 #include "vcom_proto_ioctl.h"
 #include "vcom.h"
+#include "vc_client_netdown.h"
+//#include "vcom_debug.h"
 
-extern struct vc_ops vc_netdown_ops;
-static struct vc_ops vc_sync_ops;
+struct vc_ops vc_sync_ops;
 
 #define ADV_THIS	(&vc_sync_ops)
 
-struct vc_ops * vc_sync_jmp(struct vc_attr *attr, struct vc_ops * current)
-{
-	if(attr->pre_ops != 0){
-		printf("loop call %s from unkown state\n", __func__);
-	}
-	
-	attr->pre_ops = current;
-	return ADV_THIS->init(attr);
-	
-}
-
-struct vc_ops * vc_sync_jmp_recv(struct vc_attr * attr, struct vc_ops *current,
-		char *buf, int len)
-{
-	if(attr->pre_ops != 0){
-		printf("loop call %s from unkown state\n", __func__);
-		exit(0);
-	}
-	
-	attr->pre_ops = current;
-	return ADV_THIS->recv(attr, buf, len);
-}
-
-static struct vc_ops * vc_sync_open(struct vc_attr * attr)
+struct vc_ops * vc_sync_open(struct vc_attr * attr)
 {
 	printf("%s(%d)\n", __func__, __LINE__);
 	exit(0); //this function was designed never to be called
 	return ADV_THIS;
 }
 
-static struct vc_ops * vc_sync_close(struct vc_attr * attr)
+struct vc_ops * vc_sync_close(struct vc_attr * attr)
 {
+	struct stk_vc * stk;
+
+	stk = &attr->stk;
 	printf("%s(%d)\n", __func__, __LINE__);
 	exit(0); //this function was designed never to be called
 	vc_buf_clear(attr, ADV_CLR_RX|ADV_CLR_TX);
+	stk_excp(stk);
 
-	return vc_netdown_ops.init(attr);
+	return stk_curnt(stk)->init(attr);
 }
 
-static struct vc_ops * vc_sync_error(struct vc_attr * attr, char * str, int num)
+struct vc_ops * vc_sync_error(struct vc_attr * attr, char * str, int num)
 {
+	struct stk_vc * stk;
+	
+	stk = &attr->stk;
 	printf("%s: %s(%d)\n", __func__, str, num);
-	return vc_netdown_ops.init(attr);
+	stk_excp(stk);
+
+	return stk_curnt(stk)->init(attr);
 }
 
 static int _sync_ms(struct vc_attr *attr, unsigned int uart_ms)
@@ -246,46 +233,48 @@ static int _sync_queue(struct vc_attr * attr)
 }
 
 
-static struct vc_ops * vc_sync_init(struct vc_attr * attr)
+struct vc_ops * vc_sync_init(struct vc_attr * attr)
 {
-	struct vc_ops * nxt;
+	struct stk_vc * stk;
 	unsigned int uart_ms;
-	
+
+	stk = &attr->stk;
 	uart_ms = attr_p(attr, ms);
-	
+
 	if(_sync_ms(attr, uart_ms)){
 		printf("failed to sync ms\n");
-		return vc_netdown_ops.init(attr);
+		stk_excp(stk);
+		return stk_curnt(stk)->init(attr);
 	}
 	update_eki_attr(attr, ms, uart_ms);
 
 	if(_sync_event(attr)){
 		printf("failed to sync event\n");
-		return vc_netdown_ops.init(attr);
+		stk_excp(stk);
+
+        return stk_curnt(stk)->init(attr); 
 	}
 
 	if(_sync_queue(attr)){
 		printf("failed to sync queue\n");
-		return vc_netdown_ops.init(attr);
+		stk_excp(stk);
+
+        return stk_curnt(stk)->init(attr);  
 	}
-
-
-	nxt = attr->pre_ops;
-	attr->pre_ops = 0;
-
-	return nxt->init(attr);
+	stk_pop(stk);
+	return stk_curnt(stk)->init(attr);
 }
 
-static struct vc_ops * vc_sync_recv(struct vc_attr * attr, char *buf, int len)
+struct vc_ops * vc_sync_recv(struct vc_attr * attr, char *buf, int len)
 {
 	struct vc_proto_packet * pbuf;
-	struct vc_ops * nxt;
+	struct stk_vc * stk;
 	unsigned int subcmd;
 	unsigned int tid;
 	unsigned int status;
 	
 	pbuf = (struct vc_proto_packet *)buf;
-
+	stk = &attr->stk;
 	tid = ntohl(pbuf->hdr.tid);
 	subcmd = ntohl(pbuf->attach.param.p2);
 	status = ntohl(pbuf->attach.param.p1);
@@ -293,23 +282,24 @@ static struct vc_ops * vc_sync_recv(struct vc_attr * attr, char *buf, int len)
 	switch(subcmd){
 		case VCOM_IOCTL_WAIT_ON_MASK:
 			if(_sync_event(attr)){
-				return vc_netdown_ops.init(attr);
+				stk_excp(stk);
+        		return stk_curnt(stk)->init(attr);  
 			}
 			break;
 		case VCOM_IOCTL_SET_WAIT_MASK:
 			if(_reg_sync_event(attr)){
-				return vc_netdown_ops.init(attr);
+				stk_excp(stk);
+        		return stk_curnt(stk)->init(attr);  
 			}
 			break;
 		case VCOM_IOCTL_GET_MODEMSTATUS:
 		{
 			unsigned int modem;
-
-//			modem = ntohl(pbuf->attach.uint32.uint); bug
 			modem = pbuf->attach.uint32.uint;
 			if(ioctl(attr->fd, ADVVCOM_IOCSMCTRL, &modem)){
 				printf("ioctl(mctrl) failed\n");
-				return vc_netdown_ops.init(attr);
+				stk_excp(stk);
+        		return stk_curnt(stk)->init(attr);  
 			}
 			break;	
 		}
@@ -317,22 +307,22 @@ static struct vc_ops * vc_sync_recv(struct vc_attr * attr, char *buf, int len)
 			printf("recv ioctl tid %u cmd %x status %x\n", tid, subcmd, status);
 
 	}
-	
-//	return attr->pre_ops->init(attr);
-	nxt = attr->pre_ops;
-	attr->pre_ops = 0;
+	stk_pop(stk);
 
-	return nxt->init(attr);
-
+	return stk_curnt(stk)->init(attr);
 }
 
-
+char * vc_sync_name(void)
+{
+	return "Sync";
+}
 #undef ADV_THIS
 
-static struct vc_ops vc_sync_ops = {
+struct vc_ops vc_sync_ops = {
 	.init = vc_sync_init,
 	.err = vc_sync_error,
 	.recv = vc_sync_recv,
 	.open = vc_sync_open,
 	.close = vc_sync_close,
+	.name = vc_sync_name,
 };

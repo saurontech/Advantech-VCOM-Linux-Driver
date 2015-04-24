@@ -1,4 +1,3 @@
-
 #ifndef __VCOM_PROTO_CMD_H
 #define __VCOM_PROTO_CMD_H
 

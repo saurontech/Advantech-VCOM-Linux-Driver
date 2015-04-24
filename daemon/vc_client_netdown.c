@@ -18,13 +18,11 @@
 #include "vcom_proto.h"
 #include "vcom_proto_cmd.h"
 #include "vcom.h"
+//#include "vcom_debug.h"
+#include "vc_client_pause.h"
+#include "vc_client_netup.h"
 
-#include "vc_client_sync.h"
-
-extern struct vc_ops vc_pause_ops;
-extern struct vc_ops vc_netup_ops;
 struct vc_ops vc_netdown_ops;
-
 
 int _sock_err(int sk)
 {
@@ -130,16 +128,12 @@ int _create_sklist(int * sklist, int maxlen, char * addr,
 
 int vc_connect(struct vc_attr * attr)
 {
-//	struct addrinfo hints;
-//	struct addrinfo *result, *ptr;
-//	struct sockaddr	saddr_ptr;
 	struct timeval tv;
 	fd_set rfds;
 	char * addr = attr->ip_ptr;
 	int ret;
 	int sklist[VC_MAX_SKNUM];
 	int sknum;
-//	int skarg;
 	int sk;
 	int skmax;
 	int i;
@@ -203,13 +197,7 @@ int vc_connect(struct vc_attr * attr)
 
 
 #define ADV_THIS	(&vc_netdown_ops)
-/*
-struct vc_ops * vc_netdown_xmit(struct vc_attr * attr)
-{
-	printf("%s(%d)\n", __func__, __LINE__);
-	return ADV_THIS;
-}
-*/
+
 struct vc_ops * vc_netdown_close(struct vc_attr * attr)
 {
 	printf("%s(%d)\n", __func__, __LINE__);
@@ -226,23 +214,19 @@ struct vc_ops * vc_netdown_close(struct vc_attr * attr)
 struct vc_ops * vc_netdown_open(struct vc_attr * attr)
 {
 	int ret;
-	struct vc_ops * ops;
-	
+	struct stk_vc * stk;
+
 	ret = vc_connect(attr);
 
+	stk = &attr->stk;
 	attr->sk = ret;
-	
 	if(ret >= 0){
-
 		attr->sk = ret;
-		
-		if(is_rb_empty(attr->tx)){
-			ops = &vc_netup_ops;
-		}else{
-			ops =  &vc_pause_ops;
-		}
-
-		return ops->open(attr);
+		if(is_rb_empty(attr->tx))
+			stk_push(stk, &vc_netup_ops);
+		else
+			stk_push(stk, &vc_pause_ops);
+		return stk_curnt(stk)->open(attr);
 	}else{
 		attr->sk = -1;
 		return ADV_THIS;
@@ -264,53 +248,22 @@ struct vc_ops * vc_netdown_init(struct vc_attr *attr)
 	}
 	attr->tid = 0;
 	attr->xmit_pending = 0;
-	attr->pre_ops = 0;
 	memset(&(attr->eki), 0, sizeof(struct adv_port_info));
 	update_eki_attr(attr, stop, ADV_STOP_UNDEF);
 	update_eki_attr(attr, flowctl, ADV_FLOW_UNDEF);
 	update_eki_attr(attr, pair, ADV_PAIR_UNDEF);
-//	printf("eki_is_open = %x\n", eki_p(attr, is_open));
 	return ADV_THIS;
 }
-/*
-static struct vc_ops * vc_netdown_ioctl(struct vc_attr * attr)
-{
-	if(check_attr_stat(attr, baud) == ATTR_DIFF){
-		unsigned int baud = attr_p(attr, baud);
-		update_eki_attr(attr, baud, baud);
-	}
-	if(check_attr_stat(attr, pair) == ATTR_DIFF){
-		int pair = attr_p(attr, pair);
-		update_eki_attr(attr, pair, pair);
-	}
-	if(check_attr_stat(attr, stop) == ATTR_DIFF){
-		int stop = attr_p(attr, stop);
-		update_eki_attr(attr, stop, stop);
-	}
-	if(check_attr_stat(attr, byte) == ATTR_DIFF){
-		int byte = attr_p(attr, byte);
-		update_eki_attr(attr, byte, byte);
-	}
-	if(check_attr_stat(attr, flowctl) == ATTR_DIFF){
-		int flowctl = attr_p(attr, flowctl);
-		update_eki_attr(attr, flowctl, flowctl);
-	}
-	if(check_attr_stat(attr, ms) == ATTR_DIFF){
-		unsigned int ms = attr_p(attr, ms);
-		update_eki_attr(attr, ms, ms);
-	}
-
-	return ADV_THIS;
+char * vc_netdown_name(void)
+{	
+	return "Net Down";
 }
-*/
-
 #undef ADV_THIS
 
 struct vc_ops vc_netdown_ops = {
 	.open = vc_netdown_open,
 	.close = vc_netdown_close,
-//	.ioctl = vc_netdown_ioctl,
-//	.xmit = vc_netdown_xmit,
 	.err = vc_netdown_error,
 	.init = vc_netdown_init,
+	.name = vc_netdown_name,
 };

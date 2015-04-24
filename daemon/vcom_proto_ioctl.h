@@ -60,13 +60,12 @@ static inline int vc_pack_sbaud(struct vc_proto_packet * pbuf, unsigned int tid,
 	unsigned int cmd;
 	unsigned int p1;
 	unsigned int p2;
-//	int extlen;
 	int plen;
 
 	cmd = VCOM_CMD_IOCTL;
 	plen = vc_pack_size(pbuf->attach.uint32);
 	len = vc_ext_size(pbuf->attach.uint32);
-//	len = extlen;
+
 	if(plen > buflen ){
 		printf("%s(%d) wrong length\n", __func__, __LINE__);
 		return 0;

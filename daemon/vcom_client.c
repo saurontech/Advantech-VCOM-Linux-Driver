@@ -16,6 +16,7 @@
 #include "advtype.h"
 #include "vcom_proto.h"
 #include "vcom.h"
+//#include "vcom_debug.h"
 
 
 #define RBUF_SIZE	4096
@@ -173,12 +174,13 @@ int main(int argc, char **argv)
 		printf("failed to mmap\n");
 		return 0;
 	}
-
+	port.stk.top = -1;	// state mechine stack init
 	port.sk	= -1;
 	vc_buf_setup(&port, VC_BUF_TX);
 	vc_buf_setup(&port, VC_BUF_RX);
 	vc_buf_setup(&port, VC_BUF_ATTR);
-	port_ops = vc_netdown_ops.init(&port);
+	stk_push(&port.stk, &vc_netdown_ops);
+	port_ops = stk_curnt(&port.stk)->init(&port);
 	lrecv = 0;
 
 	while(1){
