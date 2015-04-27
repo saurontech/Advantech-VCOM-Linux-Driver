@@ -241,9 +241,6 @@ struct vc_ops * vc_netdown_error(struct vc_attr * attr, char * str, int num)
 
 struct vc_ops * vc_netdown_init(struct vc_attr *attr)
 {
-	struct stk_vc * stk;
-
-	stk = &attr->stk;
 	if(attr->sk >= 0){
 		printf("close socket\n");
 		close(attr->sk);
