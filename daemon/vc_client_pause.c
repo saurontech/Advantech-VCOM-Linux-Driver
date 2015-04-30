@@ -171,7 +171,6 @@ static struct vc_ops * vc_pause_poll(struct vc_attr * attr)
 	
 	stk = &attr->stk;
 	stk_push(stk, &vc_idle_ops);
-
 	return stk_curnt(stk)->init(attr);
 }
 

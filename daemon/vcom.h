@@ -9,10 +9,12 @@
 
 #define VC_TIME_USED(a)	(VC_PULL_TIME - (a.tv_sec * 1000000 + a.tv_usec));
 #define STACK_MAX 10
+#define stk_full(a) ((a)->top>=STACK_MAX-1? 1:0)
+#define stk_empty(a) ((a)->top<0? 1:0)
+#define stk_bot(a) ((a)->top<=0? 1:0)
 struct stk_vc{
     int top;
-    /* a pointer array which all point to 'strcut vc_ops' */
-    struct vc_ops *stk_stat[STACK_MAX];
+    struct vc_ops *stk_stat[STACK_MAX];                                                   
 };
 
 struct vc_attr{
@@ -56,20 +58,28 @@ struct vc_ops{
 	struct vc_ops * (*event)(struct vc_attr *, struct timeval *, fd_set *r, fd_set *w, fd_set *e);
 	char * (*name)(void);
 };
-
 #define try_ops(a, b, c)	(((a)->b > 0)?(a)->b(c):a)
 #define try_ops2(a, b, c, d)	(((a)->b > 0)?(a)->b(c, d):a)
 #define try_ops3(a, b, c, d, e)	(((a)->b > 0)?(a)->b(c, d, e):a)
 #define try_ops5(a, b, c, d, e, f, g)	(((a)->b > 0)?(a)->b(c, d, e, f, g):a)
-extern struct vc_ops vc_netdown_ops;
-extern struct vc_ops vc_netup_ops;
+/*
+ * Vcom Monitor
+ */
+#include "vcom_monitor.h"
+#ifndef DEBUG_MONITOR
+#define mon_update(a, b) do{}while(0)   // do nothing
+#define mon_init(a) do{}while(0)        // do nothing
+#endif 
+#ifndef mon_update_check
+#define mon_update_check(a, b)  do{}while(0)
+#endif
+#define EXCP_SLEEPTIME 3
+    
+void * stk_mon;
 
 /* 
  *	state machine stack
  */
-#define stk_full(a)	((a)->top>=STACK_MAX-1? 1:0)
-#define stk_empty(a) ((a)->top<0? 1:0)
-#define stk_bot(a) ((a)->top<=0? 1:0)
 static inline int stk_push(struct stk_vc *stk, struct vc_ops *current)
 {	
 	if(stk_full(stk)){
@@ -78,6 +88,7 @@ static inline int stk_push(struct stk_vc *stk, struct vc_ops *current)
 	}else{
 		stk->top += 1;
 		stk->stk_stat[stk->top] = current;
+		mon_update_check(stk, 0);	
 	}
 	return 0;
 }
@@ -89,6 +100,7 @@ static inline int stk_pop(struct stk_vc *stk)
 		return -1;
 	}else{
 		stk->top -= 1;
+		mon_update_check(stk, 0);
 	}
 	return 0;
 }
@@ -99,8 +111,10 @@ static inline int stk_excp(struct stk_vc *stk)
 		printf("at the bottom of stack now\n");
 		return -1;
 	}else{
+		mon_update_check(stk, 0);
 		printf("stack exception !!\n");
 		stk->top = 0;
+		sleep(EXCP_SLEEPTIME);
 	}
 	return 0;
 }		
@@ -108,6 +122,7 @@ static inline int stk_excp(struct stk_vc *stk)
 static inline int stk_rpls(struct stk_vc *stk, struct vc_ops *current)
 {
 	stk->stk_stat[stk->top] = current;
+	mon_update_check(stk, 0);
 	return 0;
 }
 
@@ -126,10 +141,11 @@ static inline int stk_restart(struct stk_vc *stk)
 		printf("at the bottom of stack now, should not call this func ...\n");
 		return -1;
 	}
+	mon_update_check(stk, 0);
 	stk->top = 0;
 	return 0;
 }
-	
+
 static inline int __vc_sock_enblock(int sk, int enable)
 {
 	int skarg;
@@ -160,6 +176,9 @@ static inline int __vc_sock_enblock(int sk, int enable)
 #define VC_SKOPT_NONBLOCK	1
 #define VC_SKOPT_ENKALIVE	2
 #define VC_SKOPT_DISKALIVE	3
+extern struct vc_ops vc_netdown_ops;
+extern struct vc_ops vc_netup_ops;
+
 static inline int vc_config_sock(int sk, int option, void * arg)
 {
 	int result;
@@ -368,6 +387,4 @@ static inline int vc_buf_setup(struct vc_attr * port, int rb_id)
 
 	return vc_buf_update(port, rb_id);
 }
-
-
 #endif

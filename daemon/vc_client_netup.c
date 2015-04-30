@@ -136,8 +136,7 @@ struct vc_ops * vc_netup_poll(struct vc_attr * attr)
 	struct stk_vc * stk;
 	
 	stk = &attr->stk;
-	stk_push(stk, &vc_idle_ops);
-
+	stk_push(stk, &vc_idle_ops); 
 	return stk_curnt(stk)->init(attr);
 }
 

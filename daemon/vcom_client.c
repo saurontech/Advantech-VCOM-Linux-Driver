@@ -18,9 +18,9 @@
 #include "vcom.h"
 //#include "vcom_debug.h"
 
-
 #define RBUF_SIZE	4096
-static int log_fd = -1;
+//static int log_fd = -1;
+extern void * stk_mon; 
 struct vc_ops * vc_recv_desp(struct vc_attr *port, struct vc_ops * port_ops)
 {
 	int len;
@@ -63,7 +63,7 @@ struct vc_ops * vc_recv_desp(struct vc_attr *port, struct vc_ops * port_ops)
 	return try_ops3(port_ops, recv, port, buf, hdr_len + packet_len);
 }
 #undef RBUF_SIZE
-
+/*
 int log_open(char *log_name)
 {
     return log_fd = open(log_name,
@@ -91,8 +91,8 @@ void log_write(const char *msg)
     strcat(msgbuf, msg);
     write(log_fd, msgbuf, strlen(msgbuf));
 }
+*/
 
-/* add by Phil : to Detect parameter (-1/-t/-d/-a/-p/-r) */
 int startup(int argc, char **argv, struct vc_attr *port)
 {
 	char *addr;
@@ -104,8 +104,8 @@ int startup(int argc, char **argv, struct vc_attr *port)
 	while((ch = getopt(argc, argv, "l:t:d:a:p:r:")) != -1)  {
 		switch(ch)  {                                                                  
 			case 'l':
-				printf("open log file : %s ...\n", optarg);
-				log_open(optarg);
+				printf("open log file : %s ...\n", optarg);		
+				mon_init(optarg); 
 				break;
 			case 't':            
 				sscanf(optarg, "%d", &(port->ttyid));
@@ -150,22 +150,21 @@ int main(int argc, char **argv)
 	unsigned int intflags;
 	unsigned int lrecv;
 	char filename[64];
-	
+
 	const unsigned int psec = VC_PULL_PSEC;
 	const unsigned int pusec = VC_PULL_PUSEC;
 	
-	/* detect parameter */
 	port.ip_red = 0;
+	stk_mon = 0;
 	if(startup(argc, argv, &port) == -1)
         return 0;
-	
+
 	sprintf(filename, "/proc/vcom/advproc%d", port.ttyid);
 	port.fd = open(filename, O_RDWR);
 	if(port.fd < 0){
 		printf("cannot open file:%s\n", strerror(errno));
 		return 0;
 	}
-
 
 	port.mbase = (char *)mmap(0, 4096*3, 
 			PROT_READ|PROT_WRITE, MAP_FILE |MAP_SHARED, port.fd, 0);

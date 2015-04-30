@@ -5,6 +5,10 @@
 /* 
  * To show the stack content
  * The format should be like this :
+ *
+ * Function : <func>
+ * Time : <hh/mm/ss>
+ * State : <state>
  * |            |
  * |    Sync    |
  * |   Net Up   |
@@ -51,5 +55,5 @@ static inline void stk_display(struct stk_vc *stk, const char *func)
 		printf("-");
 	}
     printf("\n");   
-}                       
+}
 #endif
