@@ -8,20 +8,19 @@ struct vc_monitor{
     void * addr;
     int fd;
     int pid;
+	char fname[16];
 };
 struct vc_monitor vc_mon;
 
 static inline int mon_init(char * fname)
 {
-    char buf[16];
-        
-    sprintf(buf, "/tmp/%s", fname);
+    sprintf(vc_mon.fname, "/tmp/%s", fname);
     vc_mon.fd = -1;
     vc_mon.addr = 0;
 	vc_mon.pid  = getpid();
 
     do{
-        vc_mon.fd = open(buf, O_RDWR | O_CREAT | O_TRUNC, S_IRWXO|S_IRWXG|S_IRWXU);
+        vc_mon.fd = open(vc_mon.fname, O_RDWR | O_CREAT | O_TRUNC, S_IRWXO|S_IRWXG|S_IRWXU);
         if(vc_mon.fd < 0){
             printf("create log fail...\n");
             return -1;
@@ -36,7 +35,7 @@ static inline int mon_init(char * fname)
         }
 		stk_mon = &vc_mon;
     }while(0);
-    return 0;
+	return 0;
 }
 
 static inline int mon_update(struct stk_vc * stk, int sig)
@@ -51,7 +50,7 @@ static inline int mon_update(struct stk_vc * stk, int sig)
     }
     ptr = (char*)vc_mon.addr;
     msg = stk->stk_stat[stk->top]->name();
-    len = sprintf(ptr, "Pid = %d | State : %s", vc_mon.pid, msg);
+    len = sprintf(ptr, "File : %s (Pid = %d | State : %s)", vc_mon.fname, vc_mon.pid, msg);
     memset(ptr + (len+1), ' ', 16);
     if(sig){
         msync(ptr, MSIZE, MS_SYNC);

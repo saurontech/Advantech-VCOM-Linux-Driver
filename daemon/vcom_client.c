@@ -29,15 +29,19 @@ struct vc_ops * vc_recv_desp(struct vc_attr *port, struct vc_ops * port_ops)
 	unsigned short cmd;
 	static char buf[RBUF_SIZE];
 	struct vc_proto_hdr * hdr;
+	struct stk_vc * stk;
+	
+	stk = &port->stk;
 
 	hdr_len = sizeof(struct vc_proto_hdr) + sizeof(struct vc_attach_param);
 	
 	len = recv(port->sk, buf, hdr_len, 0);
 	if(len <= 0){
-		return vc_netdown_ops.init(port);
+		stk_excp(stk);
+		return stk_curnt(stk)->init(port);
 	}
 	if(len != hdr_len){
-		return port_ops->err(port, "Packet lenth too short", len);
+		return stk_curnt(stk)->err(port, "Packet lenth too short", len);
 	}
 
 	hdr = (struct vc_proto_hdr *)buf;
@@ -50,14 +54,14 @@ struct vc_ops * vc_recv_desp(struct vc_attr *port, struct vc_ops * port_ops)
 	}
 		
 	if( packet_len < 0){
-		return port_ops->err(port, "Wrong VCOM len", packet_len);
+		return stk_curnt(stk)->err(port, "Wrong VCOM len", packet_len);
 	}else if(packet_len > 0){
 		if(packet_len > (RBUF_SIZE - hdr_len)){
-			return port_ops->err(port, "payload is too long", packet_len);
+			return stk_curnt(stk)->err(port, "payload is too long", packet_len);
 		}
 		len = recv(port->sk, &buf[hdr_len], packet_len, 0);
 		if(len != packet_len)
-			return port_ops->err(port, "VCOM len miss-match", len);
+			return stk_curnt(stk)->err(port, "VCOM len miss-match", len);
 	}
 
 	return try_ops3(port_ops, recv, port, buf, hdr_len + packet_len);
@@ -102,7 +106,7 @@ int startup(int argc, char **argv, struct vc_attr *port)
 		return -1;
 	}
 	while((ch = getopt(argc, argv, "l:t:d:a:p:r:")) != -1)  {
-		switch(ch)  {                                                                  
+		switch(ch){
 			case 'l':
 				printf("open log file : %s ...\n", optarg);		
 				mon_init(optarg); 
@@ -112,7 +116,7 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				printf("setting tty ID : %d ...\n", port->ttyid);
 				break;
 			case 'd':
-				sscanf(optarg, "%hx", &(port->devid));                                      
+				sscanf(optarg, "%hx", &(port->devid));
 				printf("setting device model : %x ...\n", port->devid);
 				break;
 			case 'a':  
@@ -155,7 +159,7 @@ int main(int argc, char **argv)
 	const unsigned int pusec = VC_PULL_PUSEC;
 	
 	port.ip_red = 0;
-	stk_mon = 0;
+	stk_mon = 0;	// stack monitor init
 	if(startup(argc, argv, &port) == -1)
         return 0;
 

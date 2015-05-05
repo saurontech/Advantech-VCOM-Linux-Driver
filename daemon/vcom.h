@@ -74,6 +74,10 @@ struct vc_ops{
 #define mon_update_check(a, b)  do{}while(0)
 #endif
 #define EXCP_SLEEPTIME 3
+#define INO_SWITCH_PUSH 0
+#define INO_SWITCH_POP 0
+#define INO_SWITCH_RPLS 0
+#define INO_SWITCH_RESTART 0
     
 void * stk_mon;
 
@@ -88,7 +92,7 @@ static inline int stk_push(struct stk_vc *stk, struct vc_ops *current)
 	}else{
 		stk->top += 1;
 		stk->stk_stat[stk->top] = current;
-		mon_update_check(stk, 0);	
+		mon_update_check(stk, INO_SWITCH_PUSH);	
 	}
 	return 0;
 }
@@ -100,7 +104,7 @@ static inline int stk_pop(struct stk_vc *stk)
 		return -1;
 	}else{
 		stk->top -= 1;
-		mon_update_check(stk, 0);
+		mon_update_check(stk, INO_SWITCH_POP);
 	}
 	return 0;
 }
@@ -111,7 +115,7 @@ static inline int stk_excp(struct stk_vc *stk)
 		printf("at the bottom of stack now\n");
 		return -1;
 	}else{
-		mon_update_check(stk, 0);
+		mon_update_check(stk, 1);
 		printf("stack exception !!\n");
 		stk->top = 0;
 		sleep(EXCP_SLEEPTIME);
@@ -122,7 +126,7 @@ static inline int stk_excp(struct stk_vc *stk)
 static inline int stk_rpls(struct stk_vc *stk, struct vc_ops *current)
 {
 	stk->stk_stat[stk->top] = current;
-	mon_update_check(stk, 0);
+	mon_update_check(stk, INO_SWITCH_RPLS);
 	return 0;
 }
 
@@ -141,7 +145,7 @@ static inline int stk_restart(struct stk_vc *stk)
 		printf("at the bottom of stack now, should not call this func ...\n");
 		return -1;
 	}
-	mon_update_check(stk, 0);
+	mon_update_check(stk, INO_SWITCH_RESTART);
 	stk->top = 0;
 	return 0;
 }
