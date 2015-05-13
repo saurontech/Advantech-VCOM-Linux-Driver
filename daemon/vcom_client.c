@@ -101,10 +101,12 @@ int startup(int argc, char **argv, struct vc_attr *port)
 {
 	char *addr;
 	char ch;
+	
 	if(argc < 2) {
 		printf("Usage : ./vcomd -l 'log name' -t 'tty ID' -d 'device model' -a 'IP address' -p 'device port'\n");
 		return -1;
 	}
+	mon_init(0);
 	while((ch = getopt(argc, argv, "l:t:d:a:p:r:")) != -1)  {
 		switch(ch){
 			case 'l':

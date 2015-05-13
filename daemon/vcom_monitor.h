@@ -1,23 +1,28 @@
 #ifndef _VCOM_MONITER_H
 #define _VCOM_MONITER_H
 #define DEBUG_MONITOR
-#define MSIZE 64
+#define MSIZE 128
 extern void * stk_mon;
 
 struct vc_monitor{
     void * addr;
     int fd;
     int pid;
-	char fname[16];
+	int msgl;
+	char fname[32];
 };
 struct vc_monitor vc_mon;
 
 static inline int mon_init(char * fname)
 {
-    sprintf(vc_mon.fname, "/tmp/%s", fname);
     vc_mon.fd = -1;
     vc_mon.addr = 0;
+	
+	if(fname <= 0)
+		return 0;
+	
 	vc_mon.pid  = getpid();
+	sprintf(vc_mon.fname, "%s", fname);
 
     do{
         vc_mon.fd = open(vc_mon.fname, O_RDWR | O_CREAT | O_TRUNC, S_IRWXO|S_IRWXG|S_IRWXU);
@@ -40,21 +45,35 @@ static inline int mon_init(char * fname)
 
 static inline int mon_update(struct stk_vc * stk, int sig)
 {
-    char * ptr;
-    char * msg;
-    int len;
+	char * ptr;
+	char * mem;
+	char * msg;
+	int msgl;
+	int len;
 
-    if(stk_empty(stk)){
-        printf("stack empty ...\n");
-        return -1;
+	if(vc_mon.fd < 0)
+		return -1;
+	
+	if(stk_empty(stk)){
+		printf("stack empty ...\n");
+		return -1;
     }
-    ptr = (char*)vc_mon.addr;
-    msg = stk->stk_stat[stk->top]->name();
-    len = sprintf(ptr, "File : %s (Pid = %d | State : %s)", vc_mon.fname, vc_mon.pid, msg);
-    memset(ptr + (len+1), ' ', 16);
+
+	msg = stk->stk_stat[stk->top]->name();
+	mem = (char *)vc_mon.addr;
+	msgl = sprintf(mem, "Pid = %d | State : %s  ", 
+					vc_mon.pid, msg);
+	
+	len = MSIZE - msgl;
+	if(len <= 1){
+		printf("%s len <= 1\n", __func__);
+		return -1;
+	}
+	
+	ptr = mem + msgl;
     if(sig){
-        msync(ptr, MSIZE, MS_SYNC);
-        ftruncate(vc_mon.fd, MSIZE);
+		msync(ptr, MSIZE, MS_SYNC);
+		ftruncate(vc_mon.fd, MSIZE);
     }else{
         msync(ptr, MSIZE, MS_SYNC);
     }

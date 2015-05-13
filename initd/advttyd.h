@@ -11,7 +11,7 @@
 
 #define CF_MAXPORTS	VCOM_PORTS
 
-#define ADVTTYD_DEBUG
+//#define ADVTTYD_DEBUG
 #ifdef ADVTTYD_DEBUG
 #define ADV_LOGMSG(FMT, ...) \
         do { \

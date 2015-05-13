@@ -11,7 +11,7 @@
 #define STACK_MAX 10
 #define stk_full(a) ((a)->top>=STACK_MAX-1? 1:0)
 #define stk_empty(a) ((a)->top<0? 1:0)
-#define stk_bot(a) ((a)->top<=0? 1:0)
+#define stk_bot(a) ((a)->top==0? 1:0)
 struct stk_vc{
     int top;
     struct vc_ops *stk_stat[STACK_MAX];                                                   
@@ -74,7 +74,7 @@ struct vc_ops{
 #define mon_update_check(a, b)  do{}while(0)
 #endif
 #define EXCP_SLEEPTIME 3
-#define INO_SWITCH_PUSH 0
+#define INO_SWITCH_PUSH 1
 #define INO_SWITCH_POP 0
 #define INO_SWITCH_RPLS 0
 #define INO_SWITCH_RESTART 0

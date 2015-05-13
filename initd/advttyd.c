@@ -40,6 +40,8 @@
 
 #include    "advttyd.h"
 
+#define MON_PATH "/tmp/advmon"
+
 typedef struct _TTYINFO {
     pid_t   advttyp_pid;                        // process id for the port	                 
 	char	mpt_nameidx_str[CF_MAXSTRLEN];      // Master pseudo TTY index
@@ -63,7 +65,9 @@ static void restart_handle();
 static int  hexstr(char * strp);
 static int  log_open(char * log_name);
 static void log_close(void);
+#ifdef ADVTTY_DEBUG
 static void log_msg(const char * msg);
+#endif
 
 int main(int argc, char * argv[])
 {
@@ -250,10 +254,13 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
     pid_t advttyp_pid;
     char cmd[PATH_MAX];
     char log[PATH_MAX];
+	char mon[PATH_MAX];
 
     sprintf(cmd, "%s/%s", work_path, CF_PORTPROG);
-    sprintf(log, "%s/%s", work_path, CF_LOGNAME);
+	sprintf(log, "%s/%s", work_path, CF_LOGNAME);
+
     for(idx = 0; idx < nrport; ++idx) {
+		sprintf(mon, "%s/advtty%d", MON_PATH, idx);
         if((advttyp_pid = fork()) < 0) {
             ADV_LOGMSG("Spawn MPT[%s] fail\n", ttyinfo[idx].mpt_nameidx_str);
             continue;
@@ -270,7 +277,7 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
             log_close();
             
             execl(cmd, CF_PORTPROG,
-                  "-l", log,
+                  "-l", mon,
                   "-t", ttyinfo[idx].mpt_nameidx_str,
                   "-d", ttyinfo[idx].dev_type_str,
                   "-a", ttyinfo[idx].dev_ipaddr_str,
@@ -283,7 +290,7 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
         {
         	log_close();
             execl(cmd, CF_PORTPROG,
-                  "-l", log,
+                  "-l", mon,
                   "-t", ttyinfo[idx].mpt_nameidx_str,
                   "-d", ttyinfo[idx].dev_type_str,
                   "-a", ttyinfo[idx].dev_ipaddr_str,
@@ -373,7 +380,7 @@ static void log_close(void)
 	}
 	return;
 }
-
+#ifdef ADVTTYD_DEBUG
 static void log_msg(const char * msg)
 {
 	long t;
@@ -396,4 +403,4 @@ static void log_msg(const char * msg)
     flock(__log_fd,  LOCK_UN);
     return;
 }
-
+#endif
