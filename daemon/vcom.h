@@ -74,7 +74,7 @@ struct vc_ops{
 #define mon_update_check(a, b)  do{}while(0)
 #endif
 #define EXCP_SLEEPTIME 3
-#define INO_SWITCH_PUSH 1
+#define INO_SWITCH_PUSH 0
 #define INO_SWITCH_POP 0
 #define INO_SWITCH_RPLS 0
 #define INO_SWITCH_RESTART 0
