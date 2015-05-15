@@ -15,6 +15,7 @@ struct vc_monitor vc_mon;
 
 static inline int mon_init(char * fname)
 {
+    
     vc_mon.fd = -1;
     vc_mon.addr = 0;
 	
@@ -52,7 +53,7 @@ static inline int mon_update(struct stk_vc * stk, int sig)
 	int len;
 
 	if(vc_mon.fd < 0)
-		return -1;
+		return 0;
 	
 	if(stk_empty(stk)){
 		printf("stack empty ...\n");

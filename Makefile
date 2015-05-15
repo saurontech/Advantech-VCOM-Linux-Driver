@@ -5,12 +5,12 @@ all:
 	make -C ./daemon
 	make -C ./driver
 	make -C ./initd
-#	make -C ./inotify
+	make -C ./inotify
 clean:
 	make clean -C ./driver
 	make clean -C ./daemon
 	make clean -C ./initd
-#	make clean -C ./inotify
+	make clean -C ./inotify
 
 install_daemon:
 	install -d /usr/local/advtty

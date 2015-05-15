@@ -19,7 +19,7 @@
 //#include "vcom_debug.h"
 
 #define RBUF_SIZE	4096
-//static int log_fd = -1;
+
 extern void * stk_mon; 
 struct vc_ops * vc_recv_desp(struct vc_attr *port)
 {
@@ -67,35 +67,6 @@ struct vc_ops * vc_recv_desp(struct vc_attr *port)
 	return try_ops3(stk_curnt(stk), recv, port, buf, hdr_len + packet_len);
 }
 #undef RBUF_SIZE
-/*
-int log_open(char *log_name)
-{
-    return log_fd = open(log_name,
-                         O_WRONLY | O_CREAT | O_APPEND | O_NDELAY, 0666);
-}
-
-void log_close(void)
-{
-    if(log_fd >= 0) {
-        close(log_fd);
-        log_fd = -1;
-        printf("log closing ...\n");
-    }
-}
-
-void log_write(const char *msg)
-{
-    char msgbuf[1024];
-    time_t t = time(NULL);
-    struct tm *lt = localtime(&t);
-
-    sprintf(msgbuf, "%02d-%02d-%04d %02d:%02d:%02d   ",
-            lt->tm_mon+1, lt->tm_mday, lt->tm_year+1900,
-            lt->tm_hour, lt->tm_min, lt->tm_sec);
-    strcat(msgbuf, msg);
-    write(log_fd, msgbuf, strlen(msgbuf));
-}
-*/
 
 int startup(int argc, char **argv, struct vc_attr *port)
 {
@@ -103,12 +74,23 @@ int startup(int argc, char **argv, struct vc_attr *port)
 	char ch;
 	
 	if(argc < 2) {
-		printf("Usage : ./vcomd -l 'log name' -t 'tty ID' -d 'device model' -a 'IP address' -p 'device port'\n");
+		printf("Usage : ./vcomd [-l/-t/-d/-a/-p/-r] [argument]\n");
+		printf("Or type [-h] for help\n");
 		return -1;
 	}
 	mon_init(0);
-	while((ch = getopt(argc, argv, "l:t:d:a:p:r:")) != -1)  {
+	while((ch = getopt(argc, argv, "hl:t:d:a:p:r:")) != -1)  {
 		switch(ch){
+			case 'h':
+				printf("Usage : ./vcomd [-l/-t/-d/-a/-p/-r] [argument]\n");
+				printf("The most commonly used commands are:\n");
+				printf("-l                  Log file\n");
+				printf("-t                  Tty id\n");
+				printf("-d                  Device modle\n");
+				printf("-a                  Ip addr\n");
+				printf("-p                  Device port\n");
+				printf("-r                  Redundant IP\n");
+				printf("-h					For help\n");
 			case 'l':
 				printf("open log file : %s ...\n", optarg);		
 				mon_init(optarg); 
@@ -136,7 +118,8 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				printf("setting RIP addr : %s ...\n", port->ip_red);
 				break;
 			default:
-				printf("Usage : ./vcomd -l 'log name' -t 'tty ID' -d 'device model' -a 'IP address' -p 'device port'\n");
+				printf("Usage : ./vcomd [-l/-t/-d/-a/-p/-r] [argument]\n");
+				printf("Or type [-h] for help\n");
 				return -1;
 		}
 	}

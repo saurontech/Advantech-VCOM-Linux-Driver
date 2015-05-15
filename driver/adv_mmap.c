@@ -8,12 +8,12 @@
 
 void adv_vma_open(struct vm_area_struct *vma)
 {
-	printk("%s(%d)\n", __func__, __LINE__);
+//	printk("%s(%d)\n", __func__, __LINE__);
 }
 
 void adv_vma_close(struct vm_area_struct *vma)
 {
-	printk("%s(%d)\n", __func__, __LINE__);
+//	printk("%s(%d)\n", __func__, __LINE__);
 }
 
 int adv_vma_nopage(struct vm_area_struct *vma, struct vm_fault *vmf)
@@ -24,7 +24,7 @@ int adv_vma_nopage(struct vm_area_struct *vma, struct vm_fault *vmf)
 //	void * pageptr = NULL;
 	int ret = 0;
 
-	printk("%s(%d)\n", __func__, __LINE__);
+//	printk("%s(%d)\n", __func__, __LINE__);
 	data = vma->vm_private_data;
 
 //	printk("data = %x\n", data);
@@ -49,7 +49,7 @@ int adv_vma_nopage(struct vm_area_struct *vma, struct vm_fault *vmf)
 //		printk("mapping attr page\n");
 		page = virt_to_page(data->attr.data);
 	}else{
-		printk("%s(%d)\n", __func__, __LINE__);
+//		printk("%s(%d)\n", __func__, __LINE__);
 		goto out;
 	}
 
@@ -69,7 +69,7 @@ struct vm_operations_struct adv_vm_ops = {
 
 int adv_proc_mmap(struct file *filp, struct vm_area_struct *vma)
 {
-	printk("%s(%d)\n", __func__, __LINE__);
+//	printk("%s(%d)\n", __func__, __LINE__);
 
 //	struct inode *inode = filp->f_dentry->d_inode;
 

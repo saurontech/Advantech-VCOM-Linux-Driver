@@ -86,8 +86,6 @@ static void adv_uart_start_tx(struct uart_port *port)
 
 	tx = adv_port->tx;
 
-//	dump_stack();
-
 	mutex_lock(&(tx->lock));
 	tx->status |= ADV_RING_BUF_ENABLED;
 	adv_uart_xmit(port);
@@ -414,7 +412,6 @@ static int
 adv_uart_ioctl(struct uart_port *port, unsigned int cmd, unsigned long arg)
 {
 //	printk("cmd %x arg %x\n", cmd, arg);
-//	dump_stack();
 	return -ENOIOCTLCMD;
 }
 	      
@@ -432,7 +429,7 @@ static int adv_uart_request_port(struct uart_port *port)
 
 static void adv_uart_config_port(struct uart_port *port, int flags)
 {
-	printk("%s(%d)\n", __func__, __LINE__);
+//	printk("%s(%d)\n", __func__, __LINE__);
 }
 
 static const char *
@@ -505,11 +502,11 @@ extern int vcom_port_num;
 
 static struct uart_driver adv_uart_driver = {
 	.owner			= THIS_MODULE,
-	.driver_name		= "advvcom",
+	.driver_name	= "advvcom",
 	.dev_name		= "ttyADV",
 	.major			= VCOM_MAJOR,
 	.minor			= VCOM_MINOR,
-	.nr			= VCOM_PORTS,
+	.nr				= VCOM_PORTS,
 	.cons			= NULL,
 };
 
