@@ -1,3 +1,4 @@
+INSTALL_PATH = /usr/local/advtty/
 MODNAME = advvcom
 VERSION = 1
 
@@ -13,29 +14,32 @@ clean:
 	make clean -C ./inotify
 
 install_daemon:
-	install -d /usr/local/advtty
-	cp ./daemon/vcomd /usr/local/advtty/
-	cp ./initd/advttyd /usr/local/advtty/ 
-	cp ./config/advttyd.conf /usr/local/advtty/
-	cp ./Makefile  /usr/local/advtty/
-	cp ./script/advls /usr/local/advtty/
-	cp ./script/advadd /usr/local/advtty/
-	cp ./script/advrm /usr/local/advtty/
-	cp ./script/advman /usr/local/advtty/
-	chmod 111 /usr/local/advtty/advls
-	chmod 111 /usr/local/advtty/advadd
-	chmod 111 /usr/local/advtty/advrm
-	chmod 111 /usr/local/advtty/advman
-	ln -sf /usr/local/advtty/advls /sbin/advls
-	ln -sf /usr/local/advtty/advrm /sbin/advrm
-	ln -sf /usr/local/advtty/advadd /sbin/advadd
-	ln -sf /usr/local/advtty/advman /sbin/advman
+	install -d $(INSTALL_PATH)
+	cp ./daemon/vcomd $(INSTALL_PATH)
+	cp ./initd/advttyd $(INSTALL_PATH)
+	cp ./config/advttyd.conf $(INSTALL_PATH)
+	cp ./Makefile  $(INSTALL_PATH)
+	cp ./script/advls $(INSTALL_PATH)
+	cp ./script/advadd $(INSTALL_PATH)
+	cp ./script/advrm $(INSTALL_PATH)
+	cp ./script/advman $(INSTALL_PATH)
+	cp ./inotify/vcinotf $(INSTALL_PATH)
+	chmod 111 $(INSTALL_PATH)advls
+	chmod 111 $(INSTALL_PATH)advadd
+	chmod 111 $(INSTALL_PATH)advrm
+	chmod 111 $(INSTALL_PATH)advman
+	chmod 111 $(INSTALL_PATH)vcinotf
+	ln -sf $(INSTALL_PATH)advls /sbin/advls
+	ln -sf $(INSTALL_PATH)advrm /sbin/advrm
+	ln -sf $(INSTALL_PATH)advadd /sbin/advadd
+	ln -sf $(INSTALL_PATH)advman /sbin/advman
+	ln -sf $(INSTALL_PATH)vcinotf /sbin/vcinotf
 
 install: install_daemon
-	cp ./driver/advvcom.ko /usr/local/advtty/
+	cp ./driver/advvcom.ko $(INSTALL_PATH)
 	
 uninstall:
-	rm -Rf /usr/local/advtty
+	rm -Rf $(INSTALL_PATH)
 	rm -f /sbin/advrm
 	rm -f /sbin/advls
 	rm -f /sbin/advman
