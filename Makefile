@@ -44,6 +44,7 @@ uninstall:
 	rm -f /sbin/advls
 	rm -f /sbin/advman
 	rm -f /sbin/advadd
+	rm -f /sbin/vcinotf
 	
 # use dkms
 install_dkms: install_daemon
