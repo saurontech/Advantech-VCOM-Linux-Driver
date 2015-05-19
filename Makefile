@@ -23,17 +23,17 @@ install_daemon:
 	cp ./script/advadd $(INSTALL_PATH)
 	cp ./script/advrm $(INSTALL_PATH)
 	cp ./script/advman $(INSTALL_PATH)
-	cp ./inotify/vcinotf $(INSTALL_PATH)
+	cp ./inotify/vcinot $(INSTALL_PATH)
 	chmod 111 $(INSTALL_PATH)advls
 	chmod 111 $(INSTALL_PATH)advadd
 	chmod 111 $(INSTALL_PATH)advrm
 	chmod 111 $(INSTALL_PATH)advman
-	chmod 111 $(INSTALL_PATH)vcinotf
+	chmod 111 $(INSTALL_PATH)vcinot
 	ln -sf $(INSTALL_PATH)advls /sbin/advls
 	ln -sf $(INSTALL_PATH)advrm /sbin/advrm
 	ln -sf $(INSTALL_PATH)advadd /sbin/advadd
 	ln -sf $(INSTALL_PATH)advman /sbin/advman
-	ln -sf $(INSTALL_PATH)vcinotf /sbin/vcinotf
+	ln -sf $(INSTALL_PATH)vcinot /sbin/vcinot
 
 install: install_daemon
 	cp ./driver/advvcom.ko $(INSTALL_PATH)
@@ -44,7 +44,7 @@ uninstall:
 	rm -f /sbin/advls
 	rm -f /sbin/advman
 	rm -f /sbin/advadd
-	rm -f /sbin/vcinotf
+	rm -f /sbin/vcinot
 	
 # use dkms
 install_dkms: install_daemon

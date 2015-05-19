@@ -1,8 +1,8 @@
 CC = gcc
 SRC = vcom_inotf.c
-all: vcinotf
+all: vcinot
 
-vcinotf: $(SRC) 
+vcinot: $(SRC) 
 	$(CC) -Wall -o $@ ${SRC}
 clean:
-	find ./ -name 'vcinotf' -exec rm {} \;
+	find ./ -name 'vcinot' -exec rm {} \;

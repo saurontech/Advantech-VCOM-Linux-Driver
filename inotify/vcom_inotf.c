@@ -11,11 +11,12 @@
 #define EVENT_SIZE	(sizeof(struct inotify_event))
 #define EVENT_BUF_LEN	 (1024 * (EVENT_SIZE + 16))
 
+#define FPATH_LEN		256
+
 
 int parse_ievent(char *buf, int *i, const char *path)
 {
 #define CMDBUF_LEN		256
-#define FPATH_LEN		256
 	char fpath[FPATH_LEN];
 	char cmd[CMDBUF_LEN];
 	struct inotify_event *event = (struct inotify_event *)&buf[*i];
@@ -42,9 +43,17 @@ int parse_ievent(char *buf, int *i, const char *path)
 
 	*i += EVENT_SIZE + event->len;
 #undef CMDBUF_LEN
-#undef FPATH_LEN
 
 	return 0;
+}
+
+void usage(char * cmd)
+{
+	printf("usage : %s [-p <PATH>] [-l] [-h]\n", cmd);
+	printf("The most commonly used commands are:\n");
+	printf("	-p	Monitoring file path\n");
+	printf("	-l	Execute forever\n");
+	printf("	-h	For help\n");
 }
 
 int main(int argc, char **argv)
@@ -54,12 +63,15 @@ int main(int argc, char **argv)
 	int wd;
 	char buf[EVENT_BUF_LEN];
 	char ch;
-	char path[32];
+	char path[FPATH_LEN];
 
 	if(argc < 2){
-		printf("Usage : ./vcinotf [Argument] [PATH] or -h for help\n");
+		usage(argv[0]);
 		return -1;
 	}
+
+	path[0] = '\0';
+
 	loop = 0;
 	while((ch = getopt(argc, argv, "lhp:")) != -1){
 		switch(ch){
@@ -67,15 +79,10 @@ int main(int argc, char **argv)
 				loop = 1;	
 				break;
 			case 'h':
-				printf("usage : ./vcinotf [-p <PATH>] [-l] [-h]\n");
-				printf("The most commonly used commands are:\n");
-				printf("-p              Monitoring file path\n");
-				printf("-l              Execute forever\n");
-				printf("-h              For help\n");
-
+				usage(argv[0]);
 				return 0;
 			case 'p':
-				sprintf(path, "%s", optarg);
+				snprintf(path, FPATH_LEN, "%s", optarg);
 				break;
 			default:
 				printf("Illegal argument, please type -h for help\n"); 
@@ -83,6 +90,11 @@ int main(int argc, char **argv)
 		}
 	}
 	/* creating the INOTIFY instance */
+	if(strlen(path) == 0){
+		usage(argv[0]);
+		return -1;
+	}
+
 	fd = inotify_init();
 	if (fd < 0) {
 		perror("inotify_init");
