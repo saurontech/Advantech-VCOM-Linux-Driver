@@ -71,8 +71,9 @@ int main(int argc, char **argv)
 				printf("The most commonly used commands are:\n");
 				printf("-p              Monitoring file path\n");
 				printf("-l              Execute forever\n");
-				printf("-h              For help\n"); 
-				break;
+				printf("-h              For help\n");
+
+				return 0;
 			case 'p':
 				sprintf(path, "%s", optarg);
 				break;
