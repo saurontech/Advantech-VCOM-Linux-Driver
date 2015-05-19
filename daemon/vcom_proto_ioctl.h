@@ -1,6 +1,13 @@
 #ifndef __VCOM_PROTO_IOCTL_H
 #define __VCOM_PROTO_IOCTL_H
 
+#ifndef _BSD_SOURCE
+//this is needed to solve indianess issues
+// htole32
+#define _BSD_SOURCE
+#endif
+
+#include <endian.h>
 
 static inline int vc_pack_purge(struct vc_proto_packet * pbuf, unsigned int tid,
 		unsigned int pflags, int buflen)
@@ -28,7 +35,7 @@ static inline int vc_pack_purge(struct vc_proto_packet * pbuf, unsigned int tid,
 	pbuf->attach.param.p1 = htonl(p1);
 	pbuf->attach.param.p2 = htonl(p2);
 	
-	pbuf->attach.uint32.uint = pflags; // this should be a bug
+	pbuf->attach.uint32.uint = htole32(pflags); //little endian
 
 	return plen;
 }
@@ -79,7 +86,7 @@ static inline int vc_pack_sbaud(struct vc_proto_packet * pbuf, unsigned int tid,
 	pbuf->attach.param.p1 = htonl(p1);
 	pbuf->attach.param.p2 = htonl(p2);
 	
-	pbuf->attach.uint32.uint = baud; /*this should be a bug*/
+	pbuf->attach.uint32.uint = htole32(baud); //little endian
 
 	return plen;
 }
