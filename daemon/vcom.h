@@ -62,6 +62,9 @@ struct vc_ops{
 #define try_ops2(a, b, c, d)	(((a)->b > 0)?(a)->b(c, d):a)
 #define try_ops3(a, b, c, d, e)	(((a)->b > 0)?(a)->b(c, d, e):a)
 #define try_ops5(a, b, c, d, e, f, g)	(((a)->b > 0)?(a)->b(c, d, e, f, g):a)
+
+static inline struct vc_ops * stk_curnt(struct stk_vc *stk);
+
 /*
  * Vcom Monitor
  */
@@ -89,11 +92,12 @@ static inline int stk_push(struct stk_vc *stk, struct vc_ops *current)
 	if(stk_full(stk)){
 		printf("stack full\n");
 		return -1;
-	}else{
-		stk->top += 1;
-		stk->stk_stat[stk->top] = current;
-		mon_update_check(stk, INO_PUSH_SWITCH);	
 	}
+
+	stk->top += 1;
+	stk->stk_stat[stk->top] = current;
+	mon_update_check(stk, INO_PUSH_SWITCH);	
+
 	return 0;
 }
 	
@@ -102,10 +106,11 @@ static inline int stk_pop(struct stk_vc *stk)
 	if(stk_empty(stk)){
 		printf("stack empty\n");
 		return -1;
-	}else{
-		stk->top -= 1;
-		mon_update_check(stk, INO_POP_SWITCH);
 	}
+
+	stk->top -= 1;
+	mon_update_check(stk, INO_POP_SWITCH);
+
 	return 0;
 }
 
@@ -114,12 +119,13 @@ static inline int stk_excp(struct stk_vc *stk)
 	if(stk_bot(stk)){
 		printf("at the bottom of stack now\n");
 		return -1;
-	}else{
-		mon_update_check(stk, 1);
-		printf("stack exception !!\n");
-		stk->top = 0;
-		sleep(EXCP_SLEEPTIME);
 	}
+
+	printf("stack exception !!\n");
+	stk->top = 0;
+	mon_update_check(stk, 1);
+	sleep(EXCP_SLEEPTIME);
+
 	return 0;
 }		
 
@@ -145,8 +151,8 @@ static inline int stk_restart(struct stk_vc *stk)
 		printf("at the bottom of stack now, should not call this func ...\n");
 		return -1;
 	}
-	mon_update_check(stk, INO_RESTART_SWITCH);
 	stk->top = 0;
+	mon_update_check(stk, INO_RESTART_SWITCH);
 	return 0;
 }
 

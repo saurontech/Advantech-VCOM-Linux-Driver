@@ -91,30 +91,34 @@ void _init_std()
 	}
 }
 
+void usage(char * cmd)
+{
+	printf("Usage : %s [-l/-t/-d/-a/-p/-r] [argument]\n", cmd);
+	printf("The most commonly used commands are:\n");
+	printf("	-l	Log file\n");
+	printf("	-t	TTY id\n");
+	printf("	-d	Device modle\n");
+	printf("	-a	IP addr\n");
+	printf("	-p	Device port\n");
+	printf("	-r	Redundant IP\n");
+	printf("	-h	For help\n");
+}
+
 int startup(int argc, char **argv, struct vc_attr *port)
 {
 	char *addr;
 	char ch;
 	
 	if(argc < 2) {
-		printf("Usage : ./vcomd [-l/-t/-d/-a/-p/-r] [argument]\n");
-		printf("Or type [-h] for help\n");
+		usage(argv[0]);
 		return -1;
 	}
 	mon_init(0);
 	while((ch = getopt(argc, argv, "hl:t:d:a:p:r:")) != -1)  {
 		switch(ch){
 			case 'h':
-				printf("Usage : ./vcomd [-l/-t/-d/-a/-p/-r] [argument]\n");
-				printf("The most commonly used commands are:\n");
-				printf("-l		Log file\n");
-				printf("-t		TTY id\n");
-				printf("-d		Device modle\n");
-				printf("-a		IP addr\n");
-				printf("-p		Device port\n");
-				printf("-r		Redundant IP\n");
-				printf("-h		For help\n");
-				exit(0);
+				usage(argv[0]);
+				return -1;
 			case 'l':
 				printf("open log file : %s ...\n", optarg);		
 				mon_init(optarg); 
@@ -142,8 +146,7 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				printf("setting RIP addr : %s ...\n", port->ip_red);
 				break;
 			default:
-				printf("Usage : ./vcomd [-l/-t/-d/-a/-p/-r] [argument]\n");
-				printf("Or type [-h] for help\n");
+				usage(argv[0]);
 				return -1;
 		}
 	}
@@ -174,7 +177,7 @@ int main(int argc, char **argv)
 	port.ip_red = 0;
 	stk_mon = 0;	// stack monitor init
 	if(startup(argc, argv, &port) == -1)
-        return 0;
+        	return 0;
 
 	sprintf(filename, "/proc/vcom/advproc%d", port.ttyid);
 	port.fd = open(filename, O_RDWR);

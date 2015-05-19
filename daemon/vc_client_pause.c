@@ -66,7 +66,6 @@ static struct vc_ops * vc_pause_init(struct vc_attr * attr)
 	vc_buf_update(attr, VC_BUF_TX);
 
 	return ADV_THIS;
-
 }
 
 static struct vc_ops * vc_pause_ioctl(struct vc_attr * attr)
@@ -155,9 +154,8 @@ static struct vc_ops * vc_pause_resume(struct vc_attr * attr)
 	
 	if(_resume_queue(attr)){
 		printf("%s(%d)\n", __func__, __LINE__);
-		stk_excp(stk);                 
-                                                   
-        return stk_curnt(stk)->init(attr);
+		stk_excp(stk);
+		return stk_curnt(stk)->init(attr);
 	}
 	stk_rpls(stk, &vc_netup_ops);
 

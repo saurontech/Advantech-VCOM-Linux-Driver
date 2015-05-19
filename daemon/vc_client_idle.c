@@ -50,7 +50,7 @@ struct vc_ops * vc_idle_poll(struct vc_attr * attr)
 
 	stk = &attr->stk;
 	printf("%s(%d)\n", __func__, __LINE__);
-	stk_restart(stk);
+	stk_excp(stk);
 
 	return stk_curnt(stk)->init(attr);
 }
