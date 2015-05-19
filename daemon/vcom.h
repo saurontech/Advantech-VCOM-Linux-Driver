@@ -58,10 +58,20 @@ struct vc_ops{
 	struct vc_ops * (*event)(struct vc_attr *, struct timeval *, fd_set *r, fd_set *w, fd_set *e);
 	char * (*name)(void);
 };
-#define try_ops(a, b, c)	(((a)->b > 0)?(a)->b(c):a)
+#define try_ops1(a, b, c)	(((a)->b > 0)?(a)->b(c):a)
 #define try_ops2(a, b, c, d)	(((a)->b > 0)?(a)->b(c, d):a)
 #define try_ops3(a, b, c, d, e)	(((a)->b > 0)?(a)->b(c, d, e):a)
+#define try_ops4(a, b, c, d, e, f)	(((a)->b > 0)?(a)->b(c, d, e, f):a)
 #define try_ops5(a, b, c, d, e, f, g)	(((a)->b > 0)?(a)->b(c, d, e, f, g):a)
+
+#define try_ovrld(_1, _2, _3, _4, _5, _6, _7, func,...) func
+#define try_ops(args...) try_ovrld(args, try_ops5 \
+					,try_ops4 \
+					,try_ops3 \
+					,try_ops2 \
+					,try_ops1 \
+					,...)(args)
+
 
 static inline struct vc_ops * stk_curnt(struct stk_vc *stk);
 

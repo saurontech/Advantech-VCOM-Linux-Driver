@@ -64,7 +64,7 @@ struct vc_ops * vc_recv_desp(struct vc_attr *port)
 			return stk_curnt(stk)->err(port, "VCOM len miss-match", len);
 	}
 
-	return try_ops3(stk_curnt(stk), recv, port, buf, hdr_len + packet_len);
+	return try_ops(stk_curnt(stk), recv, port, buf, hdr_len + packet_len);
 }
 #undef RBUF_SIZE
 
@@ -242,7 +242,7 @@ int main(int argc, char **argv)
 		FD_SET(port.fd, &efds);
 		FD_SET(port.sk, &rfds);
 
-		try_ops5(stk_curnt(stk), event, &port, &tv, &rfds, &wfds, &efds);
+		try_ops(stk_curnt(stk), event, &port, &tv, &rfds, &wfds, &efds);
 
 		intflags = ADV_INT_RX|ADV_INT_TX;
 
