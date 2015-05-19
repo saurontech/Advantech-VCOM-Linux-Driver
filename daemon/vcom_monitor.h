@@ -1,6 +1,5 @@
 #ifndef _VCOM_MONITER_H
 #define _VCOM_MONITER_H
-#define DEBUG_MONITOR
 #define MSIZE 128
 #define FNAME_LEN 256
 extern void * stk_mon;

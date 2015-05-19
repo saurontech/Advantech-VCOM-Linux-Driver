@@ -79,11 +79,9 @@ static inline struct vc_ops * stk_curnt(struct stk_vc *stk);
  * Vcom Monitor
  */
 #include "vcom_monitor.h"
-#ifndef DEBUG_MONITOR
+#ifndef _VCOM_MONITER_H
 #define mon_update(...) do{}while(0)   // do nothing
 #define mon_init(a) do{}while(0)        // do nothing
-#endif 
-#ifndef mon_update_check
 #define mon_update_check(...)  do{}while(0)
 #endif
 #define EXCP_SLEEPTIME 3
