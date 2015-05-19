@@ -114,14 +114,17 @@ static inline int stk_pop(struct stk_vc *stk)
 	return 0;
 }
 
-static inline int stk_excp(struct stk_vc *stk)	
+#define _expmsg(msg, len) do{snprintf(msg, len, "%s,%d", __func__, __LINE__);}while(0)
+#define stk_excp(a) do{char msg[128]; _expmsg(msg,128); _stk_excp(a, msg);}while(0)
+
+static inline int _stk_excp(struct stk_vc *stk, char * msg)	
 {
 	if(stk_bot(stk)){
 		printf("at the bottom of stack now\n");
 		return -1;
 	}
 
-	printf("stack exception !!\n");
+	printf("stack exception !! %s\n", msg);
 	stk->top = 0;
 	mon_update_check(stk, 1);
 	sleep(EXCP_SLEEPTIME);
