@@ -235,9 +235,9 @@ unsigned int adv_proc_poll(struct file *filp, poll_table *wait)
 extern int adv_proc_mmap(struct file *filp, struct vm_area_struct *vma);
 
 static const struct file_operations adv_proc_fops = {
-	.owner          = THIS_MODULE,
-	.open           = adv_proc_open,
-	.release        = adv_proc_release,
+	.owner		= THIS_MODULE,
+	.open		= adv_proc_open,
+	.release	= adv_proc_release,
 	.mmap		= adv_proc_mmap,
 	.unlocked_ioctl	= adv_proc_ioctl,
 	.poll		= adv_proc_poll,

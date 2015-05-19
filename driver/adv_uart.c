@@ -502,11 +502,11 @@ extern int vcom_port_num;
 
 static struct uart_driver adv_uart_driver = {
 	.owner			= THIS_MODULE,
-	.driver_name	= "advvcom",
+	.driver_name		= "advvcom",
 	.dev_name		= "ttyADV",
 	.major			= VCOM_MAJOR,
 	.minor			= VCOM_MINOR,
-	.nr				= VCOM_PORTS,
+	.nr			= VCOM_PORTS,
 	.cons			= NULL,
 };
 
