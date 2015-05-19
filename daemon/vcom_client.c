@@ -68,6 +68,29 @@ struct vc_ops * vc_recv_desp(struct vc_attr *port)
 }
 #undef RBUF_SIZE
 
+void _init_std()
+{
+	int fd;
+	
+	if(dup2(STDIN_FILENO, STDIN_FILENO) == -1 &&
+	   errno == EBADF){
+		fd = open("/dev/null", O_RDONLY);
+		dup2(fd, STDIN_FILENO);
+	}
+
+	if(dup2(STDOUT_FILENO, STDOUT_FILENO) == -1 &&
+	   errno == EBADF){
+		fd = open("/dev/null", O_RDWR);
+		dup2(fd, STDOUT_FILENO);
+	}
+
+	if(dup2(STDERR_FILENO, STDERR_FILENO) == -1 &&
+	   errno == EBADF){
+		fd = open("/dev/null", O_RDWR);
+		dup2(fd, STDERR_FILENO);
+	}
+}
+
 int startup(int argc, char **argv, struct vc_attr *port)
 {
 	char *addr;
@@ -84,13 +107,14 @@ int startup(int argc, char **argv, struct vc_attr *port)
 			case 'h':
 				printf("Usage : ./vcomd [-l/-t/-d/-a/-p/-r] [argument]\n");
 				printf("The most commonly used commands are:\n");
-				printf("-l                  Log file\n");
-				printf("-t                  Tty id\n");
-				printf("-d                  Device modle\n");
-				printf("-a                  Ip addr\n");
-				printf("-p                  Device port\n");
-				printf("-r                  Redundant IP\n");
-				printf("-h					For help\n");
+				printf("-l		Log file\n");
+				printf("-t		TTY id\n");
+				printf("-d		Device modle\n");
+				printf("-a		IP addr\n");
+				printf("-p		Device port\n");
+				printf("-r		Redundant IP\n");
+				printf("-h		For help\n");
+				exit(0);
 			case 'l':
 				printf("open log file : %s ...\n", optarg);		
 				mon_init(optarg); 
@@ -142,6 +166,8 @@ int main(int argc, char **argv)
 
 	const unsigned int psec = VC_PULL_PSEC;
 	const unsigned int pusec = VC_PULL_PUSEC;
+
+	_init_std();
 
 	stk = &port.stk;
 	
