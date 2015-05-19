@@ -70,11 +70,11 @@ static inline struct vc_ops * stk_curnt(struct stk_vc *stk);
  */
 #include "vcom_monitor.h"
 #ifndef DEBUG_MONITOR
-#define mon_update(a, b) do{}while(0)   // do nothing
+#define mon_update(...) do{}while(0)   // do nothing
 #define mon_init(a) do{}while(0)        // do nothing
 #endif 
 #ifndef mon_update_check
-#define mon_update_check(a, b)  do{}while(0)
+#define mon_update_check(...)  do{}while(0)
 #endif
 #define EXCP_SLEEPTIME 3
 #define INO_PUSH_SWITCH 0
@@ -126,7 +126,7 @@ static inline int _stk_excp(struct stk_vc *stk, char * msg)
 
 	printf("stack exception !! %s\n", msg);
 	stk->top = 0;
-	mon_update_check(stk, 1);
+	mon_update_check(stk, 1, msg);
 	sleep(EXCP_SLEEPTIME);
 
 	return 0;

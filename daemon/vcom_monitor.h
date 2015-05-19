@@ -46,7 +46,7 @@ static inline int mon_init(char * fname)
 	return 0;
 }
 
-static inline int mon_update(struct stk_vc * stk, int sig)
+static inline int mon_update(struct stk_vc * stk, int sig, char * dbg)
 {
 	char * ptr;
 	char * mem;
@@ -65,7 +65,7 @@ static inline int mon_update(struct stk_vc * stk, int sig)
 
 	msg = stk_curnt(stk)->name();
 	mem = (char *)vc_mon.addr;
-	msgl = snprintf(mem, MSIZE, "Pid: %d |State: %s", 
+	msgl = snprintf(mem, MSIZE, "Pid: %d |State: %s ",
 			vc_mon.pid, msg);
 
 	len = MSIZE - msgl;
@@ -74,6 +74,14 @@ static inline int mon_update(struct stk_vc * stk, int sig)
 		printf("%s len <= 1\n", __func__);
 		return -1;
 	}
+
+	ptr = mem + msgl;
+
+	if(dbg != 0){
+		msgl += snprintf(ptr, len, "|E: %s ", dbg);
+	}
+
+	len = MSIZE - msgl;
 
 	ptr = mem + msgl;
 	memset(ptr + 1, 0, len - 1);
@@ -88,9 +96,19 @@ static inline int mon_update(struct stk_vc * stk, int sig)
 	return 0;
 }
 
-#define mon_update_check(a, b)	 	\
+#define muc2(a, b)	 	\
 	do{if(stk_mon) 		 	\
-		mon_update(a, b);	\
+		mon_update(a, b, 0);	\
 	}while(0)
+
+
+#define muc3(a, b, c)	 	\
+	do{if(stk_mon) 		 	\
+		mon_update(a, b, c);	\
+	}while(0)
+
+#define muc_ovrld(_1, _2, _3, func, ...) func
+
+#define mon_update_check(args...) muc_ovrld(args, muc3, muc2,...)(args)
 
 #endif
