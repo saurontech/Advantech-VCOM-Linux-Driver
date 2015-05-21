@@ -9,9 +9,9 @@
 
 #define VC_TIME_USED(a)	(VC_PULL_TIME - (a.tv_sec * 1000000 + a.tv_usec));
 #define STACK_MAX 10
-#define stk_full(a) ((a)->top>=STACK_MAX-1? 1:0)
-#define stk_empty(a) ((a)->top<0? 1:0)
-#define stk_bot(a) ((a)->top==0? 1:0)
+#define stk_full(a) ((a)->top>=STACK_MAX-1)
+#define stk_empty(a) ((a)->top<0)
+#define stk_bot(a) ((a)->top==0)
 struct stk_vc{
     int top;
     struct vc_ops *stk_stat[STACK_MAX];                                                   
@@ -89,14 +89,14 @@ static inline struct vc_ops * stk_curnt(struct stk_vc *stk);
 #define INO_POP_SWITCH 0
 #define INO_RPLS_SWITCH 0
 #define INO_RESTART_SWITCH 0
-    
+
 void * stk_mon;
 
 /* 
  *	state machine stack
  */
 static inline int stk_push(struct stk_vc *stk, struct vc_ops *current)
-{	
+{
 	if(stk_full(stk)){
 		printf("stack full\n");
 		return -1;
@@ -104,8 +104,8 @@ static inline int stk_push(struct stk_vc *stk, struct vc_ops *current)
 
 	stk->top += 1;
 	stk->stk_stat[stk->top] = current;
-	mon_update_check(stk, INO_PUSH_SWITCH);	
-
+	mon_update_check(stk, INO_PUSH_SWITCH);
+	
 	return 0;
 }
 	

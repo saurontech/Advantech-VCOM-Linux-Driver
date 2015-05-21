@@ -108,11 +108,17 @@ int startup(int argc, char **argv, struct vc_attr *port)
 {
 	char *addr;
 	char ch;
-	
+
+	port->ttyid = -1;
+	port->devid = 0;
+	port->port = -1;
+	addr = 0;
+
 	if(argc < 2) {
 		usage(argv[0]);
 		return -1;
 	}
+
 	mon_init(0);
 	while((ch = getopt(argc, argv, "hl:t:d:a:p:r:")) != -1)  {
 		switch(ch){
@@ -150,6 +156,11 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				return -1;
 		}
 	}
+	if(addr == NULL || port->port < 0 || port->devid == 0 || port->ttyid < 0){
+		usage(argv[0]);
+		return -1;
+	}
+
 	return 0;
 }
 

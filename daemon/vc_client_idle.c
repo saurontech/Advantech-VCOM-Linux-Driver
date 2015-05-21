@@ -33,7 +33,7 @@ struct vc_ops * vc_idle_open(struct vc_attr * attr)
 
 	stk = &attr->stk;
 	stk_pop(stk);
-	
+
 	return stk_curnt(stk)->open(attr); 
 }
 
