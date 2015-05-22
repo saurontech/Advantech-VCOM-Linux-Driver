@@ -36,6 +36,7 @@ extern void adv_uart_update_xmit(struct uart_port *);
 extern void adv_uart_recv_chars(struct uart_port *);
 extern void adv_main_interrupt(struct adv_vcom *, int);
 extern void adv_main_clear(struct adv_vcom * data, int mask);
+extern unsigned int adv_uart_ms(struct uart_port *, unsigned int);
 
 //module_param(_adv_portcount, int, S_IRUGO|S_IWUSR);
 //module_param(_adv_pagecount, int, 1);
@@ -151,9 +152,7 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 	case ADVVCOM_IOCSMCTRL:
 		ret = __get_user(tmp, (int __user *)arg);
-		mutex_lock(&(data->attr.lock));
-		data->attr.mctrl = tmp;
-		mutex_unlock(&(data->attr.lock));
+		adv_uart_ms(data->adv_uart, (unsigned int)tmp);
 		break;
 
 	case ADVVCOM_IOCSCLR:

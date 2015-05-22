@@ -64,6 +64,46 @@ void adv_uart_update_xmit(struct uart_port *port)
 	spin_unlock(&port->lock);
 }
 
+
+unsigned int adv_uart_ms(struct uart_port *port, unsigned int status)
+{
+	struct adv_uart_port * up = (struct adv_uart_port *)port;
+	struct adv_port_att * attr = up->attr;
+	unsigned int ms;
+	
+	spin_lock(&port->lock);
+
+	mutex_lock(&(attr->lock));
+	ms = attr->mctrl;
+	attr->mctrl = status;
+	mutex_unlock(&(attr->lock));
+	
+	if((status ^ ms) & ADV_MS_CTS){
+		//uart_handle_cts_change(port, status);
+		port->icount.cts++;
+	}
+
+	if((status ^ ms) & ADV_MS_DSR){
+		port->icount.dsr++;
+	}
+	
+	if((status ^ ms) & ADV_MS_CAR){
+		//uart_handle_dcd_change(port, status & ADV_MS_CAR);
+		port->icount.dcd++;
+	}
+
+	if((status ^ ms) & ADV_MS_RI){
+		port->icount.rng++;
+	}
+
+	wake_up_interruptible(&port->state->port.delta_msr_wait);
+
+	spin_unlock(&port->lock);
+
+	return status;
+	
+}
+
 static void adv_uart_stop_tx(struct uart_port *port)
 {
 	struct adv_uart_port * adv_port;
@@ -112,7 +152,7 @@ static void adv_uart_stop_rx(struct uart_port *port)
 
 static void adv_uart_enable_ms(struct uart_port *port)
 {
-	printk("%s(%d)\n", __func__, __LINE__);
+//	printk("%s(%d)\n", __func__, __LINE__);
 }
 
 void adv_uart_recv_chars(struct uart_port *port)
