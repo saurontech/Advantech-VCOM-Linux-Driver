@@ -13,8 +13,9 @@
 #define stk_empty(a) ((a)->top<0)
 #define stk_bot(a) ((a)->top==0)
 struct stk_vc{
-    int top;
-    struct vc_ops *stk_stat[STACK_MAX];                                                   
+	int top;
+	char pre_stat[16];
+	struct vc_ops *stk_stat[STACK_MAX];
 };
 
 struct vc_attr{
@@ -71,8 +72,6 @@ struct vc_ops{
 					,try_ops2 \
 					,try_ops1 \
 					,...)(args)
-
-
 static inline struct vc_ops * stk_curnt(struct stk_vc *stk);
 
 /*
@@ -98,8 +97,14 @@ void * stk_mon;
 static inline int stk_push(struct stk_vc *stk, struct vc_ops *current)
 {
 	if(stk_full(stk)){
-		printf("stack full\n");
+		printf("%s : stack full\n", __func__);
 		return -1;
+	}
+
+	if(stk_empty(stk)){
+		sprintf(stk->pre_stat, "NULL");
+	}else{
+		sprintf(stk->pre_stat, "%s", stk->stk_stat[stk->top]->name());
 	}
 
 	stk->top += 1;
@@ -112,10 +117,11 @@ static inline int stk_push(struct stk_vc *stk, struct vc_ops *current)
 static inline int stk_pop(struct stk_vc *stk)
 {
 	if(stk_empty(stk)){
-		printf("stack empty\n");
+		printf("%s : stack empty\n", __func__);
 		return -1;
 	}
 
+	sprintf(stk->pre_stat, "%s", stk->stk_stat[stk->top]->name());
 	stk->top -= 1;
 	mon_update_check(stk, INO_POP_SWITCH);
 
@@ -128,13 +134,16 @@ static inline int stk_pop(struct stk_vc *stk)
 static inline int _stk_excp(struct stk_vc *stk, char * msg)	
 {
 	if(stk_bot(stk)){
-		printf("at the bottom of stack now\n");
+		printf("%s : at the bottom of stack now\n", __func__);
 		return -1;
 	}
+
+	sprintf(stk->pre_stat, "%s", stk->stk_stat[stk->top]->name());
 
 	printf("stack exception !! %s\n", msg);
 	stk->top = 0;
 	mon_update_check(stk, 1, msg);
+	/* TODO : Here to modify the excption sleep time */
 	sleep(EXCP_SLEEPTIME);
 
 	return 0;
@@ -142,6 +151,7 @@ static inline int _stk_excp(struct stk_vc *stk, char * msg)
 
 static inline int stk_rpls(struct stk_vc *stk, struct vc_ops *current)
 {
+	sprintf(stk->pre_stat, "%s", stk->stk_stat[stk->top]->name());
 	stk->stk_stat[stk->top] = current;
 	mon_update_check(stk, INO_RPLS_SWITCH);
 	return 0;
@@ -150,7 +160,7 @@ static inline int stk_rpls(struct stk_vc *stk, struct vc_ops *current)
 static inline struct vc_ops * stk_curnt(struct stk_vc *stk)	
 {
 	if(stk_empty(stk)){
-		printf("no state in stack\n");
+		printf("%s : no state in stack\n", __func__);
 		exit(0);
 	}
 	return stk->stk_stat[stk->top];
@@ -159,9 +169,10 @@ static inline struct vc_ops * stk_curnt(struct stk_vc *stk)
 static inline int stk_restart(struct stk_vc *stk)
 {
 	if(stk_bot(stk)){
-		printf("at the bottom of stack now, should not call this func ...\n");
+		printf("at the bottom of stack now, should not call <%s> ...\n", __func__);
 		return -1;
 	}
+	sprintf(stk->pre_stat, "%s", stk->stk_stat[stk->top]->name());
 	stk->top = 0;
 	mon_update_check(stk, INO_RESTART_SWITCH);
 	return 0;

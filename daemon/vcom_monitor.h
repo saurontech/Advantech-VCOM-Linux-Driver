@@ -15,7 +15,6 @@ struct vc_monitor vc_mon;
 
 static inline int mon_init(char * fname)
 {
-
 	vc_mon.fd = -1;
 	vc_mon.addr = 0;
 
@@ -64,8 +63,8 @@ static inline int mon_update(struct stk_vc * stk, int sig, char * dbg)
 
 	msg = stk_curnt(stk)->name();
 	mem = (char *)vc_mon.addr;
-	msgl = snprintf(mem, MSIZE, "Pid: %d |State: %s ",
-			vc_mon.pid, msg);
+	msgl = snprintf(mem, MSIZE, "Pid : %d | State : %s -> %s ",
+			vc_mon.pid, stk->pre_stat, msg);
 
 	len = MSIZE - msgl;
 
@@ -75,9 +74,9 @@ static inline int mon_update(struct stk_vc * stk, int sig, char * dbg)
 	}
 
 	ptr = mem + msgl;
-
+	/* TODO : here to record the exception history */ 
 	if(dbg != 0){
-		msgl += snprintf(ptr, len, "|E: %s ", dbg);
+		msgl += snprintf(ptr, len, "| E : %s ", dbg);
 	}
 
 	len = MSIZE - msgl;
@@ -107,7 +106,6 @@ static inline int mon_update(struct stk_vc * stk, int sig, char * dbg)
 	}while(0)
 
 #define muc_ovrld(_1, _2, _3, func, ...) func
-
 #define mon_update_check(args...) muc_ovrld(args, muc3, muc2,...)(args)
 
 #endif
