@@ -247,7 +247,7 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 	sprintf(log, "%s/%s", work_path, CF_LOGNAME);
 
 	for(idx = 0; idx < nrport; ++idx) {
-		sprintf(mon, "%s/advtty%d", MON_PATH, idx);
+		sprintf(mon, "%s/advtty%s", MON_PATH, ttyinfo[idx].mpt_nameidx_str);
 		if((advttyp_pid = fork()) < 0) {
 			ADV_LOGMSG("Spawn MPT[%s] fail\n", ttyinfo[idx].mpt_nameidx_str);
 			continue;
