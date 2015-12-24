@@ -1,8 +1,9 @@
 #ifndef _VCOM_MONITOR_DBG_H
 #define _VCOM_MONITOR_DBG_H
-#define MSIZE 1024		// 1K file
+#define MSIZE 1024		// 1K size file
 #define FNAME_LEN 256
 #define CUTTER	"> "
+
 extern void * stk_mon;
 
 struct vc_monitor{
@@ -70,7 +71,6 @@ static inline int mon_update(struct stk_vc * stk, int sig, const char * dbg)
 	stat = stk_curnt(stk)->name();
 	mem = (char *)vc_mon.addr;
 	memset(tmp, ' ', sizeof(tmp));
-
 	statl = snprintf(tmp, sizeof(tmp), "Pid %d | State [%s] ", 
 				vc_mon.pid, stat);
 
