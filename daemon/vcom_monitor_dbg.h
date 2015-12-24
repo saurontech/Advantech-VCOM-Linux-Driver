@@ -1,5 +1,5 @@
-#ifndef _VCOM_MONITOR_DBG_H
-#define _VCOM_MONITOR_DBG_H
+#ifndef _VCOM_MONITOR_H
+#define _VCOM_MONITOR_H
 #define MSIZE 1024		// 1K size file
 #define FNAME_LEN 256
 #define CUTTER	"> "

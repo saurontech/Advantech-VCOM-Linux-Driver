@@ -81,9 +81,7 @@ static inline struct vc_ops * stk_curnt(struct stk_vc *stk);
 //#include "vcom_monitor_dbg.h"		// monitor with record debug log
 //#include "vcom_monitor_pre_stat.h"	// monitor with record pre-state
 
-#if !defined (_VCOM_MONITOR_H) && 	\
-!defined (_VCOM_MONITOR_DBG_H) && 	\
-!defined (_VCOM_MONITOR_PRE_STAT_H)
+#ifndef _VCOM_MONITOR_H
 #define mon_update(...) do{}while(0)   // do nothing
 #define mon_init(a) do{}while(0)        // do nothing
 #define mon_update_check(...)  do{}while(0)
@@ -154,7 +152,7 @@ _stk_excp(struct stk_vc *stk, char * msg)
 	printf("stack exception !! %s\n", msg);
 	stk->top = 0;
 	mon_update_check(stk, 1, msg);
-	/* TODO : Here to modify the excption sleep time */
+	/* TODO : dynamic modify the excption sleep time */
 	sleep(EXCP_SLEEPTIME);
 
 	return 0;

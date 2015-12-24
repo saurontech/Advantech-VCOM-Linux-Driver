@@ -286,7 +286,6 @@ int main(int argc, char **argv)
 			lrecv += (used > 0)?used:1;
 			if(lrecv > VC_PULL_TIME){
 				stk_curnt(stk)->err(&port, "PROTO timeout", 0);
-				printf("lrecv = %u\n", lrecv);
 				lrecv = 0;
 			}
 		}
