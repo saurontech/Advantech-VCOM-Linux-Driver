@@ -1,15 +1,16 @@
-
-#ifndef _VCOM_MONITOR_H
-#define _VCOM_MONITOR_H
-#define MSIZE 128
+#ifndef _VCOM_MONITOR_DBG_H
+#define _VCOM_MONITOR_DBG_H
+#define MSIZE 1024		// 1K file
 #define FNAME_LEN 256
+#define CUTTER	"> "
 extern void * stk_mon;
 
 struct vc_monitor{
 	void * addr;
 	int fd;
 	int pid;
-	int msgl;
+	int max_statl;
+	int dbg_first;
 	char fname[FNAME_LEN];
 };
 struct vc_monitor vc_mon;
@@ -18,6 +19,8 @@ static inline int mon_init(char * fname)
 {
 	vc_mon.fd = -1;
 	vc_mon.addr = 0;
+	vc_mon.max_statl = 0;
+	vc_mon.dbg_first = 1;
 
 	if(fname <= 0)
 		return 0;
@@ -40,18 +43,20 @@ static inline int mon_init(char * fname)
 		vc_mon.fd = 0;
 		return -1;
 	}
-
+	memset(vc_mon.addr, ' ', MSIZE);
 	stk_mon = &vc_mon;
 	return 0;
 }
 
-static inline int mon_update(struct stk_vc * stk, int sig, char * dbg)
+static inline int mon_update(struct stk_vc * stk, int sig, const char * dbg)
 {
 	char * ptr;
 	char * mem;
-	char * msg;
-	int msgl;
+	char * stat;
+	char tmp[64];	
 	int len;
+	int statl;
+	int dbgl;
 
 	if(vc_mon.fd < 0){
 		return 0;
@@ -62,28 +67,45 @@ static inline int mon_update(struct stk_vc * stk, int sig, char * dbg)
 		return -1;
 	}
 
-	msg = stk_curnt(stk)->name();
+	stat = stk_curnt(stk)->name();
 	mem = (char *)vc_mon.addr;
-	msgl = snprintf(mem, MSIZE, "Pid : %d | State : %s ",
-			vc_mon.pid, msg);
+	memset(tmp, ' ', sizeof(tmp));
 
-	len = MSIZE - msgl;
+	statl = snprintf(tmp, sizeof(tmp), "Pid %d | State [%s] ", 
+				vc_mon.pid, stat);
 
+	len = MSIZE - statl;
 	if(len <= 1){
 		printf("%s len <= 1\n", __func__);
 		return -1;
 	}
 
-	ptr = mem + msgl;
-	if(dbg != 0){
-		msgl += snprintf(ptr, len, "| E : %s ", dbg);
+	if(statl > vc_mon.max_statl){
+		memmove(mem+statl, mem+vc_mon.max_statl, MSIZE-statl);
+		vc_mon.max_statl = statl;
 	}
+	memcpy(mem, tmp, vc_mon.max_statl);
+	memset(tmp, ' ', sizeof(tmp));	
+	/* for record debug message */
+	if(dbg != 0 && sig){
+		ptr = mem + vc_mon.max_statl;
+		dbgl = snprintf(tmp, sizeof(tmp), "%s%s", CUTTER, dbg);
+		
+		len = MSIZE - dbgl - vc_mon.max_statl;
+		if(len <= 1){
+			printf("%s len <= 1\n", __func__);
+			return -1;
+		}
 
-	len = MSIZE - msgl;
-
-	ptr = mem + msgl;
-	memset(ptr + 1, 0, len - 1);
-
+		if(!vc_mon.dbg_first){	
+			memmove(ptr+dbgl+1, ptr, MSIZE-statl-dbgl); 
+		}else{
+			vc_mon.dbg_first = 0;
+		}
+		memcpy(ptr, tmp, dbgl);
+		memset(ptr+dbgl, ' ', 1);
+	}
+	/* Trigger the inotify */
 	if(sig){
 		msync(mem, MSIZE, MS_SYNC);
 		ftruncate(vc_mon.fd, MSIZE);

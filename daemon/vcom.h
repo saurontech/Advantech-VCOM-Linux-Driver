@@ -14,7 +14,6 @@
 #define stk_bot(a) ((a)->top==0)
 struct stk_vc{
 	int top;
-	char pre_stat[16];
 	struct vc_ops *stk_stat[STACK_MAX];
 };
 
@@ -77,13 +76,24 @@ static inline struct vc_ops * stk_curnt(struct stk_vc *stk);
 /*
  * Vcom Monitor
  */
-#include "vcom_monitor.h"
-#ifndef _VCOM_MONITER_H
+
+#include "vcom_monitor.h"		// The normal monitor
+//#include "vcom_monitor_dbg.h"		// monitor with record debug log
+//#include "vcom_monitor_pre_stat.h"	// monitor with record pre-state
+
+#if !defined (_VCOM_MONITOR_H) && 	\
+!defined (_VCOM_MONITOR_DBG_H) && 	\
+!defined (_VCOM_MONITOR_PRE_STAT_H)
 #define mon_update(...) do{}while(0)   // do nothing
 #define mon_init(a) do{}while(0)        // do nothing
 #define mon_update_check(...)  do{}while(0)
 #endif
+
 #define EXCP_SLEEPTIME 3
+/*
+ * Switch == 1, trigger inotify and record the log
+ * Switch == 0, do nothing
+*/
 #define INO_PUSH_SWITCH 0
 #define INO_POP_SWITCH 0
 #define INO_RPLS_SWITCH 0
@@ -94,51 +104,52 @@ void * stk_mon;
 /* 
  *	state machine stack
  */
-static inline int stk_push(struct stk_vc *stk, struct vc_ops *current)
+#define _expmsg(msg, len) \
+do{ if(stk->top > 0)	\
+		snprintf(msg, len, "(%s)%s,%d", stk->stk_stat[stk->top]->name(), __func__, __LINE__);	\
+	else				\
+		snprintf(msg, len, "(NULL)%s,%d", __func__, __LINE__);	\
+}while(0)
+
+#define stk_push(a, b) do{char msg[128]; _expmsg(msg, 128); _stk_push(a, b, msg);}while(0)
+static inline int
+_stk_push(struct stk_vc *stk, struct vc_ops *current, char *msg)
 {
 	if(stk_full(stk)){
 		printf("%s : stack full\n", __func__);
 		return -1;
 	}
 
-	if(stk_empty(stk)){
-		sprintf(stk->pre_stat, "NULL");
-	}else{
-		sprintf(stk->pre_stat, "%s", stk->stk_stat[stk->top]->name());
-	}
-
 	stk->top += 1;
 	stk->stk_stat[stk->top] = current;
-	mon_update_check(stk, INO_PUSH_SWITCH);
-	
+	mon_update_check(stk, INO_PUSH_SWITCH, msg);
+
 	return 0;
 }
-	
-static inline int stk_pop(struct stk_vc *stk)
+
+#define stk_pop(a) do{char msg[128]; _expmsg(msg, 128); _stk_pop(a, msg);}while(0)
+static inline int
+_stk_pop(struct stk_vc *stk, char *msg)
 {
 	if(stk_empty(stk)){
 		printf("%s : stack empty\n", __func__);
 		return -1;
 	}
 
-	sprintf(stk->pre_stat, "%s", stk->stk_stat[stk->top]->name());
-	stk->top -= 1;
-	mon_update_check(stk, INO_POP_SWITCH);
+	stk->top -= 1;	
+	mon_update_check(stk, INO_POP_SWITCH, msg);
 
 	return 0;
 }
 
-#define _expmsg(msg, len) do{snprintf(msg, len, "%s,%d", __func__, __LINE__);}while(0)
-#define stk_excp(a) do{char msg[128]; _expmsg(msg,128); _stk_excp(a, msg);}while(0)
-
-static inline int _stk_excp(struct stk_vc *stk, char * msg)	
+#define stk_excp(a) do{char msg[128]; _expmsg(msg, 128); _stk_excp(a, msg);}while(0)
+static inline int
+_stk_excp(struct stk_vc *stk, char * msg)
 {
 	if(stk_bot(stk)){
 		printf("%s : at the bottom of stack now\n", __func__);
 		return -1;
 	}
-
-	sprintf(stk->pre_stat, "%s", stk->stk_stat[stk->top]->name());
 
 	printf("stack exception !! %s\n", msg);
 	stk->top = 0;
@@ -149,11 +160,13 @@ static inline int _stk_excp(struct stk_vc *stk, char * msg)
 	return 0;
 }		
 
-static inline int stk_rpls(struct stk_vc *stk, struct vc_ops *current)
+#define stk_rpls(a, b) do{char msg[128]; _expmsg(msg, 128); _stk_rpls(a, b, msg);}while(0)
+static inline int
+_stk_rpls(struct stk_vc *stk, struct vc_ops *current, char *msg)
 {
-	sprintf(stk->pre_stat, "%s", stk->stk_stat[stk->top]->name());
 	stk->stk_stat[stk->top] = current;
-	mon_update_check(stk, INO_RPLS_SWITCH);
+	mon_update_check(stk, INO_RPLS_SWITCH, msg);
+
 	return 0;
 }
 
@@ -163,18 +176,21 @@ static inline struct vc_ops * stk_curnt(struct stk_vc *stk)
 		printf("%s : no state in stack\n", __func__);
 		exit(0);
 	}
+
 	return stk->stk_stat[stk->top];
 }
-	
-static inline int stk_restart(struct stk_vc *stk)
+
+#define stk_restart(a) do{char msg[128]; _expmsg(msg, 128); _stk_restart(a, msg);}while(0)	
+static inline int
+_stk_restart(struct stk_vc *stk, char *msg)
 {
 	if(stk_bot(stk)){
 		printf("at the bottom of stack now, should not call <%s> ...\n", __func__);
 		return -1;
 	}
-	sprintf(stk->pre_stat, "%s", stk->stk_stat[stk->top]->name());
 	stk->top = 0;
-	mon_update_check(stk, INO_RESTART_SWITCH);
+	mon_update_check(stk, INO_RESTART_SWITCH, msg);
+
 	return 0;
 }
 

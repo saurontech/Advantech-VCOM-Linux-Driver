@@ -29,6 +29,7 @@ static inline void _lineup(struct stk_vc *stk, int fram, int count)
         printf(" ");
     }
 }
+
 static inline void stk_display(struct stk_vc *stk, const char *func)
 {
     int i;

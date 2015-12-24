@@ -1,6 +1,5 @@
-
-#ifndef _VCOM_MONITOR_H
-#define _VCOM_MONITOR_H
+#ifndef _VCOM_MONITOR_PRE_STAT_H
+#define _VCOM_MONITOR_PRE_STAT_H
 #define MSIZE 128
 #define FNAME_LEN 256
 extern void * stk_mon;
@@ -10,6 +9,7 @@ struct vc_monitor{
 	int fd;
 	int pid;
 	int msgl;
+	char pre_stat[16];
 	char fname[FNAME_LEN];
 };
 struct vc_monitor vc_mon;
@@ -18,6 +18,7 @@ static inline int mon_init(char * fname)
 {
 	vc_mon.fd = -1;
 	vc_mon.addr = 0;
+	sprintf(vc_mon.pre_stat, "NULL");
 
 	if(fname <= 0)
 		return 0;
@@ -64,8 +65,8 @@ static inline int mon_update(struct stk_vc * stk, int sig, char * dbg)
 
 	msg = stk_curnt(stk)->name();
 	mem = (char *)vc_mon.addr;
-	msgl = snprintf(mem, MSIZE, "Pid : %d | State : %s ",
-			vc_mon.pid, msg);
+	msgl = snprintf(mem, MSIZE, "Pid : %d | State : %s -> %s ",
+			vc_mon.pid, vc_mon.pre_stat, msg);
 
 	len = MSIZE - msgl;
 
@@ -74,6 +75,8 @@ static inline int mon_update(struct stk_vc * stk, int sig, char * dbg)
 		return -1;
 	}
 
+	snprintf(vc_mon.pre_stat, sizeof(vc_mon.pre_stat), "%s", msg);	
+	
 	ptr = mem + msgl;
 	if(dbg != 0){
 		msgl += snprintf(ptr, len, "| E : %s ", dbg);
