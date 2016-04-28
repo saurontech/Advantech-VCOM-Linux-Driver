@@ -76,7 +76,6 @@ static inline struct vc_ops * stk_curnt(struct stk_vc *stk);
 /*
  * Vcom Monitor
  */
-
 #include "vcom_monitor.h"		// The normal monitor
 //#include "vcom_monitor_dbg.h"		// monitor with record debug log
 //#include "vcom_monitor_pre_stat.h"	// monitor with record pre-state
@@ -88,6 +87,7 @@ static inline struct vc_ops * stk_curnt(struct stk_vc *stk);
 #endif
 
 #define EXCP_SLEEPTIME 3
+#define EXCP_RECONN_TIME 5
 /*
  * Switch == 1, trigger inotify and record the log
  * Switch == 0, do nothing
@@ -139,11 +139,15 @@ _stk_pop(struct stk_vc *stk, char *msg)
 
 	return 0;
 }
+#include <time.h>
 
 #define stk_excp(a) do{char msg[128]; _expmsg(msg, 128); _stk_excp(a, msg);}while(0)
 static inline int
 _stk_excp(struct stk_vc *stk, char * msg)
 {
+	static time_t pre_excp_t = 0;
+	time_t now_excp_t;
+	
 	if(stk_bot(stk)){
 		printf("%s : at the bottom of stack now\n", __func__);
 		return -1;
@@ -152,8 +156,16 @@ _stk_excp(struct stk_vc *stk, char * msg)
 	printf("stack exception !! %s\n", msg);
 	stk->top = 0;
 	mon_update_check(stk, 1, msg);
-	/* TODO : dynamic modify the excption sleep time */
-	sleep(EXCP_SLEEPTIME);
+	
+	if(pre_excp_t == 0){	//mean first time excption
+		time(&pre_excp_t);
+	}else{
+		time(&now_excp_t);
+		if((now_excp_t-pre_excp_t) < EXCP_RECONN_TIME){
+			sleep(EXCP_SLEEPTIME);
+		}
+		pre_excp_t = now_excp_t;
+	}
 
 	return 0;
 }		
