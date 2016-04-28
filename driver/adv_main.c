@@ -41,6 +41,8 @@ extern unsigned int adv_uart_ms(struct uart_port *, unsigned int);
 //module_param(_adv_portcount, int, S_IRUGO|S_IWUSR);
 //module_param(_adv_pagecount, int, 1);
 
+MODULE_LICENSE("GPL");
+
 long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	struct adv_vcom * data;
