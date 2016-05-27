@@ -109,7 +109,6 @@ do{ if(stk->top > 0)	\
 		snprintf(msg, len, "(NULL)%s,%d", __func__, __LINE__);	\
 }while(0)
 
-#define stk_push(a, b) do{char msg[128]; _expmsg(msg, 128); _stk_push(a, b, msg);}while(0)
 static inline int
 _stk_push(struct stk_vc *stk, struct vc_ops *current, char *msg)
 {
@@ -120,12 +119,11 @@ _stk_push(struct stk_vc *stk, struct vc_ops *current, char *msg)
 
 	stk->top += 1;
 	stk->stk_stat[stk->top] = current;
-	mon_update_check(stk, INO_PUSH_SWITCH, msg);
+	mon_update_check(stk, INO_PUSH_SWITCH);
 
 	return 0;
 }
 
-#define stk_pop(a) do{char msg[128]; _expmsg(msg, 128); _stk_pop(a, msg);}while(0)
 static inline int
 _stk_pop(struct stk_vc *stk, char *msg)
 {
@@ -135,7 +133,7 @@ _stk_pop(struct stk_vc *stk, char *msg)
 	}
 
 	stk->top -= 1;	
-	mon_update_check(stk, INO_POP_SWITCH, msg);
+	mon_update_check(stk, INO_POP_SWITCH);
 
 	return 0;
 }
@@ -170,12 +168,11 @@ _stk_excp(struct stk_vc *stk, char * msg)
 	return 0;
 }		
 
-#define stk_rpls(a, b) do{char msg[128]; _expmsg(msg, 128); _stk_rpls(a, b, msg);}while(0)
 static inline int
 _stk_rpls(struct stk_vc *stk, struct vc_ops *current, char *msg)
 {
 	stk->stk_stat[stk->top] = current;
-	mon_update_check(stk, INO_RPLS_SWITCH, msg);
+	mon_update_check(stk, INO_RPLS_SWITCH);
 
 	return 0;
 }
@@ -190,7 +187,6 @@ static inline struct vc_ops * stk_curnt(struct stk_vc *stk)
 	return stk->stk_stat[stk->top];
 }
 
-#define stk_restart(a) do{char msg[128]; _expmsg(msg, 128); _stk_restart(a, msg);}while(0)	
 static inline int
 _stk_restart(struct stk_vc *stk, char *msg)
 {
@@ -199,7 +195,7 @@ _stk_restart(struct stk_vc *stk, char *msg)
 		return -1;
 	}
 	stk->top = 0;
-	mon_update_check(stk, INO_RESTART_SWITCH, msg);
+	mon_update_check(stk, INO_RESTART_SWITCH);
 
 	return 0;
 }
