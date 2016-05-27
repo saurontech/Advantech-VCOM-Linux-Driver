@@ -75,12 +75,10 @@ static inline int mon_update(struct stk_vc * stk, int sig, char * dbg)
 	}
 
 	ptr = mem + msgl;
-	if(dbg != 0){
-		msgl += snprintf(ptr, len, "| E : %s ", dbg);
-	}
+	if(dbg != 0)
+		msgl += snprintf(ptr, len, "| E : %s   \n", dbg);
 
 	len = MSIZE - msgl;
-
 	ptr = mem + msgl;
 	memset(ptr + 1, 0, len - 1);
 

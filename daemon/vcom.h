@@ -76,9 +76,9 @@ static inline struct vc_ops * stk_curnt(struct stk_vc *stk);
 /*
  * Vcom Monitor
  */
-#include "vcom_monitor.h"		// The normal monitor
+//#include "vcom_monitor.h"		// The normal monitor
 //#include "vcom_monitor_dbg.h"		// monitor with record debug log
-//#include "vcom_monitor_pre_stat.h"	// monitor with record pre-state
+#include "vcom_monitor_pre_stat.h"	// monitor with record pre-state
 
 #ifndef _VCOM_MONITOR_H
 #define mon_update(...) do{}while(0)   // do nothing
