@@ -109,8 +109,9 @@ do{ if(stk->top > 0)	\
 		snprintf(msg, len, "(NULL)%s,%d", __func__, __LINE__);	\
 }while(0)
 
+#define stk_push(a, b)	_stk_push(a, b)
 static inline int
-_stk_push(struct stk_vc *stk, struct vc_ops *current, char *msg)
+_stk_push(struct stk_vc *stk, struct vc_ops *current)
 {
 	if(stk_full(stk)){
 		printf("%s : stack full\n", __func__);
@@ -124,8 +125,9 @@ _stk_push(struct stk_vc *stk, struct vc_ops *current, char *msg)
 	return 0;
 }
 
+#define stk_pop(a)	_stk_pop(a)
 static inline int
-_stk_pop(struct stk_vc *stk, char *msg)
+_stk_pop(struct stk_vc *stk)
 {
 	if(stk_empty(stk)){
 		printf("%s : stack empty\n", __func__);
@@ -138,7 +140,6 @@ _stk_pop(struct stk_vc *stk, char *msg)
 	return 0;
 }
 #include <time.h>
-
 #define stk_excp(a) do{char msg[128]; _expmsg(msg, 128); _stk_excp(a, msg);}while(0)
 static inline int
 _stk_excp(struct stk_vc *stk, char * msg)
@@ -168,8 +169,9 @@ _stk_excp(struct stk_vc *stk, char * msg)
 	return 0;
 }		
 
+#define stk_rpls(a, b)	_stk_rpls(a, b)
 static inline int
-_stk_rpls(struct stk_vc *stk, struct vc_ops *current, char *msg)
+_stk_rpls(struct stk_vc *stk, struct vc_ops *current)
 {
 	stk->stk_stat[stk->top] = current;
 	mon_update_check(stk, INO_RPLS_SWITCH);
@@ -187,8 +189,9 @@ static inline struct vc_ops * stk_curnt(struct stk_vc *stk)
 	return stk->stk_stat[stk->top];
 }
 
+#define stk_restart(a)	_stk_restart(a)
 static inline int
-_stk_restart(struct stk_vc *stk, char *msg)
+_stk_restart(struct stk_vc *stk)
 {
 	if(stk_bot(stk)){
 		printf("at the bottom of stack now, should not call <%s> ...\n", __func__);
