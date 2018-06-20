@@ -19,6 +19,8 @@
 #include <signal.h>
 #include <stdarg.h> 
 #include <ctype.h>
+#include <dirent.h>
+#include <syslog.h>
 
 
 #ifdef	STREAM
@@ -43,18 +45,173 @@ int __log_fd = -1;
 int _restart;
 
 static int  parse_env(char * cmdpath, char * workpath);
-static int  daemon_init(void);
+//static int  daemon_init(void);
 static int  paser_config(char * conf_name, TTYINFO ttyinfo[]);
 static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[]);
-static void shutdown_ttyp(int nrport, TTYINFO ttyinfo[]);
-static void restart_handle();
+//static void shutdown_ttyp(int nrport, TTYINFO ttyinfo[]);
+//static void restart_handle();
 //static u_long device_ipaddr(char * ipaddr);
 static int  hexstr(char * strp);
-static int  log_open(char * log_name);
-static void log_close(void);
+//static int  log_open(char * log_name);
+//static void log_close(void);
 #ifdef ADVTTY_DEBUG
 static void log_msg(const char * msg);
 #endif
+
+int __pid_search_fd(int pid, char * file)
+{
+	static DIR *dir = 0;
+	struct dirent *entry;
+	char *name;
+	int n;
+	int fd;
+	char status[1204];
+	char buf[1024];
+	char fdpath[1024];
+	struct stat sb;
+	snprintf(fdpath, 1024, "/proc/%d/fd", pid);
+	if (!dir) {
+		dir = opendir(fdpath);
+		if(!dir){
+			syslog(LOG_DEBUG, "Can't open /proc/fd: %s", fdpath);
+			return -1;
+		}
+	}
+	for(;;) {
+		if((entry = readdir(dir)) == NULL) {
+			closedir(dir);
+			dir = 0;
+			return -1;
+		}
+		name = entry->d_name;
+		if (!(*name >= '0' && *name <= '9'))
+			continue;
+
+
+		fd = atoi(name);
+
+		sprintf(status, "/proc/%d/fd/%d", pid, fd);
+		if(stat(status, &sb)){
+			syslog(LOG_DEBUG, "stat failed");
+			continue;
+		}
+		if(lstat(status, &sb) < 0){
+			syslog(LOG_DEBUG, "lstat failed");
+			continue;
+		}
+
+		n = readlink(status, buf, sizeof(buf));
+
+		if(n <= 0){
+			syslog(LOG_DEBUG, "readlink failed");
+			closedir(dir);
+			return -1;
+		}
+
+		if(n !=  strlen(file) ){
+			//can't be the same file since the langth is different
+			continue;
+		}
+
+		if(memcmp(buf, file, strlen(file)) == 0){
+			closedir(dir);
+			dir = 0;
+			return pid;
+		}
+	}
+
+}
+
+int __cmd_search_file(char * cmd, char * file, char *retcmd, int len)
+{
+	static DIR *dir = 0;
+	struct dirent *entry;
+	char *name;
+	int n;
+	char status[32];
+	char buf[1024];
+	int retlen;
+	FILE *fp;
+	int pid;
+	struct stat sb;
+
+	if (!dir) {
+		dir = opendir("/proc");
+		if(!dir){
+			syslog(LOG_DEBUG, "Can't open /proc");
+			return -1;
+		}
+	}
+	for(;;) {
+		if((entry = readdir(dir)) == NULL) {
+			syslog(LOG_DEBUG, "%s(%d)readdir failed", __func__, __LINE__);
+			closedir(dir);
+			dir = 0;
+			return -1;
+		}
+
+		name = entry->d_name;
+		if (!(*name >= '0' && *name <= '9'))
+			continue;
+
+
+		pid = atoi(name);
+
+		sprintf(status, "/proc/%d", pid);
+		if(stat(status, &sb))
+			continue;
+		sprintf(status, "/proc/%d/cmdline", pid);
+		if((fp = fopen(status, "r")) == NULL){
+			syslog(LOG_DEBUG, "%s(%d)fopen failed", __func__, __LINE__);
+			continue;
+		}
+
+		if((n=fread(buf, 1, sizeof(buf)-1, fp)) > 0) {
+
+			if(buf[n-1]=='\n'){
+				buf[--n] = 0;
+			}
+			name = buf;
+			while(n) {
+				if(((unsigned char)*name) < ' ')
+					*name = ' ';
+				name++;
+				n--;
+			}
+			*name = 0;
+			/* if NULL it work true also */
+		}
+		fclose(fp);
+
+		if(memcmp(buf, cmd, strlen(cmd)) == 0){
+			if(__pid_search_fd(pid, file) > 0){
+
+				if(strlen(buf) > len){
+					retlen = len -1;
+				}else{
+					retlen = strlen(buf);
+				}
+
+				memcpy(retcmd, buf, retlen);
+				retcmd[retlen] = '\0';
+
+				closedir(dir);
+				dir = 0;
+				//printf("command %s pid %d\n", cmd, pid);
+				return pid;
+			}else{
+				//printf("pid %dcmd %s\n", pid, cmd);
+			}
+		}
+	}
+}
+
+void __close_stdfd(void)
+{
+	close(0);
+	close(1);
+	close(2);
+}
 
 int main(int argc, char * argv[])
 {
@@ -63,37 +220,22 @@ int main(int argc, char * argv[])
 	char work_path[PATH_MAX];
 	char file_name[PATH_MAX];
 
-	_restart = 0;
 	nrport = 0;
 
+	__close_stdfd();
+
 	if(parse_env(argv[0], work_path) < 0)
-		exit(-1);
+		return -1;
 
-	if(daemon_init() < 0)
-		exit(-2);
-
-	sprintf(file_name,"%s/%s", work_path, CF_LOGNAME);
-	if(log_open(file_name) < 0)
-		exit(-3);
-
-	for(;;) {
-		if(_restart) {
-			ADV_LOGMSG("Advantech Virtual TTY daemon program - restart\n");
-			_restart = 0;
-		}
-		sprintf(file_name,"%s/%s", work_path, CF_CONFNAME);
-		if((nrport = paser_config(file_name, ttyinfo)) <= 0) {
-			signal(SIGTERM, ((void (*)())restart_handle));
-			pause();
-			continue;
-		}
-		ADV_LOGMSG("Advantech Virtual TTY daemon program - %s\n", CF_VERSION);
-		spawn_ttyp(work_path, nrport, ttyinfo);
-		signal(SIGTERM, ((void (*)())restart_handle));
-		pause();
-		shutdown_ttyp(nrport, ttyinfo);
+	sprintf(file_name,"%s/%s", work_path, CF_CONFNAME);
+	if((nrport = paser_config(file_name, ttyinfo)) <= 0) {
+		syslog(LOG_DEBUG, "failed to paser config file");
+		return 0;
 	}
-	exit(0);
+	ADV_LOGMSG("Advantech Virtual TTY daemon program - %s\n", CF_VERSION);
+	spawn_ttyp(work_path, nrport, ttyinfo);
+
+	return 0;
 }
 
 static int parse_env(char * cmdpath, char * workpath)
@@ -115,7 +257,7 @@ static int parse_env(char * cmdpath, char * workpath)
 	chdir(currpath);
 	return 0;
 }
-
+/*
 static int daemon_init(void)   
 {   
 	pid_t   pid;  
@@ -159,7 +301,7 @@ L_EXIT:
 	umask(0);                   // clear   file   mode   creation
 	return(0);   
 }   
-
+*/
 
 static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 {
@@ -176,7 +318,7 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 
 	nrport = 0;    
 	if((conf_fp = fopen(conf_name, "r")) == NULL) {
-		ADV_LOGMSG("Open the configuration file [%s] fail\n", conf_name);
+		syslog(LOG_DEBUG, "Open the configuration file [%s] fail", conf_name);
 		return nrport;
 	}
 	while(nrport < CF_MAXPORTS) {
@@ -194,7 +336,7 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 		if ( matchCount < 4) {
 			continue;
 		}
-		ADV_LOGMSG("matchCount = %d\n", matchCount);
+		//printf("matchCount = %d\n", matchCount);
 		if(atoi(mpt_nameidx_str) > CF_MAXPORTS)
 			continue;
 		if ((int_tmp = hexstr(dev_type_str)) <= 0 || int_tmp <= 0x1000)
@@ -238,22 +380,29 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 {
 	int idx;
-	pid_t advttyp_pid;
+	int oldpid;
+	int cmdidx;
 	char cmd[PATH_MAX];
 	char log[PATH_MAX];
 	char mon[PATH_MAX];
+	char oldcmd[2048];
+	char vcomif[1024];
+	char syscmd[1024];
+	char killcmd[256];
+
 
 	sprintf(cmd, "%s/%s", work_path, CF_PORTPROG);
 	sprintf(log, "%s/%s", work_path, CF_LOGNAME);
 
+
 	for(idx = 0; idx < nrport; ++idx) {
 		sprintf(mon, "%s/advtty%s", MON_PATH, ttyinfo[idx].mpt_nameidx_str);
-		if((advttyp_pid = fork()) < 0) {
-			ADV_LOGMSG("Spawn MPT[%s] fail\n", ttyinfo[idx].mpt_nameidx_str);
-			continue;
-		}
-		if(advttyp_pid == 0 && ttyinfo[idx].has_redundant_ip) {
-			ADV_LOGMSG("executing command %s -l %s -t %s -d %s -a %s -p %s -r %s\n", 
+		
+		snprintf(vcomif, sizeof(vcomif), "/proc/vcom/advproc%s", ttyinfo[idx].mpt_nameidx_str);
+		
+		oldpid = __cmd_search_file(cmd, vcomif, oldcmd, sizeof(oldcmd));
+		if(ttyinfo[idx].has_redundant_ip) {		
+			ADV_LOGMSG("executing command %s -l %s -t %s -d %s -a %s -p %s -r %s \n", 
 					cmd,
 					log, 
 					ttyinfo[idx].mpt_nameidx_str, 
@@ -261,35 +410,46 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 					ttyinfo[idx].dev_ipaddr_str, 
 					ttyinfo[idx].dev_portidx_str, 
 					ttyinfo[idx].dev_redundant_ipaddr_str);
-			log_close();
+			cmdidx = snprintf(syscmd, sizeof(syscmd), 
+					"%s -l%s -t%s -d%s -a%s -p%s -r%s ", 
+						cmd,
+						mon, 
+						ttyinfo[idx].mpt_nameidx_str,
+						ttyinfo[idx].dev_type_str,
+						ttyinfo[idx].dev_ipaddr_str,
+						ttyinfo[idx].dev_portidx_str,
+						ttyinfo[idx].dev_redundant_ipaddr_str
+						);
 
-			execl(cmd, CF_PORTPROG,
-					"-l", mon,
-					"-t", ttyinfo[idx].mpt_nameidx_str,
-					"-d", ttyinfo[idx].dev_type_str,
-					"-a", ttyinfo[idx].dev_ipaddr_str,
-					"-p", ttyinfo[idx].dev_portidx_str,
-					"-r", ttyinfo[idx].dev_redundant_ipaddr_str,
-					NULL);
-			exit(-4);      
+		}else{
+			cmdidx = snprintf(syscmd, sizeof(syscmd), 
+					"%s -l%s -t%s -d%s -a%s -p%s ", 
+						cmd,
+						mon, 
+						ttyinfo[idx].mpt_nameidx_str,
+						ttyinfo[idx].dev_type_str,
+						ttyinfo[idx].dev_ipaddr_str,
+						ttyinfo[idx].dev_portidx_str
+						);
+
 		}
-		else if(advttyp_pid == 0)
-		{
-			log_close();
-			execl(cmd, CF_PORTPROG,
-					"-l", mon,
-					"-t", ttyinfo[idx].mpt_nameidx_str,
-					"-d", ttyinfo[idx].dev_type_str,
-					"-a", ttyinfo[idx].dev_ipaddr_str,
-					"-p", ttyinfo[idx].dev_portidx_str,
-					NULL);
-			exit(-4);      
+
+		if(oldpid > 0){
+			if(strcmp(syscmd, oldcmd) == 0){
+				continue;
+			}else{
+				snprintf(killcmd, sizeof(killcmd), "kill -9 %d", oldpid);
+				system(killcmd);
+			}
 		}
-		ttyinfo[idx].advttyp_pid = advttyp_pid;
+
+		snprintf(&syscmd[cmdidx], sizeof(syscmd) - cmdidx - 1, "&");
+		system(syscmd);
 	}
+
 	return;
 }
-
+/*
 static void shutdown_ttyp(int nrport, TTYINFO ttyinfo[])
 {
 	int idx;
@@ -316,12 +476,12 @@ static void shutdown_ttyp(int nrport, TTYINFO ttyinfo[])
 	}
 	return;
 }
-
-static void restart_handle()
+*/
+/*static void restart_handle()
 {
 	_restart = 1;
 	return;
-} 
+} */
 
 static int hexstr(char * strp)
 {
@@ -340,12 +500,12 @@ static int hexstr(char * strp)
 	return val;
 }
 
-static int log_open(char * log_name)
+/*static int log_open(char * log_name)
 {
 	return __log_fd = open(log_name,
 			O_WRONLY | O_CREAT | O_APPEND | O_NDELAY, 0666);
-}
-
+}*/
+/*
 static void log_close(void)
 {
 	if(__log_fd >= 0) {
@@ -353,7 +513,7 @@ static void log_close(void)
 		__log_fd = -1;
 	}
 	return;
-}
+}*/
 #ifdef ADVTTYD_DEBUG
 static void log_msg(const char * msg)
 {

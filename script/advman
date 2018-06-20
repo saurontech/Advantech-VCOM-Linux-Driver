@@ -87,7 +87,9 @@ startDeamon()
 	fi
 	echo "invoking local deamon..."
 	install -m 777 -d /tmp/advmon
-	`$DEAMONFILE`
+	#`$DEAMONFILE`
+	$DEAMONFILE
+
 }
 
 stopDeamon()
@@ -166,9 +168,18 @@ case $OBJECTIVE in
 		exit 1
 	;;
 	restart)
-		stopService
-		killall $DEAMON
+		hasdriver
+		if [ $RETURN -eq 1 ]
+		then
+			echo "starting service...."
+			startDeamon
+		else
+			echo "can not start service..."
+			insdriver
+			startDeamon
+		fi
 		exit 1
+
 	;;
 	stop)
 		echo stop
