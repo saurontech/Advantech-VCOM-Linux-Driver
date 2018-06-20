@@ -21,6 +21,27 @@
 #define RBUF_SIZE	4096
 
 extern void * stk_mon; 
+
+int recv_second_chance(int sock, char * buf, int buflen)
+{
+	int ret;
+	struct timeval tv;
+	fd_set rfds;
+
+	FD_ZERO(&rfds);
+	FD_SET(sock, &rfds);
+	tv.tv_sec = 0;
+	tv.tv_usec = 10000;
+
+	ret = select(sock + 1, &rfds, 0, 0, &tv);
+
+	if(ret <= 0){
+		return 0;
+	}
+
+	return recv(sock, buf, buflen, 0);
+}
+
 struct vc_ops * vc_recv_desp(struct vc_attr *port)
 {
 	int len;
@@ -41,7 +62,15 @@ struct vc_ops * vc_recv_desp(struct vc_attr *port)
 		return stk_curnt(stk)->init(port);
 	}
 	if(len != hdr_len){
-		return stk_curnt(stk)->err(port, "Packet lenth too short", len);
+		do{
+			if(len < hdr_len){
+				len += recv_second_chance(port->sk, &buf[len], hdr_len - len);
+				if(len == hdr_len){
+					break;
+				}
+			}
+			return stk_curnt(stk)->err(port, "Packet lenth too short", len);
+		}while(0);
 	}
 
 	hdr = (struct vc_proto_hdr *)buf;
@@ -60,8 +89,17 @@ struct vc_ops * vc_recv_desp(struct vc_attr *port)
 			return stk_curnt(stk)->err(port, "payload is too long", packet_len);
 		}
 		len = recv(port->sk, &buf[hdr_len], packet_len, 0);
-		if(len != packet_len)
-			return stk_curnt(stk)->err(port, "VCOM len miss-match", len);
+		if(len != packet_len){
+			do{
+				if(len < packet_len){
+					len += recv_second_chance(port->sk, &buf[hdr_len + len], packet_len - len);
+					if(len == packet_len){
+						break;
+					}
+				}
+				return stk_curnt(stk)->err(port, "VCOM len miss-match", len);
+			}while(0);
+		}
 	}
 
 	return try_ops(stk_curnt(stk), recv, port, buf, hdr_len + packet_len);
