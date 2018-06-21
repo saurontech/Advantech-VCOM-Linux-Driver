@@ -7,11 +7,13 @@ all:
 	make -C ./driver
 	make -C ./initd
 	make -C ./inotify
+	make -C ./advps
 clean:
 	make clean -C ./driver
 	make clean -C ./daemon
 	make clean -C ./initd
 	make clean -C ./inotify
+	make clean -C ./advps
 
 install_daemon:
 	install -d $(INSTALL_PATH)
@@ -24,16 +26,20 @@ install_daemon:
 	cp ./script/advrm $(INSTALL_PATH)
 	cp ./script/advman $(INSTALL_PATH)
 	cp ./inotify/vcinot $(INSTALL_PATH)
+	cp ./advps/advps $(INSTALL_PATH)
 	chmod 111 $(INSTALL_PATH)advls
 	chmod 111 $(INSTALL_PATH)advadd
 	chmod 111 $(INSTALL_PATH)advrm
 	chmod 111 $(INSTALL_PATH)advman
 	chmod 111 $(INSTALL_PATH)vcinot
+	chmod 111 $(INSTALL_PATH)advps
 	ln -sf $(INSTALL_PATH)advls /sbin/advls
 	ln -sf $(INSTALL_PATH)advrm /sbin/advrm
 	ln -sf $(INSTALL_PATH)advadd /sbin/advadd
 	ln -sf $(INSTALL_PATH)advman /sbin/advman
 	ln -sf $(INSTALL_PATH)vcinot /sbin/vcinot
+	ln -sf $(INSTALL_PATH)advps /sbin/advps
+
 
 install: install_daemon
 	cp ./driver/advvcom.ko $(INSTALL_PATH)
