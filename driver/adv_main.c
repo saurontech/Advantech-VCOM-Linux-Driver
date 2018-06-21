@@ -76,17 +76,17 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		
 //		adv_uart_recv_chars(data->adv_uart);
 
-		mutex_lock((&data->tx.lock));
+		spin_lock((&data->tx.lock));
 		tmp = get_rb_head(data->tx);
 		ret = __put_user(tmp, (int __user *)arg);
-		mutex_unlock(&(data->tx.lock));
+		spin_unlock(&(data->tx.lock));
 		break;
 
         case ADVVCOM_IOCGTXTAIL:
-		mutex_lock(&(data->tx.lock));
+		spin_lock(&(data->tx.lock));
 		tmp = get_rb_tail(data->tx);
 		ret = __put_user(tmp, (int __user *)arg);
-		mutex_unlock(&(data->tx.lock));
+		spin_unlock(&(data->tx.lock));
 		break;
 
 	case ADVVCOM_IOCGTXSIZE:
@@ -99,17 +99,17 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
         case ADVVCOM_IOCGRXHEAD:
 //		adv_uart_update_xmit(data->adv_uart);
-		mutex_lock(&(data->rx.lock));
+		spin_lock(&(data->rx.lock));
 		tmp = get_rb_head(data->rx);
 		ret = __put_user(tmp, (int __user *)arg);
-		mutex_unlock(&(data->rx.lock));
+		spin_unlock(&(data->rx.lock));
 		break;
 
 	case ADVVCOM_IOCGRXTAIL:
-		mutex_lock(&(data->rx.lock));
+		spin_lock(&(data->rx.lock));
 		tmp = get_rb_tail(data->rx);
 		ret = __put_user(tmp, (int __user *)arg);
-		mutex_unlock(&(data->rx.lock));
+		spin_unlock(&(data->rx.lock));
 		break;
 
         case ADVVCOM_IOCGRXSIZE:
@@ -121,19 +121,19 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		break;
 
         case ADVVCOM_IOCSTXTAIL:
-		mutex_lock(&(data->tx.lock));
+		spin_lock(&(data->tx.lock));
 		ret = __get_user(tmp, (int __user *)arg);
 		move_rb_tail(&data->tx, tmp);
-		mutex_unlock(&(data->tx.lock));
+		spin_unlock(&(data->tx.lock));
 
 		adv_uart_recv_chars(data->adv_uart);
 		break;
 
         case ADVVCOM_IOCSRXHEAD:
-		mutex_lock(&(data->rx.lock));
+		spin_lock(&(data->rx.lock));
 		ret = __get_user(tmp, (int __user *)arg);
 		move_rb_head(&data->rx, tmp);
-		mutex_unlock(&(data->rx.lock));
+		spin_unlock(&(data->rx.lock));
 		break;
 
 	case ADVVCOM_IOCGATTRBEGIN:
@@ -141,10 +141,10 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		break;
 
 	case ADVVCOM_IOCGATTRPTR:
-		mutex_lock(&(data->attr.lock));
+		spin_lock(&(data->attr.lock));
 		tmp = flush_attr_info(&(data->attr));
 		ret = __put_user(tmp, (int __user *)arg);
-		mutex_unlock(&(data->attr.lock));
+		spin_unlock(&(data->attr.lock));
 		break;
 
 	case ADVVCOM_IOCSINTER:
@@ -202,20 +202,20 @@ unsigned int adv_proc_poll(struct file *filp, poll_table *wait)
 
 	
 	
-	mutex_lock(&(data->rx.lock));
+	spin_lock(&(data->rx.lock));
 	if(data->rx.status & ADV_RING_BUF_ENABLED){
 		mask |= is_rb_empty(data->rx)?0x0:POLLIN;
 	}
-	mutex_unlock(&(data->rx.lock));
+	spin_unlock(&(data->rx.lock));
 
-	mutex_lock(&(data->tx.lock));
+	spin_lock(&(data->tx.lock));
 	if(data->tx.status & ADV_RING_BUF_ENABLED){
 		mask |= is_rb_empty(data->tx)?POLLOUT:0x0;
 	//	mask |= POLLOUT;
 	}
-	mutex_unlock(&(data->tx.lock));
+	spin_unlock(&(data->tx.lock));
 
-	mutex_lock(&(data->attr.lock));
+	spin_lock(&(data->attr.lock));
 	if(data->attr.throttled){
 			mask &= (~POLLOUT);
 	}
@@ -228,7 +228,7 @@ unsigned int adv_proc_poll(struct file *filp, poll_table *wait)
 			mask |= POLLPRI;
 		}
 	}
-	mutex_unlock(&(data->attr.lock));
+	spin_unlock(&(data->attr.lock));
 
 	return mask;
 }
@@ -259,15 +259,15 @@ void adv_main_interrupt(struct adv_vcom * data, int mask)
 void adv_main_clear(struct adv_vcom * data, int mask)
 {
 	if(mask & ADV_CLR_RX){
-		mutex_lock((&data->rx.lock));
+		spin_lock((&data->rx.lock));
 		data->rx.status |= ADV_RING_BUF_CLEAN;
-		mutex_unlock((&data->rx.lock));
+		spin_unlock((&data->rx.lock));
 	}
 	if(mask & ADV_CLR_TX){
-		mutex_lock((&data->tx.lock));
+		spin_lock((&data->tx.lock));
 		data->tx.status |= ADV_RING_BUF_CLEAN;
 		move_rb_head(&data->tx, 0);
-		mutex_unlock((&data->tx.lock));
+		spin_unlock((&data->tx.lock));
 	}
 
 }
@@ -312,9 +312,9 @@ struct adv_vcom * adv_main_init(int port)
 
 	memset(vcomdata->attr.data, 0, (ADV_ATTRBUF_NUM *sizeof(struct adv_port_info)));
 
-	mutex_init(&(vcomdata->tx.lock));
-	mutex_init(&(vcomdata->rx.lock));
-	mutex_init(&(vcomdata->attr.lock));
+	spin_lock_init(&(vcomdata->tx.lock));
+	spin_lock_init(&(vcomdata->rx.lock));
+	spin_lock_init(&(vcomdata->attr.lock));
 
 	init_waitqueue_head(&(vcomdata->tx.wait));
 	init_waitqueue_head(&(vcomdata->rx.wait));

@@ -47,16 +47,16 @@ void adv_uart_update_xmit(struct uart_port *port)
 	
 	spin_lock(&port->lock);
 
-	mutex_lock(&(attr->lock));
+	spin_lock(&(attr->lock));
 	is_open = info->is_open;
-	mutex_unlock(&(attr->lock));
+	spin_unlock(&(attr->lock));
 
 	if(is_open){
-		mutex_lock(&(tx->lock));
+		spin_lock(&(tx->lock));
 		if(is_rb_empty(*tx)){
 			adv_uart_xmit(port);
 		}
-		mutex_unlock(&(tx->lock));
+		spin_unlock(&(tx->lock));
 
 		uart_write_wakeup(port);
 	}
@@ -73,10 +73,10 @@ unsigned int adv_uart_ms(struct uart_port *port, unsigned int status)
 	
 	spin_lock(&port->lock);
 
-	mutex_lock(&(attr->lock));
+	spin_lock(&(attr->lock));
 	ms = attr->mctrl;
 	attr->mctrl = status;
-	mutex_unlock(&(attr->lock));
+	spin_unlock(&(attr->lock));
 	
 	if((status ^ ms) & ADV_MS_CTS){
 		//uart_handle_cts_change(port, status);
@@ -112,9 +112,9 @@ static void adv_uart_stop_tx(struct uart_port *port)
 	adv_port = (struct adv_uart_port *)port;
 	tx = adv_port->tx;
 
-	mutex_lock(&(tx->lock));
+	spin_lock(&(tx->lock));
 	tx->status &= ~(ADV_RING_BUF_ENABLED);
-	mutex_unlock(&(tx->lock));
+	spin_unlock(&(tx->lock));
 }
 
 static void adv_uart_start_tx(struct uart_port *port)
@@ -126,10 +126,10 @@ static void adv_uart_start_tx(struct uart_port *port)
 
 	tx = adv_port->tx;
 
-	mutex_lock(&(tx->lock));
+	spin_lock(&(tx->lock));
 	tx->status |= ADV_RING_BUF_ENABLED;
 	adv_uart_xmit(port);
-	mutex_unlock(&(tx->lock));
+	spin_unlock(&(tx->lock));
 	
 	if(waitqueue_active(&tx->wait)){
 		wake_up_interruptible(&tx->wait);
@@ -145,9 +145,9 @@ static void adv_uart_stop_rx(struct uart_port *port)
 	adv_port = (struct adv_uart_port *)port;
 	rx = adv_port->rx;
 
-	mutex_lock(&(rx->lock));
+	spin_lock(&(rx->lock));
 	rx->status &= ~(ADV_RING_BUF_ENABLED);
-	mutex_unlock(&(rx->lock));
+	spin_unlock(&(rx->lock));
 }
 
 static void adv_uart_enable_ms(struct uart_port *port)
@@ -168,18 +168,18 @@ void adv_uart_recv_chars(struct uart_port *port)
 	int rx_l, rx_ll, rx_hd;
 	char * rx_base = (char *)rx->data;
 
-	mutex_lock(&(attr->lock));
+	spin_lock(&(attr->lock));
 	throttled = attr->throttled;
-	mutex_unlock(&(attr->lock));
+	spin_unlock(&(attr->lock));
 	if(throttled){
 		return;
 	}
 
 
-	mutex_lock(&rx->lock);
+	spin_lock(&rx->lock);
 		
 	if((rx->status & ADV_RING_BUF_ENABLED) == 0){
-		mutex_unlock(&rx->lock);
+		spin_unlock(&rx->lock);
 		return;
 	}
 	
@@ -205,7 +205,7 @@ void adv_uart_recv_chars(struct uart_port *port)
 		max_retry--;
 	}
 
-	mutex_unlock(&rx->lock);
+	spin_unlock(&rx->lock);
 
 	if(count != rx_l){
 		tty_flip_buffer_push(tty);
@@ -278,9 +278,9 @@ static unsigned int adv_uart_tx_empty(struct uart_port *port)
 	adv_port = (struct adv_uart_port *)port;
 	tx = adv_port->tx;
 
-	mutex_lock(&(tx->lock));
+	spin_lock(&(tx->lock));
 	empty = is_rb_empty(*tx);
-	mutex_unlock(&(tx->lock));
+	spin_unlock(&(tx->lock));
 
 	return empty ? TIOCSER_TEMT : 0;
 }
@@ -292,7 +292,7 @@ static unsigned int adv_uart_get_mctrl(struct uart_port *port)
 	unsigned int status;
 
 	status = 0;
-	mutex_lock(&attr->lock);
+	spin_lock(&attr->lock);
 	if(attr->mctrl & ADV_MS_CTS){
 		status |= TIOCM_CTS;
 	}
@@ -305,7 +305,7 @@ static unsigned int adv_uart_get_mctrl(struct uart_port *port)
 	if(attr->mctrl & ADV_MS_RI){
 		status |= TIOCM_RI;
 	}
-	mutex_unlock(&attr->lock);
+	spin_unlock(&attr->lock);
 
 	return status;
 }
@@ -324,9 +324,9 @@ static void adv_uart_set_mctrl(struct uart_port *port, unsigned int mctrl)
 	if (mctrl & TIOCM_DTR)
 		status |= ADV_MS_DTR;
 
-	mutex_lock(&attr->lock);
+	spin_lock(&attr->lock);
 	info->ms = status;	
-	mutex_unlock(&attr->lock);
+	spin_unlock(&attr->lock);
 
 	if(waitqueue_active(&attr->wait)){
 		wake_up_interruptible(&attr->wait);
@@ -347,11 +347,11 @@ int adv_uart_startup(struct uart_port *port)
 
 	rx = up->rx;
 
-	mutex_lock(&attr->lock);
+	spin_lock(&attr->lock);
 	info->is_open = 1;	
 	attr->throttled = 0;
 	rx->status |= ADV_RING_BUF_ENABLED;
-	mutex_unlock(&attr->lock);
+	spin_unlock(&attr->lock);
 
 	if(waitqueue_active(&attr->wait)){
 		wake_up_interruptible(&attr->wait);
@@ -365,9 +365,9 @@ static void adv_uart_shutdown(struct uart_port *port)
 	struct adv_port_att * attr = up->attr;
 	struct adv_port_info * info = &attr->_attr;
 
-	mutex_lock(&attr->lock);
+	spin_lock(&attr->lock);
 	info->is_open = 0;	
-	mutex_unlock(&attr->lock);
+	spin_unlock(&attr->lock);
 
 	if(waitqueue_active(&attr->wait)){
 		wake_up_interruptible(&attr->wait);
@@ -384,7 +384,7 @@ adv_uart_set_termios(struct uart_port *port, struct ktermios *termios,
 	struct adv_port_info * attr = &adv_attr->_attr;
 
 	
-	mutex_lock(&adv_attr->lock);
+	spin_lock(&adv_attr->lock);
 
 	attr->baud = uart_get_baud_rate(port, termios, old, 50, 921600);//port->uartclk);
 //	uart_update_timeout();
@@ -438,7 +438,7 @@ adv_uart_set_termios(struct uart_port *port, struct ktermios *termios,
 		attr->stop = ADV_STOP_1;
 	}
 	
-	mutex_unlock(&adv_attr->lock);
+	spin_unlock(&adv_attr->lock);
 
 	uart_update_timeout(port, termios->c_cflag, attr->baud);
 
@@ -486,9 +486,9 @@ void adv_uart_throttle(struct uart_port *port)
 	adv_port = (struct adv_uart_port *)port;
 	attr = adv_port->attr;
 
-	mutex_lock(&(attr->lock));
+	spin_lock(&(attr->lock));
 	attr->throttled = 1;
-	mutex_unlock(&(attr->lock));
+	spin_unlock(&(attr->lock));
 
 	if(waitqueue_active(&attr->wait)){
 		wake_up_interruptible(&attr->wait);
@@ -503,9 +503,9 @@ void adv_uart_unthrottle(struct uart_port *port)
 	adv_port = (struct adv_uart_port *)port;
 	attr = adv_port->attr;
 
-	mutex_lock(&(attr->lock));
+	spin_lock(&(attr->lock));
 	attr->throttled = 0;
-	mutex_unlock(&(attr->lock));
+	spin_unlock(&(attr->lock));
 	
 	adv_uart_recv_chars(port);
 }

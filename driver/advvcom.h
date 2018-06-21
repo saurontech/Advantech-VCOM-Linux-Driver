@@ -23,7 +23,7 @@ struct ring_buf{
 //#define VCOM_PORTS	10
 
 struct ring_buf{
-	struct mutex lock;
+	spinlock_t lock;
 	int head;
 	int tail;
 	int begin;
@@ -36,7 +36,7 @@ struct ring_buf{
 
 
 struct adv_port_att{
-	struct mutex lock;
+	spinlock_t lock;
 	struct adv_port_info _attr;
 	unsigned int mctrl; /*for input pins only*/
 	int _newbie;
