@@ -344,14 +344,24 @@ int adv_uart_startup(struct uart_port *port)
 	struct adv_port_att * attr = up->attr;
 	struct adv_port_info * info = &attr->_attr;
 	struct ring_buf * rx;
+	struct ring_buf * tx;
+
 
 	rx = up->rx;
+	tx = up->tx;
 
 	spin_lock(&attr->lock);
 	info->is_open = 1;	
 	attr->throttled = 0;
-	rx->status |= ADV_RING_BUF_ENABLED;
 	spin_unlock(&attr->lock);
+
+	spin_lock(&rx->lock);
+	rx->status |= ADV_RING_BUF_ENABLED;
+	spin_unlock(&rx->lock);
+	
+	spin_lock(&tx->lock);
+	tx->status |= ADV_RING_BUF_ENABLED;
+	spin_unlock(&tx->lock);
 
 	if(waitqueue_active(&attr->wait)){
 		wake_up_interruptible(&attr->wait);
