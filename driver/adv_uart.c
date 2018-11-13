@@ -115,6 +115,7 @@ static void adv_uart_stop_tx(struct uart_port *port)
 	spin_lock(&(tx->lock));
 	tx->status &= ~(ADV_RING_BUF_ENABLED);
 	spin_unlock(&(tx->lock));
+	dump_stack();
 }
 
 static void adv_uart_start_tx(struct uart_port *port)
@@ -144,10 +145,11 @@ static void adv_uart_stop_rx(struct uart_port *port)
 
 	adv_port = (struct adv_uart_port *)port;
 	rx = adv_port->rx;
-
+	
 	spin_lock(&(rx->lock));
 	rx->status &= ~(ADV_RING_BUF_ENABLED);
 	spin_unlock(&(rx->lock));
+	dump_stack();
 }
 
 static void adv_uart_enable_ms(struct uart_port *port)
@@ -366,6 +368,14 @@ int adv_uart_startup(struct uart_port *port)
 	if(waitqueue_active(&attr->wait)){
 		wake_up_interruptible(&attr->wait);
 	}
+	if(waitqueue_active(&rx->wait)){
+		wake_up_interruptible(&rx->wait);
+	}
+	if(waitqueue_active(&tx->wait)){
+		wake_up_interruptible(&tx->wait);
+	}
+	//adv_uart_recv_chars(port);
+
 	return 0;
 }
 
@@ -418,10 +428,18 @@ adv_uart_set_termios(struct uart_port *port, struct ktermios *termios,
 	//flow control
 	if(termios->c_cflag & CRTSCTS){
 		attr->flowctl = ADV_FLOW_RTSCTS;
+		port->status |= UPSTAT_AUTOCTS;
+		port->status |= UPSTAT_AUTORTS;
+
 	}else if(termios->c_iflag & IXOFF){
 		attr->flowctl = ADV_FLOW_XONXOFF;
+		port->status |= UPSTAT_AUTOXOFF;
 	}else{
 		attr->flowctl = ADV_FLOW_NONE;
+		port->status &= ~UPSTAT_AUTOCTS;
+		port->status &= ~UPSTAT_AUTORTS;
+		port->status &= ~UPSTAT_AUTOXOFF;
+
 	}
 	//pairity
 	switch(termios->c_cflag & (PARODD|CMSPAR|PARENB)){
