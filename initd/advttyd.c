@@ -144,7 +144,8 @@ int __cmd_search_file(char * cmd, char * file, char *retcmd, int len)
 	}
 	for(;;) {
 		if((entry = readdir(dir)) == NULL) {
-			syslog(LOG_DEBUG, "%s(%d)readdir failed", __func__, __LINE__);
+		//	syslog(LOG_DEBUG, "%s(%d)readdir failed", __func__, __LINE__);
+			syslog(LOG_DEBUG, "no old vcomds were found operating %s", file);
 			closedir(dir);
 			dir = 0;
 			return -1;
