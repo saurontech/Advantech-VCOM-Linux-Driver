@@ -43,6 +43,7 @@ int _sock_err(int sk)
 	return 0;
 }
 
+unsigned short vc_tcp_port = VC_PROTO_PORT;
 
 int _create_sklist(int * sklist, int maxlen, char * addr, 
 	fd_set * rfds, int *retlen, int *retmax)
@@ -88,7 +89,7 @@ int _create_sklist(int * sklist, int maxlen, char * addr,
 
 		vc_config_sock(sklist[sknum], VC_SKOPT_NONBLOCK, 0);
 
-		if( __set_sockaddr_port(ptr, VC_PROTO_PORT)){
+		if( __set_sockaddr_port(ptr, vc_tcp_port)){
 			printf("cannot set client port\n");
 			close(sklist[sknum]);
 			continue;
@@ -140,6 +141,12 @@ int vc_connect(struct vc_attr * attr)
 	int max;
 	
 	FD_ZERO(&rfds);
+
+	if(attr->ssl){
+		printf("connecting to TLS proxy\n");
+		addr = "127.0.0.1";
+		vc_tcp_port = VC_SSL_PROXY;
+	}
 
 	sk = _create_sklist(sklist, VC_MAX_SKNUM, addr, &rfds, &sknum, &skmax);
 	if(sk < 0 && attr->ip_red > 0){

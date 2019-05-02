@@ -139,6 +139,7 @@ void usage(char * cmd)
 	printf("	-a	IP addr\n");
 	printf("	-p	Device port\n");
 	printf("	-r	Redundant IP\n");
+	printf("	-s	enable TLS\n");
 	printf("	-h	For help\n");
 }
 
@@ -150,6 +151,7 @@ int startup(int argc, char **argv, struct vc_attr *port)
 	port->ttyid = -1;
 	port->devid = 0;
 	port->port = -1;
+	port->ssl = 0;
 	addr = 0;
 
 	if(argc < 2) {
@@ -158,7 +160,7 @@ int startup(int argc, char **argv, struct vc_attr *port)
 	}
 
 	mon_init(0);
-	while((ch = getopt(argc, argv, "hl:t:d:a:p:r:")) != -1)  {
+	while((ch = getopt(argc, argv, "shl:t:d:a:p:r:")) != -1)  {
 		switch(ch){
 			case 'h':
 				usage(argv[0]);
@@ -188,6 +190,10 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				addr = optarg;
 				port->ip_red = addr;
 				printf("setting RIP addr : %s ...\n", port->ip_red);
+				break;
+			case 's':
+				port->ssl = 1;
+				printf("ssl enabled\n");
 				break;
 			default:
 				usage(argv[0]);

@@ -23,6 +23,7 @@ struct vc_attr{
 	int attr_ptr;
 	int xmit_pending;
 	int ttyid;
+	int ssl;
 	unsigned int port;
 	unsigned int tid;
 	unsigned short devid;
@@ -257,6 +258,7 @@ static inline int vc_config_sock(int sk, int option, void * arg)
 
 #define VC_MAX_SKNUM	16
 #define VC_PROTO_PORT	5202
+#define VC_SSL_PROXY	5555
 
 static inline int __set_sockaddr_port(struct addrinfo *info, unsigned short port)
 {
