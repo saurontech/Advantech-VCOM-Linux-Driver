@@ -1,0 +1,1 @@
+int loadConfig(char *filepath);

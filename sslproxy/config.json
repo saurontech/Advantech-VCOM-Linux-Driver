@@ -1,0 +1,7 @@
+{
+	"ssl":{
+		"keyfile":"./client.pem",
+		"rootca":"./rootCA.pem",
+		"password":"password"
+	}
+}
