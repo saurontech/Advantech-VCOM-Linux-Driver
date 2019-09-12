@@ -39,6 +39,7 @@ typedef struct _TTYINFO {
 	char    dev_portidx_str[CF_MAXSTRLEN];      // Device Port Index
 	char	dev_redundant_ipaddr_str[INET6_ADDRSTRLEN];
 	int has_redundant_ip;
+	int dev_ssl;
 } TTYINFO;
 
 int __log_fd = -1;
@@ -314,15 +315,19 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 	char dev_portidx_str[CF_MAXSTRLEN];
 	char dev_ipaddr_str[INET6_ADDRSTRLEN];
 	char dev_redundant_ipaddr_str[INET6_ADDRSTRLEN];
+	char *dev_type;
 	int matchCount=0;
 	char conf_dp[256];
+	char *sslkeyword = "ssl:";
 
-	nrport = 0;    
 	if((conf_fp = fopen(conf_name, "r")) == NULL) {
 		syslog(LOG_DEBUG, "Open the configuration file [%s] fail", conf_name);
 		return nrport;
 	}
+	
+	nrport = 0;    
 	while(nrport < CF_MAXPORTS) {
+		dev_type = dev_type_str;
 		if(fgets(conf_dp, sizeof(conf_dp), conf_fp) == NULL)
 			break;
 		/*
@@ -337,21 +342,32 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 		if ( matchCount < 4) {
 			continue;
 		}
-		//printf("matchCount = %d\n", matchCount);
+		//syslog(LOG_DEBUG,"matchCount = %d\n", matchCount);
 		if(atoi(mpt_nameidx_str) > CF_MAXPORTS)
 			continue;
-		if ((int_tmp = hexstr(dev_type_str)) <= 0 || int_tmp <= 0x1000)
+		
+		memset(&ttyinfo[nrport], 0, sizeof(TTYINFO));
+
+		if(strlen(dev_type_str) > 4 && 
+		memcmp(sslkeyword, dev_type_str, strlen(sslkeyword)) == 0){
+			dev_type = dev_type_str + strlen(sslkeyword);
+			ttyinfo[nrport].dev_ssl = 1;
+			//syslog(LOG_DEBUG, "nrport %d, found ssl\n", nrport);
+		}
+		syslog(LOG_DEBUG,"dev_type = %s\n", dev_type);
+		if ((int_tmp = hexstr(dev_type)) <= 0 || int_tmp <= 0x1000)
 			continue;
 		/*
 		   ulong_tmp = device_ipaddr(dev_ipaddr_str);
 		   if ((ulong_tmp == (u_long)0xFFFFFFFF) || (ulong_tmp == 0))
 		   continue;
 		 */
+		syslog(LOG_DEBUG,"dev_type success = %x\n", int_tmp);
+
 		if ((int_tmp = atoi(dev_portidx_str)) <= 0 || int_tmp > 16)
 			continue;
-		memset(&ttyinfo[nrport], 0, sizeof(TTYINFO));
 		strcpy(ttyinfo[nrport].mpt_nameidx_str, mpt_nameidx_str);
-		strcpy(ttyinfo[nrport].dev_type_str, dev_type_str);
+		strcpy(ttyinfo[nrport].dev_type_str, dev_type);
 		strcpy(ttyinfo[nrport].dev_ipaddr_str, dev_ipaddr_str);
 		strcpy(ttyinfo[nrport].dev_portidx_str, dev_portidx_str);
 		if (matchCount > 4)
@@ -370,6 +386,7 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 				ttyinfo[nrport].has_redundant_ip = 0;
 			}		
 		}
+		//syslog(LOG_DEBUG,"dev[%d] ssl= %d\n", nrport, ttyinfo[nrport].dev_ssl);
 		++nrport;
 	}
 	fclose(conf_fp);
@@ -402,17 +419,11 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 		snprintf(vcomif, sizeof(vcomif), "/proc/vcom/advproc%s", ttyinfo[idx].mpt_nameidx_str);
 		
 		oldpid = __cmd_search_file(cmd, vcomif, oldcmd, sizeof(oldcmd));
-		if(ttyinfo[idx].has_redundant_ip) {		
-			ADV_LOGMSG("executing command %s -l %s -t %s -d %s -a %s -p %s -r %s \n", 
-					cmd,
-					log, 
-					ttyinfo[idx].mpt_nameidx_str, 
-					ttyinfo[idx].dev_type_str, 
-					ttyinfo[idx].dev_ipaddr_str, 
-					ttyinfo[idx].dev_portidx_str, 
-					ttyinfo[idx].dev_redundant_ipaddr_str);
-			cmdidx = snprintf(syscmd, sizeof(syscmd), 
-					"%s -l%s -t%s -d%s -a%s -p%s -r%s ", 
+		if(ttyinfo[idx].has_redundant_ip) {
+
+			if(ttyinfo[idx].dev_ssl){
+				cmdidx = snprintf(syscmd, sizeof(syscmd), 
+					"%s -l%s -t%s -d%s -a%s -p%s -r%s -s", 
 						cmd,
 						mon, 
 						ttyinfo[idx].mpt_nameidx_str,
@@ -421,10 +432,31 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 						ttyinfo[idx].dev_portidx_str,
 						ttyinfo[idx].dev_redundant_ipaddr_str
 						);
+			}else{
+				ADV_LOGMSG("executing command %s -l %s -t %s -d %s -a %s -p %s -r %s \n", 
+						cmd,
+						log, 
+						ttyinfo[idx].mpt_nameidx_str, 
+						ttyinfo[idx].dev_type_str, 
+						ttyinfo[idx].dev_ipaddr_str, 
+						ttyinfo[idx].dev_portidx_str, 
+						ttyinfo[idx].dev_redundant_ipaddr_str);
+				cmdidx = snprintf(syscmd, sizeof(syscmd), 
+						"%s -l%s -t%s -d%s -a%s -p%s -r%s ", 
+						cmd,
+						mon, 
+						ttyinfo[idx].mpt_nameidx_str,
+						ttyinfo[idx].dev_type_str,
+						ttyinfo[idx].dev_ipaddr_str,
+						ttyinfo[idx].dev_portidx_str,
+						ttyinfo[idx].dev_redundant_ipaddr_str
+						);
+			}
 
 		}else{
-			cmdidx = snprintf(syscmd, sizeof(syscmd), 
-					"%s -l%s -t%s -d%s -a%s -p%s ", 
+			if(ttyinfo[idx].dev_ssl){
+				cmdidx = snprintf(syscmd, sizeof(syscmd), 
+						"%s -l%s -t%s -d%s -a%s -p%s -s", 
 						cmd,
 						mon, 
 						ttyinfo[idx].mpt_nameidx_str,
@@ -432,8 +464,21 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 						ttyinfo[idx].dev_ipaddr_str,
 						ttyinfo[idx].dev_portidx_str
 						);
+			}else{
+				cmdidx = snprintf(syscmd, sizeof(syscmd), 
+						"%s -l%s -t%s -d%s -a%s -p%s ", 
+						cmd,
+						mon, 
+						ttyinfo[idx].mpt_nameidx_str,
+						ttyinfo[idx].dev_type_str,
+						ttyinfo[idx].dev_ipaddr_str,
+						ttyinfo[idx].dev_portidx_str
+						);
+			}
 
 		}
+
+		//syslog(LOG_DEBUG, "spawn cmd = %s", syscmd);
 
 		if(oldpid > 0){
 			if(strcmp(syscmd, oldcmd) == 0){
