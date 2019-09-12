@@ -22,6 +22,7 @@
 #include <linux/aio.h>                              
 #include <asm/uaccess.h>
 #include <linux/wait.h>
+#include <linux/version.h>
 #include "advioctl.h"
 #include "advvcom.h"
 
@@ -61,9 +62,17 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	}
 
 	if (_IOC_DIR(cmd) & _IOC_READ){
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0)
 		err = !access_ok(VERIFY_WRITE, (void __user *)arg, _IOC_SIZE(cmd));
+#else
+		err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
+#endif
 	}else if (_IOC_DIR(cmd) & _IOC_WRITE){
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0)
 		err =  !access_ok(VERIFY_READ, (void __user *)arg, _IOC_SIZE(cmd));
+#else
+		err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
+#endif
 	}
 	if (err)
 		return -EFAULT;
