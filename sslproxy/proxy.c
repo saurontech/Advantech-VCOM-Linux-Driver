@@ -38,7 +38,7 @@ char * _config_rootca;
 BIO *bio_err=0;
 static char *pass;
 
-int __search_port_inode( unsigned short port)
+int __search_lport_stat_inode(int ipfamily, unsigned short port,  unsigned short stat)
 {
 	FILE *fp;
 	char buf[2048];
@@ -57,7 +57,110 @@ int __search_port_inode( unsigned short port)
 	int i;
 	char tmp[1024];
 	int inode;
+	snprintf(path, sizeof(path), "/proc/net/tcp%s", ipfamily==4?"":"6");
+	//printf("path = %s\n", path);
 
+	found = 0;
+
+	fp = fopen(path, "r");
+
+	//printf("fp= %x\n", fp);
+	// skip first two lines
+	for (int i = 0; i < 1; i++) {
+		fgets(buf, sizeof(buf), fp);
+	}
+
+	while (fgets(buf, sizeof(buf), fp)) {
+	//	printf("%s(%d)\n", __func__, __LINE__);
+	//	printf("buf = %s\n", buf);
+		ret = sscanf(buf, "%d: %s %s %x %s %s %s %s %s %d", 
+				&sl, 
+				laddr,
+				raddr,
+				&connection_state,
+				tmp,
+				tmp,
+				tmp,
+				tmp,
+				tmp,
+				&inode
+				);
+//		printf("%s(%d)\n", __func__, __LINE__);
+//		printf("sscanf ret = %d\n", ret);
+		if(ret < 10){
+			printf("!!!!!!!!!!!!!!!!!!!!!!!!!!! error scanf\n");
+			continue;
+		}
+		if(connection_state != stat){
+			continue;
+		}
+		ptr = strstr(laddr, ":");
+		if(ptr == 0){
+			printf("didn't find :\n");
+			continue;
+		}
+		sscanf(ptr+1, "%hx", &lport);
+//		printf("ret = %d sl = %d laddr = %s port = %u state = %u inode= %d\n", ret, sl, laddr, lport, connection_state, inode);
+		if(lport == port){
+			found = 1;
+			break;
+		}
+	}
+	fclose(fp);
+
+
+/*	snprintf(path, sizeof(path), "/proc/%d/cmdline", pid);
+printf("%s(%d)\n", __func__, __LINE__);
+printf("path = %s\n", path);
+
+	fd = open(path, O_RDONLY);
+	printf("fd = %d\n", fd);
+	cnt = read(fd, buf, sizeof(buf));
+//	printf("cnt = %d buf= %s\n", cnt, buf);
+	for (i = 0; i < cnt; i++){
+		printf("[%d]%c(0x%hhx)\n", i, buf[i], buf[i]);
+	}
+	i = 0;
+	do{
+		ptr = strstr(&buf[i], "-a");
+		printf("ptr = %x buf[%d]= %s\n", ptr, i, &buf[i]);
+		if(ptr > 0){
+		printf("addr: %s\n", ptr+2);
+		}
+		i += strlen(&buf[i]);
+	}while(++i < cnt);
+	printf("ready to return %d\n", found);*/
+
+	if(found){
+		printf("!!!!!!!!!!!!!!!!!!!!! found inode %d\n", inode);
+		return inode;
+	}
+
+	return -1;
+
+}
+
+int __search_port_inode( unsigned short port)
+{
+	int inode;
+/*	FILE *fp;
+	char buf[2048];
+	char path[1024];
+	int ret;
+	int found;
+	int sl;
+	char laddr[64];
+	unsigned short lport;
+	char raddr[64];
+	char * ptr;
+	unsigned short rport;
+	unsigned int connection_state;
+	int fd;
+	int cnt;
+	int i;
+	char tmp[1024];
+	int inode;
+	do{
 	snprintf(path, sizeof(path), "/proc/net/tcp");
 	printf("path = %s\n", path);
 
@@ -65,7 +168,7 @@ int __search_port_inode( unsigned short port)
 
 	fp = fopen(path, "r");
 
-	printf("fp= %x\n", fp);
+	//printf("fp= %x\n", fp);
 	// skip first two lines
 	for (int i = 0; i < 1; i++) {
 		fgets(buf, sizeof(buf), fp);
@@ -109,34 +212,80 @@ int __search_port_inode( unsigned short port)
 	}
 	fclose(fp);
 
-/*	snprintf(path, sizeof(path), "/proc/%d/cmdline", pid);
-printf("%s(%d)\n", __func__, __LINE__);
-printf("path = %s\n", path);
+	if(found)
+		break;
 
-	fd = open(path, O_RDONLY);
-	printf("fd = %d\n", fd);
-	cnt = read(fd, buf, sizeof(buf));
-//	printf("cnt = %d buf= %s\n", cnt, buf);
-	for (i = 0; i < cnt; i++){
-		printf("[%d]%c(0x%hhx)\n", i, buf[i], buf[i]);
+	snprintf(path, sizeof(path), "/proc/net/tcp6");
+	printf("path = %s\n", path);
+
+	found = 0;
+
+	fp = fopen(path, "r");
+
+	//printf("fp= %x\n", fp);
+	// skip first two lines
+	for (int i = 0; i < 1; i++) {
+		fgets(buf, sizeof(buf), fp);
 	}
-	i = 0;
-	do{
-		ptr = strstr(&buf[i], "-a");
-		printf("ptr = %x buf[%d]= %s\n", ptr, i, &buf[i]);
-		if(ptr > 0){
-		printf("addr: %s\n", ptr+2);
+
+	while (fgets(buf, sizeof(buf), fp)) {
+		printf("%s(%d)\n", __func__, __LINE__);
+		printf("buf = %s\n", buf);
+		ret = sscanf(buf, "%d: %s %s %x %s %s %s %s %s %d", 
+				&sl, 
+				laddr,
+				raddr,
+				&connection_state,
+				tmp,
+				tmp,
+				tmp,
+				tmp,
+				tmp,
+				&inode
+				);
+		printf("%s(%d)\n", __func__, __LINE__);
+		printf("sscanf ret = %d\n", ret);
+		if(ret < 10){
+			printf("!!!!!!!!!!!!!!!!!!!!!!!!!!! error scanf\n");
+			continue;
 		}
-		i += strlen(&buf[i]);
-	}while(++i < cnt);
-	printf("ready to return %d\n", found);*/
+		if(connection_state != 1){
+			continue;
+		}
+		ptr = strstr(laddr, ":");
+		if(ptr == 0){
+			printf("didn't find :\n");
+			continue;
+		}
+		sscanf(ptr+1, "%hx", &lport);
+		printf("ret = %d sl = %d laddr = %s port = %u state = %u inode= %d\n", ret, sl, laddr, lport, connection_state, inode);
+		if(lport == port){
+			found = 1;
+			break;
+		}
+	}
+	fclose(fp);
+
+	}while(0);
+
 
 	if(found){
 		printf("!!!!!!!!!!!!!!!!!!!!! found inode %d\n", inode);
 		return inode;
 	}
 
-	return -1;
+	return -1;*/
+	do{
+		inode = __search_lport_stat_inode(4, port, 1);
+		if(inode >= 0){
+			//printf("found tcp4 inode = %d", inode);
+			break;
+		}
+
+		inode = __search_lport_stat_inode(6, port, 1);
+	}while(0);
+
+	return inode;
 }
 
 int __pid_search_fd(int pid, char * file)
@@ -297,10 +446,10 @@ char* __pid_vcomd_get_address(int pid, char * buf, int len)
 	char *ptr;
 
 	snprintf(path, sizeof(path), "/proc/%d/cmdline", pid);
-printf("path = %s\n", path);
+	//printf("path = %s\n", path);
 
 	fd = open(path, O_RDONLY);
-	printf("fd = %d\n", fd);
+	//printf("fd = %d\n", fd);
 	cnt = read(fd, buf, len);
 	close(fd);
 	printf("cnt = %d buf= %s\n", cnt, buf);
@@ -986,7 +1135,7 @@ int loadconfig(char * filepath)
 
 	return 0;
 }
-
+#define SSL_PORT "5555"
 int main(int argc, char **argv)
 {
 	int server;
@@ -1020,7 +1169,12 @@ int main(int argc, char **argv)
 
 	ctx = initialize_ctx( /*"./client.pem"*/ _config_keyfile, _config_password/*"password"*/);
 
-	server = init_serversock("5555");
+	if(__search_lport_stat_inode(6, atoi(SSL_PORT), 0xa) >= 0){
+		printf("found vcomproxy in background\n");
+		exit(-1);
+	}
+
+	server = init_serversock(SSL_PORT);
 
 	do{
 		addrlen = sizeof(struct sockaddr_storage);

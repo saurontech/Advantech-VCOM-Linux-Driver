@@ -8,12 +8,14 @@ all:
 	make -C ./initd
 	make -C ./inotify
 	make -C ./advps
+	make -C ./sslproxy
 clean:
 	make clean -C ./driver
 	make clean -C ./daemon
 	make clean -C ./initd
 	make clean -C ./inotify
 	make clean -C ./advps
+	make clean -C ./sslproxy
 
 install_daemon:
 	install -d $(INSTALL_PATH)
@@ -27,6 +29,7 @@ install_daemon:
 	cp ./script/advman $(INSTALL_PATH)
 	cp ./inotify/vcinot $(INSTALL_PATH)
 	cp ./advps/advps $(INSTALL_PATH)
+	cp ./sslproxy/advsslvcom $(INSTALL_PATH)
 	chmod 111 $(INSTALL_PATH)advls
 	chmod 111 $(INSTALL_PATH)advadd
 	chmod 111 $(INSTALL_PATH)advrm
@@ -39,6 +42,8 @@ install_daemon:
 	ln -sf $(INSTALL_PATH)advman /sbin/advman
 	ln -sf $(INSTALL_PATH)vcinot /sbin/vcinot
 	ln -sf $(INSTALL_PATH)advps /sbin/advps
+	ln -sf $(INSTALL_PATH)advsslvcom /sbin/advsslvcom
+	
 
 
 install: install_daemon
@@ -51,6 +56,8 @@ uninstall:
 	rm -f /sbin/advman
 	rm -f /sbin/advadd
 	rm -f /sbin/vcinot
+	rm -f /sbin/advps
+	rm -f /sbin/advsslvcom
 	
 # use dkms
 install_dkms: install_daemon
