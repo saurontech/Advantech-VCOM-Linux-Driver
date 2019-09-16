@@ -4,7 +4,7 @@
 
 ROOTCA_PUB="$2.pem"
 ROOTCA_PRIV="$2.key"
-ROOTCA_SERIAL= "$2.srl"
+ROOTCA_SERIAL="$2.srl"
 
 DH_FILENAME="dh1024_$1.pem"
 PUB_KEY="$1_cert.pem"
@@ -50,4 +50,4 @@ echo "$DH_FILENAME"
 `openssl x509 -req -in $CSR -CAkey $ROOTCA_PRIV -CA $ROOTCA_PUB -force_pubkey $UNSIGNED_PUB -out $PUB_KEY -CAserial $ROOTCA_SERIAL`
 
 #create key pair
-`cat $PUB_KEY $PRIV_KEY > $KEYPAIR`
+`cat $PUB_KEY  $PRIV_KEY> $KEYPAIR`

@@ -1,6 +1,6 @@
 {
 	"ssl":{
-		"keyfile":"./client.pem",
+		"keyfile":"./vcom.pem",
 		"rootca":"./rootCA.pem",
 		"password":"password"
 	}
