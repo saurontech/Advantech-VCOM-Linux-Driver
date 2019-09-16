@@ -1,0 +1,53 @@
+#!/bin/bash
+
+
+
+ROOTCA_PUB="$2.pem"
+ROOTCA_PRIV="$2.key"
+ROOTCA_SERIAL= "$2.srl"
+
+DH_FILENAME="dh1024_$1.pem"
+PUB_KEY="$1_cert.pem"
+UNSIGNED_PUB="$1_pub.pem"
+PRIV_KEY="$1.key"
+CSR="$1.csr"
+DSA="$1dsa.pem"
+KEYPAIR="$1.pem"
+
+
+if [ -f "$ROOTCA_PUB" ]
+then
+	echo "$ROOTCA_PUB found."
+else
+	echo "$ROOTCA_PUB not found."
+	exit 1
+fi
+
+if [ -f "$ROOTCA_PRIV" ]
+then
+	echo "$ROOTCA_PRIV found."
+else
+	echo "$ROOTCA_PRIV not found."
+	exit 1
+fi
+
+echo "$DH_FILENAME"
+#create DH
+`openssl dhparam -out $DH_FILENAME 1024`
+
+#create private key
+`openssl ecparam -name prime256v1 -out s_prime256v1.pem`
+`openssl ecparam -in s_prime256v1.pem -genkey -noout -out $PRIV_KEY`
+
+#create CSR
+`openssl dsaparam -genkey -out serverdsa.pem 1024`
+`openssl req -new -key serverdsa.pem -out $CSR`
+
+#create unsigned pub key
+`openssl ec -in $PRIV_KEY -pubout -out $UNSIGNED_PUB`
+
+#sign public key
+`openssl x509 -req -in $CSR -CAkey $ROOTCA_PRIV -CA $ROOTCA_PUB -force_pubkey $UNSIGNED_PUB -out $PUB_KEY -CAserial $ROOTCA_SERIAL`
+
+#create key pair
+`cat $PUB_KEY $PRIV_KEY > $KEYPAIR`
