@@ -1,23 +1,49 @@
 #!/bin/bash
 
 
+ROOTCA_PATH=/usr/local/advtty
+ROOTCA_NAME=rootCA
+ROOTCA_PUB="$ROOTCA_PATH/$ROOTCA_NAME.pem"
+ROOTCA_PRIV="$ROOTCA_PATH/$ROOTCA_NAME.key"
+ROOTCA_SERIAL="$ROOTCA_PATH/$ROOTCA_NAME.srl"
+EKI=
 
-ROOTCA_PUB="$2.pem"
-ROOTCA_PRIV="$2.key"
-ROOTCA_SERIAL="$2.srl"
+usage()
+{
+cat << EOF
+usage $0 options
 
-DH_FILENAME="dh1024_$1.pem"
-PUB_KEY="$1_cert.pem"
-UNSIGNED_PUB="$1_pub.pem"
-PRIV_KEY="$1.key"
-CSR="$1.csr"
-DSA="$1dsa.pem"
-KEYPAIR="$1.pem"
+This script creates the PEM key-pair and diffi-hellman needed by the EKI device server to operate TLS mode
 
+OPTIONS:
+	-h	Show this message
+	-n	PEM output file name(without sub filename)
+	-k	RootCA private key(default:$ROOTCA_PRIV)
+	-p	RootCA public key(default:$ROOTCA_PUB)
+	-s	RootCA serial(default:$ROOTCA_SERIAL)
 
+EXAMPLE:
+	$0 -n EKI1
+	$0 -n EKI1 -k ./rootCA.key -p ./rootCA.pem -s ./rootCA.srl
+
+EOF
+}
+
+createkey()
+{
+DH_FILENAME="${EKI}_dh1024.pem"
+PUB_KEY="${EKI}_cert.pem"
+UNSIGNED_PUB="${EKI}_pub.pem"
+PRIV_KEY="$EKI.key"
+CSR="$EKI.csr"
+DSA="${EKI}dsa.pem"
+KEYPAIR="$EKI.pem"
+
+#check for rootCA files
+echo "checking for rootCA files:"
 if [ -f "$ROOTCA_PUB" ]
 then
-	echo "$ROOTCA_PUB found."
+	echo "public key $ROOTCA_PUB found."
 else
 	echo "$ROOTCA_PUB not found."
 	exit 1
@@ -25,13 +51,20 @@ fi
 
 if [ -f "$ROOTCA_PRIV" ]
 then
-	echo "$ROOTCA_PRIV found."
+	echo "private key $ROOTCA_PRIV found."
 else
 	echo "$ROOTCA_PRIV not found."
 	exit 1
 fi
 
-echo "$DH_FILENAME"
+if [ -f "$ROOTCA_SERIAL" ]
+then
+	echo "serial $ROOTCA_SERIAL found."
+else
+	echo "$ROOTCA_SERIAL not found."
+	exit 1
+fi
+
 #create DH
 `openssl dhparam -out $DH_FILENAME 1024`
 
@@ -51,3 +84,47 @@ echo "$DH_FILENAME"
 
 #create key pair
 `cat $PUB_KEY  $PRIV_KEY> $KEYPAIR`
+}
+
+while getopts “hn:k:p:s:” OPTION
+do
+	case $OPTION in
+		h)
+			usage
+			exit 1
+			;;
+		k)
+			ROOTCA_PRIV=$OPTARG
+			;;
+		p)
+			ROOTCA_PUB=$OPTARG
+			;;
+		s)
+			ROOTCA_SERIAL=$OPTARG
+			;;
+		n)
+			EKI=$OPTARG
+			;;
+		?)
+			;;	
+			
+	esac
+done
+
+if [[ -z $EKI ]]
+then
+	usage
+	exit 1
+fi
+
+createkey
+
+echo ""
+echo "---"
+echo "Copy the following files to the corresponding EKI device server"
+echo ""
+echo "* key-pair(pub/priv): $KEYPAIR "
+echo "* diffi-hellman: $DH_FILENAME"
+echo "* rootCA: $ROOTCA_PUB"
+echo ""
+
