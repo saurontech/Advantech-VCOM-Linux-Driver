@@ -320,12 +320,13 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 	char conf_dp[256];
 	char *sslkeyword = "ssl:";
 
+	
+	nrport = 0;    
 	if((conf_fp = fopen(conf_name, "r")) == NULL) {
 		syslog(LOG_DEBUG, "Open the configuration file [%s] fail", conf_name);
 		return nrport;
 	}
 	
-	nrport = 0;    
 	while(nrport < CF_MAXPORTS) {
 		dev_type = dev_type_str;
 		if(fgets(conf_dp, sizeof(conf_dp), conf_fp) == NULL)
@@ -423,7 +424,7 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 
 			if(ttyinfo[idx].dev_ssl){
 				cmdidx = snprintf(syscmd, sizeof(syscmd), 
-					"%s -l%s -t%s -d%s -a%s -p%s -r%s -s", 
+					"%s -l%s -t%s -d%s -a%s -p%s -r%s -s ", 
 						cmd,
 						mon, 
 						ttyinfo[idx].mpt_nameidx_str,
@@ -456,7 +457,7 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 		}else{
 			if(ttyinfo[idx].dev_ssl){
 				cmdidx = snprintf(syscmd, sizeof(syscmd), 
-						"%s -l%s -t%s -d%s -a%s -p%s -s", 
+						"%s -l%s -t%s -d%s -a%s -p%s -s ", 
 						cmd,
 						mon, 
 						ttyinfo[idx].mpt_nameidx_str,
@@ -478,7 +479,7 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 
 		}
 
-		//syslog(LOG_DEBUG, "spawn cmd = %s", syscmd);
+		//syslog(LOG_DEBUG, "spawn cmd = %s; old cmd = %s;", syscmd, oldcmd);
 
 		if(oldpid > 0){
 			if(strcmp(syscmd, oldcmd) == 0){
