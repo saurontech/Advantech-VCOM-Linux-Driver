@@ -24,6 +24,7 @@
 #include <arpa/inet.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <syslog.h>
 #include "jsmn.h"
 #include "jstree.h"
 #include "jstree_readhelper.h"
@@ -50,11 +51,7 @@ int __search_lport_stat_inode(int ipfamily, unsigned short port,  unsigned short
 	unsigned short lport;
 	char raddr[64];
 	char * ptr;
-	unsigned short rport;
 	unsigned int connection_state;
-	int fd;
-	int cnt;
-	int i;
 	char tmp[1024];
 	int inode;
 	snprintf(path, sizeof(path), "/proc/net/tcp%s", ipfamily==4?"":"6");
@@ -221,7 +218,7 @@ int __cmd_search_file(char * cmd, char * file, char *retcmd, int len)
 	}
 	for(;;) {
 		if((entry = readdir(dir)) == NULL) {
-		//	syslog(LOG_DEBUG, "%s(%d)readdir failed", __func__, __LINE__);
+			//syslog(LOG_DEBUG, "%s(%d)readdir failed", __func__, __LINE__);
 			printf( "no %s were found operating %s", cmd, file);
 			closedir(dir);
 			dir = 0;
@@ -496,14 +493,23 @@ int tcp_recv(pair_info * self)
 
 }
 
-int berr_exit(string)
+int berr(char * string)
+{
+	BIO_printf(bio_err,"%s\n",string);
+	ERR_print_errors(bio_err);
+	syslog(LOG_DEBUG, "%s", string);
+	return 0;
+}
+
+void berr_exit(string)
 	char *string;
 {
 	BIO_printf(bio_err,"%s\n",string);
 	ERR_print_errors(bio_err);
-	//exit(0);
+	syslog(LOG_DEBUG, "%s", string);
+	exit(-1);
 	//
-	return 0;
+	//return 0;
 }
 
 
@@ -556,7 +562,7 @@ int ssl_send(pair_info * self)
 
 			/* Some other error */
 		default:	      
-			berr_exit("SSL write problem");
+			berr("SSL write problem");
 			return -1;
 			break;
 	}
@@ -615,7 +621,7 @@ int ssl_recv(pair_info * self)
 			printf("default rlen %d err %d:\n", rlen, err);
 			ERR_error_string_n(ERR_get_error(), errstr, 1024);
 			printf("error string %s", errstr);
-			berr_exit("SSL read problem");
+			berr("SSL read problem");
 			return -1;
 	}
 
@@ -737,7 +743,10 @@ void *pair_thread(void *data)
 		}
 
 		ret = select(maxfd + 1, &rfds, &wfds, 0, tv);
-		//printf("select ret = %d\n", ret);
+		if(ret < 0){
+			printf("select ret = %d\n", ret);
+
+		}
 
 	}while(1);
 }
@@ -767,7 +776,7 @@ int check_cert_chain(SSL *ssl)
 	char peer_CN[256];
 
 	if(SSL_get_verify_result(ssl)!=X509_V_OK){
-		berr_exit("Certificate doesn't verify");
+		berr("Certificate doesn't verify");
 		return -1;
 	}
 	/*Check the common name*/
@@ -851,7 +860,7 @@ SSL_CTX *initialize_ctx(keyfile,password)
 				berr_exit("Can't read key file");
 		}
 	}
-
+	//syslog(LOG_DEBUG, "rootCA.pem path %s", _config_rootca);
 	/* Load the CAs we trust*/
 	if(!(SSL_CTX_load_verify_locations(ctx,
 					_config_rootca/*"rootCA.pem"*/,0)))
@@ -899,20 +908,20 @@ int loadconfig(char * filepath)
 	int fd;
 	int filelen;
 	int ret;
-	int i;
 	int tokcount;
 	char * filedata;
-	char content[1024];
-	char item[1024];
 
 	jsmn_parser p;
 	jsmntok_t *tok;
-	_tree_node *tmp;
 	_tree_node * rnode;
 
 
 	fd = open(filepath, O_RDONLY);
 //	printf("%s fd = %d\n", filepath, fd);
+	if(fd <= 0){
+		//can't open file
+		return -1;
+	}
 
 	filelen = lseek(fd, 0, SEEK_END);
 //	printf("filelen = %d\n", filelen);
@@ -987,13 +996,15 @@ int main(int argc, char **argv)
 {
 	int server;
 	int client;
-	int addrlen;
+	socklen_t addrlen;
 	int inode;
 	int pid;
 	char sockname[1024];
 	char cmd[1024];
 	char buf[2048];
 	char *addr_str;
+	char *wd_end;
+	//char dbug_tmp[1024];
 	SSL_CTX *ctx;
 
 	struct sockaddr_storage addr;
@@ -1013,6 +1024,27 @@ int main(int argc, char **argv)
 		printf("need to execuate as root\n");
 		return -1;
 	}
+
+	/*if(getcwd(dbug_tmp, sizeof(dbug_tmp))){
+		syslog(LOG_DEBUG, "cwd = %s\n", dbug_tmp);
+	}*/
+	if((wd_end = memrchr(argv[1], '/', strlen(argv[1])))){
+		int wdlen = wd_end - argv[1] + 1;
+		char *wd;
+
+		wd = malloc(wdlen + 1);
+		if(wd == 0){
+			syslog(LOG_DEBUG, "can't malloc for chdir");
+			printf("can't malloc for chdir\n");
+		}
+		wd[wdlen] = '\0';
+
+		memcpy(wd, argv[1] , wdlen);
+		syslog(LOG_DEBUG, "changing work dir to %s", wd);
+		printf("changing work dir to %s\n", wd);
+		chdir(wd);
+	}	
+	
 	printf("loading configurations\n");
 	if(loadconfig(argv[1])){
 		printf("cannot load config file");
@@ -1028,26 +1060,28 @@ int main(int argc, char **argv)
 	}
 
 	printf("invoking SSL service\n");
+	syslog(LOG_DEBUG, "invoking SSL service\n");
 	server = init_serversock(SSL_PORT);
 
 
 	printf("system standby\n");
+	syslog(LOG_DEBUG,"system standby\n");
 	do{
 		addrlen = sizeof(struct sockaddr_storage);
 		client = accept(server, (struct sockaddr *)&addr, &addrlen);
 
-		//printf("address family %hu len = %d client sock = %d\n", addr.ss_family, addrlen, client);
+		//syslog(LOG_DEBUG, "address family %hu len = %d client sock = %d\n", addr.ss_family, addrlen, client);
 
 		if(addrlen == sizeof(struct sockaddr_in6)){
-			/*printf("port6 = %hu-->%hu\n", 
+			/*syslog(LOG_DEBUG, "port6 = %hu-->%hu\n", 
 					ntohs(((struct sockaddr_in6 *)(&addr))->sin6_port),
 					((struct sockaddr_in6 *)(&addr))->sin6_port);*/
 			service = ntohs(((struct sockaddr_in6 *)(&addr))->sin6_port);
 		}else if(addrlen == sizeof(struct sockaddr_in)){
-			//printf("port = %hu\n", ntohs(((struct sockaddr_in *)(&addr))->sin_port));
+			//syslog(LOG_DEBUG, "port = %hu\n", ntohs(((struct sockaddr_in *)(&addr))->sin_port));
 			service = ntohs(((struct sockaddr_in *)(&addr))->sin_port);
 		}else{
-			printf("addrlen = %d\n", addrlen);
+			syslog(LOG_DEBUG, "addrlen = %d\n", addrlen);
 			close(client);
 			continue;
 		}
