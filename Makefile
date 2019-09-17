@@ -9,6 +9,7 @@ all:
 	make -C ./inotify
 	make -C ./advps
 	make -C ./sslproxy
+	make -C ./keys
 clean:
 	make clean -C ./driver
 	make clean -C ./daemon
@@ -16,6 +17,7 @@ clean:
 	make clean -C ./inotify
 	make clean -C ./advps
 	make clean -C ./sslproxy
+	make clean -C ./keys
 
 install_daemon:
 	install -d $(INSTALL_PATH)
@@ -27,15 +29,20 @@ install_daemon:
 	cp ./script/advadd $(INSTALL_PATH)
 	cp ./script/advrm $(INSTALL_PATH)
 	cp ./script/advman $(INSTALL_PATH)
+	cp ./script/adv-eki-tls-create $(INSTALL_PATH)
 	cp ./inotify/vcinot $(INSTALL_PATH)
 	cp ./advps/advps $(INSTALL_PATH)
 	cp ./sslproxy/advsslvcom $(INSTALL_PATH)
+	cp ./keys/rootCA.key $(INSTALL_PATH)
+	cp ./keys/rootCA.pem $(INSTALL_PATH)
+	cp ./keys/rootCA.srl $(INSTALL_PATH)
 	chmod 111 $(INSTALL_PATH)advls
 	chmod 111 $(INSTALL_PATH)advadd
 	chmod 111 $(INSTALL_PATH)advrm
 	chmod 111 $(INSTALL_PATH)advman
 	chmod 111 $(INSTALL_PATH)vcinot
 	chmod 111 $(INSTALL_PATH)advps
+	chmod 111 $(INSTALL_PATH)adv-eki-tls-create
 	ln -sf $(INSTALL_PATH)advls /sbin/advls
 	ln -sf $(INSTALL_PATH)advrm /sbin/advrm
 	ln -sf $(INSTALL_PATH)advadd /sbin/advadd
@@ -43,8 +50,7 @@ install_daemon:
 	ln -sf $(INSTALL_PATH)vcinot /sbin/vcinot
 	ln -sf $(INSTALL_PATH)advps /sbin/advps
 	ln -sf $(INSTALL_PATH)advsslvcom /sbin/advsslvcom
-	
-
+	ln -sf $(INSTALL_PATH)adv-eki-tls-create /sbin/adv-eki-tls-create
 
 install: install_daemon
 	cp ./driver/advvcom.ko $(INSTALL_PATH)
@@ -58,6 +64,7 @@ uninstall:
 	rm -f /sbin/vcinot
 	rm -f /sbin/advps
 	rm -f /sbin/advsslvcom
+	rm -f /sbin/adv-eki-tls-create
 	
 # use dkms
 install_dkms: install_daemon
