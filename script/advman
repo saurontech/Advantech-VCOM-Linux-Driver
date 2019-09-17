@@ -5,6 +5,7 @@ INSTALLPATH=/usr/local/advtty
 DEAMON=advttyd
 SERVICE=vcomd
 DRIVER=advvcom
+SSLPROXY=advsslvcom
 CONFIGFILE=$INSTALLPATH/advttyd.conf
 DEAMONFILE=$INSTALLPATH/$DEAMON
 DKMSFILE=/lib/modules/`uname -r`/updates/dkms/$DRIVER.ko
@@ -109,6 +110,8 @@ stopDeamon()
 	then
         	rm -rf /dev/vttyAP*
 	fi
+
+	killall -s 9 $SSLPROXY
 }
 
 
@@ -161,7 +164,7 @@ case $OBJECTIVE in
 			echo "starting service...."
 			startDeamon
 		else
-			echo "can not start service..."
+			echo "installing driver & start service..."
 			insdriver
 			startDeamon
 		fi

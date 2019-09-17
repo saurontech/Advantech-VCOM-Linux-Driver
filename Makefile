@@ -33,9 +33,11 @@ install_daemon:
 	cp ./inotify/vcinot $(INSTALL_PATH)
 	cp ./advps/advps $(INSTALL_PATH)
 	cp ./sslproxy/advsslvcom $(INSTALL_PATH)
+	cp ./sslproxy/config.json $(INSTALL_PATH)
 	cp ./keys/rootCA.key $(INSTALL_PATH)
 	cp ./keys/rootCA.pem $(INSTALL_PATH)
 	cp ./keys/rootCA.srl $(INSTALL_PATH)
+	cp ./keys/vcom.pem $(INSTALL_PATH)
 	chmod 111 $(INSTALL_PATH)advls
 	chmod 111 $(INSTALL_PATH)advadd
 	chmod 111 $(INSTALL_PATH)advrm

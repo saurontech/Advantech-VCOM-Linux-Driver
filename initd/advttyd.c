@@ -355,7 +355,7 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 			ttyinfo[nrport].dev_ssl = 1;
 			//syslog(LOG_DEBUG, "nrport %d, found ssl\n", nrport);
 		}
-		syslog(LOG_DEBUG,"dev_type = %s\n", dev_type);
+		//syslog(LOG_DEBUG,"dev_type = %s\n", dev_type);
 		if ((int_tmp = hexstr(dev_type)) <= 0 || int_tmp <= 0x1000)
 			continue;
 		/*
@@ -401,9 +401,12 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 	int idx;
 	int oldpid;
 	int cmdidx;
+	int sslproxy = 0;
 	char cmd[PATH_MAX];
 	char log[PATH_MAX];
 	char mon[PATH_MAX];
+	char sslcmd[PATH_MAX];
+	char sslconf[PATH_MAX];
 	char oldcmd[2048];
 	char vcomif[1024];
 	char syscmd[1024];
@@ -412,8 +415,9 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 
 	sprintf(cmd, "%s/%s", work_path, CF_PORTPROG);
 	sprintf(log, "%s/%s", work_path, CF_LOGNAME);
-
-
+	sprintf(sslcmd, "%s/%s", work_path, CF_SSLPROG);
+	sprintf(sslconf, "%s/%s", work_path, CF_SSLCONF);
+	
 	for(idx = 0; idx < nrport; ++idx) {
 		sprintf(mon, "%s/advtty%s", MON_PATH, ttyinfo[idx].mpt_nameidx_str);
 		
@@ -479,6 +483,10 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 
 		}
 
+		if(sslproxy == 0 && ttyinfo[idx].dev_ssl){
+			sslproxy = 1;
+		}
+
 		//syslog(LOG_DEBUG, "spawn cmd = %s; old cmd = %s;", syscmd, oldcmd);
 
 		if(oldpid > 0){
@@ -491,6 +499,11 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 		}
 
 		snprintf(&syscmd[cmdidx], sizeof(syscmd) - cmdidx - 1, "&");
+		system(syscmd);
+	}
+
+	if(sslproxy){
+		snprintf(syscmd, sizeof(syscmd), "%s %s &", sslcmd, sslconf);
 		system(syscmd);
 	}
 
