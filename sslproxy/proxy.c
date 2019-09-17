@@ -299,8 +299,8 @@ char* __pid_vcomd_get_address(int pid, char * buf, int len)
 	//printf("fd = %d\n", fd);
 	cnt = read(fd, buf, len);
 	close(fd);
-	printf("cnt = %d buf= %s\n", cnt, buf);
-	/*for (i = 0; i < cnt; i++){
+	/*printf("cnt = %d buf= %s\n", cnt, buf);
+	for (i = 0; i < cnt; i++){
 		printf("[%d]%c(0x%hhx)\n", i, buf[i], buf[i]);
 	}*/
 	i = 0;
@@ -308,7 +308,7 @@ char* __pid_vcomd_get_address(int pid, char * buf, int len)
 		ptr = strstr(&buf[i], "-a");
 	//	printf("ptr = %x buf[%d]= %s\n", ptr, i, &buf[i]);
 		if(ptr > 0){
-			printf("addr: %s\n", ptr+2);
+			//printf("addr: %s\n", ptr+2);
 			break;
 		}
 		i += strlen(&buf[i]);
@@ -912,7 +912,7 @@ int loadconfig(char * filepath)
 
 
 	fd = open(filepath, O_RDONLY);
-	printf("%s fd = %d\n", filepath, fd);
+//	printf("%s fd = %d\n", filepath, fd);
 
 	filelen = lseek(fd, 0, SEEK_END);
 //	printf("filelen = %d\n", filelen);
@@ -947,18 +947,18 @@ int loadconfig(char * filepath)
 		break;
 	}while(1);
 
-	dump(filedata, tok, p.toknext, 0);
+//	dump(filedata, tok, p.toknext, 0);
 
 	jstreeret result;
 
 	result = js2tree(filedata, tok, p.toknext);
-	dumptree(result.node, 0);
+	//dumptree(result.node, 0);
 
 	if(readJSTree(result.node->r, &rnode, "ssl", "keyfile")!= 2){
 		printf("didn't find keyfile\n");
 		return -1;
 	}
-	printf("found keyfile = %s\n", rnode->data.data);
+	//printf("found keyfile = %s\n", rnode->data.data);
 
 	_config_keyfile = rnode->data.data;
 
@@ -966,7 +966,7 @@ int loadconfig(char * filepath)
 		printf("didn't find keyfile\n");
 		return -1;
 	}
-	printf("found rootca = %s\n", rnode->data.data);
+	//printf("found rootca = %s\n", rnode->data.data);
 
 	_config_rootca = rnode->data.data;
 
@@ -974,7 +974,7 @@ int loadconfig(char * filepath)
 		printf("didn't find keyfile\n");
 		return -1;
 	}
-	printf("found password = %s\n", rnode->data.data);
+	//printf("found password = %s\n", rnode->data.data);
 
 	_config_password = rnode->data.data;
 
@@ -1013,13 +1013,13 @@ int main(int argc, char **argv)
 		printf("need to execuate as root\n");
 		return -1;
 	}
-
+	printf("loading configurations\n");
 	if(loadconfig(argv[1])){
 		printf("cannot load config file");
 		return -1;
 
 	}
-
+	printf("initializing SSL context\n");
 	ctx = initialize_ctx( _config_keyfile, _config_password);
 
 	if(__search_lport_stat_inode(6, atoi(SSL_PORT), 0xa) >= 0){
@@ -1027,21 +1027,24 @@ int main(int argc, char **argv)
 		exit(-1);
 	}
 
+	printf("invoking SSL service\n");
 	server = init_serversock(SSL_PORT);
 
+
+	printf("system standby\n");
 	do{
 		addrlen = sizeof(struct sockaddr_storage);
 		client = accept(server, (struct sockaddr *)&addr, &addrlen);
 
-		printf("address family %hu len = %d client sock = %d\n", addr.ss_family, addrlen, client);
+		//printf("address family %hu len = %d client sock = %d\n", addr.ss_family, addrlen, client);
 
 		if(addrlen == sizeof(struct sockaddr_in6)){
-			printf("port6 = %hu-->%hu\n", 
+			/*printf("port6 = %hu-->%hu\n", 
 					ntohs(((struct sockaddr_in6 *)(&addr))->sin6_port),
-					((struct sockaddr_in6 *)(&addr))->sin6_port);
+					((struct sockaddr_in6 *)(&addr))->sin6_port);*/
 			service = ntohs(((struct sockaddr_in6 *)(&addr))->sin6_port);
 		}else if(addrlen == sizeof(struct sockaddr_in)){
-			printf("port = %hu\n", ntohs(((struct sockaddr_in *)(&addr))->sin_port));
+			//printf("port = %hu\n", ntohs(((struct sockaddr_in *)(&addr))->sin_port));
 			service = ntohs(((struct sockaddr_in *)(&addr))->sin_port);
 		}else{
 			printf("addrlen = %d\n", addrlen);
@@ -1049,22 +1052,22 @@ int main(int argc, char **argv)
 			continue;
 		}
 
-		printf("port = %hu\n", service);
+		//printf("port = %hu\n", service);
 		inode = __search_port_inode(service);
-		printf("inode = %d\n", inode);
+		//printf("inode = %d\n", inode);
 		if(inode < 0){
 			close(client);
 			continue;
 		}
 		snprintf(sockname, sizeof(sockname), "socket:[%d]", inode);
-		printf("ready to find socket: %s\n", sockname);
+		//printf("ready to find socket: %s\n", sockname);
 		pid = __cmd_search_file("vcomd", sockname, cmd, sizeof(cmd));
 		if(pid < 0){
 			return -1;
 		}
-		printf("found pid = %d\n", pid);
+		//printf("found pid = %d\n", pid);
 		addr_str = __pid_vcomd_get_address(pid, buf, sizeof(buf));
-		printf("address is -->%s\n", addr_str);
+		//printf("address is -->%s\n", addr_str);
 		
 		if(inet_pton(AF_INET, addr_str, &remote.sin_addr) <= 0){
 			printf("failed to create remote address\n");
@@ -1073,14 +1076,14 @@ int main(int argc, char **argv)
 		}
 		remote.sin_port = htons(5202);
 		remote.sin_family = AF_INET;
-		printf("remote.sin_addr = %x port %x %x\n", remote.sin_addr, remote.sin_port, remote.sin_family);
+		//printf("remote.sin_addr = %x port %x %x\n", remote.sin_addr, remote.sin_port, remote.sin_family);
 		sk = socket(AF_INET, SOCK_STREAM, 0);
 		if(sk < 0){
 			printf("failed to create remote socket\n");
 			close(client);
 			continue;
 		}
-		printf("sk = %d\n", sk);
+		//printf("sk = %d\n", sk);
 
 		if(connect(sk, (struct sockaddr *)&remote, sizeof(remote)) < 0){
 			printf("failed to connect:(%d)%s\n", errno, strerror(errno));
@@ -1093,7 +1096,7 @@ int main(int argc, char **argv)
 		pair->tcp_sock = client;
 		pair->ssl_sock = sk;
 		pair->ssl = SSL_new(ctx);
-		printf("pair ssl_sock %d tcp_sock %d\n", pair->ssl_sock, pair->tcp_sock);
+		//printf("pair ssl_sock %d tcp_sock %d\n", pair->ssl_sock, pair->tcp_sock);
 		if(SSL_set_fd(pair->ssl, pair->ssl_sock) == 0){
 			printf("SSL_set_fd failed\n");
 			SSL_free(pair->ssl);

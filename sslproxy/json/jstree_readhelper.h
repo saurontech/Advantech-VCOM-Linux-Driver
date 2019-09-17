@@ -65,74 +65,74 @@ static inline int _readJSTree(int argc, _tree_node *input, _tree_node **output, 
 	//		printf("jumping to the %dth node\n", iter);
 			rnode = next_node(rnode, iter);
 			if(rnode <= 0){
-				printf("->[%d]:N/A", iter);
+				//printf("->[%d]:N/A", iter);
 				break;
 			}else if(rnode->data.type == JSMN_STRING){
-				printf("->[%d](string): %s", iter, rnode->data.data);
+				//printf("->[%d](string): %s", iter, rnode->data.data);
 				if(i + 1 < loop){
 					rnode = rnode->r;
 					if(rnode == 0 ){
-						printf("cannot move forward");
+						//printf("cannot move forward");
 						break;
 					}else if(rnode->data.type == JSMN_ARRAY){
 						rnode = rnode->r;
-						printf("->(array)");
+					//	printf("->(array)");
 					}else if(rnode->data.type == JSMN_OBJECT){
 						rnode = rnode->r;
-						printf("->(object)");
+					//	printf("->(object)");
 					}
 				}
 			}else if(rnode->data.type == JSMN_PRIMITIVE){
-				printf("->[%d](primitive): %s", iter, rnode->data.data);
+				//printf("->[%d](primitive): %s", iter, rnode->data.data);
 			}else if(rnode->data.type == JSMN_OBJECT){
-				printf("->[%d](object)", iter);
+				//printf("->[%d](object)", iter);
 				rnode = rnode->r;
 			}else if(rnode->data.type == JSMN_ARRAY){
-				printf("->[%d](array)", iter);
+				//printf("->[%d](array)", iter);
 				rnode = rnode->r;
 			}else{
-				printf("->[%d]unknonw type %x", iter, rnode->data.type);
+				//printf("->[%d]unknonw type %x", iter, rnode->data.type);
 				break;
 			}
 			
 		}else{
 
-			printf("->%s", argv);
+			//printf("->%s", argv);
 			rnode = find_node(rnode, argv);
 			
 			if(rnode == 0){
-				printf("not found");
+				//printf("not found");
 				break;
 			}else if(rnode->r == 0){
-				printf(":has no child");
+				//printf(":has no child");
 				break;
 			}else if(rnode->r->data.type == JSMN_STRING){
-				printf("->(string): %s", rnode->r->data.data);
+				//printf("->(string): %s", rnode->r->data.data);
 				rnode = rnode->r;
 				i++;
 				break;
 			}else if(rnode->r->data.type == JSMN_PRIMITIVE){
-				printf("->(primitive): %s", rnode->r->data.data);
+				//printf("->(primitive): %s", rnode->r->data.data);
 				rnode = rnode->r;
 				i++;
 				break;
 			}else if(rnode->r->data.type == JSMN_OBJECT){
-				printf("->(object)");
+				//printf("->(object)");
 				rnode = rnode->r->r;
 			}else if(rnode->r->data.type == JSMN_ARRAY){
-				printf("->(array)");
+				//printf("->(array)");
 				rnode = rnode->r->r;
 			}else{
-				printf("child unknonw type %x", rnode->r->data.type);
+				//printf("child unknonw type %x", rnode->r->data.type);
 				break;
 			}
 		}
 		i++;
 	}
-	printf("\n");
+	//printf("\n");
 	va_end(ap);
 
-	printf("ret = %d\n",ret);
+	//printf("ret = %d\n",ret);
 
 	*output = rnode;
 
