@@ -115,7 +115,7 @@ static void adv_uart_stop_tx(struct uart_port *port)
 	spin_lock(&(tx->lock));
 	tx->status &= ~(ADV_RING_BUF_ENABLED);
 	spin_unlock(&(tx->lock));
-	dump_stack();
+	//dump_stack();
 }
 
 static void adv_uart_start_tx(struct uart_port *port)
@@ -149,7 +149,7 @@ static void adv_uart_stop_rx(struct uart_port *port)
 	spin_lock(&(rx->lock));
 	rx->status &= ~(ADV_RING_BUF_ENABLED);
 	spin_unlock(&(rx->lock));
-	dump_stack();
+	//dump_stack();
 }
 
 static void adv_uart_enable_ms(struct uart_port *port)
