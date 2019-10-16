@@ -25,6 +25,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <syslog.h>
+#include <netinet/tcp.h>
 #include "jsmn.h"
 #include "jstree.h"
 #include "jstree_readhelper.h"
@@ -401,7 +402,7 @@ int __set_nonblock(int sock)
 typedef struct pair_info_t{
 	int tcp_sock;
 	int tcp_rxlen;
-	unsigned char tcp_rxbuf[2048];
+	unsigned char tcp_rxbuf[4096];
 	int tcp_rb;
 	int tcp_wb;
 	int (*tcp_send)(struct pair_info_t *self);
@@ -410,7 +411,7 @@ typedef struct pair_info_t{
 	int ssl_sock;
 	SSL *ssl;
 	int ssl_rxlen;
-	unsigned char ssl_rxbuf[2048];
+	unsigned char ssl_rxbuf[4096];
 	int ssl_rb;
 	int ssl_wbr;
 	int ssl_wb;
@@ -448,7 +449,7 @@ int tcp_send(pair_info * self)
 		if(wlen == ptr){
 			self->ssl_rxlen = 0;
 		}else{
-			printf("moving tcp send data wlen = %d totalt = %d\n", wlen, ptr);
+			//printf("moving tcp send data wlen = %d totalt = %d\n", wlen, ptr);
 			memmove(self->ssl_rxbuf, &self->ssl_rxbuf[wlen], ptr - wlen);
 			self->ssl_rxlen -= wlen;
 		}
@@ -538,7 +539,7 @@ int ssl_send(pair_info * self)
 			if(wlen == ptr){
 				self->tcp_rxlen = 0;
 			}else{
-				printf("moving tcp send data wlen = %d totalt = %d\n", wlen, ptr);
+				//printf("moving tcp send data wlen = %d totalt = %d\n", wlen, ptr);
 				memmove(self->tcp_rxbuf, &self->tcp_rxbuf[wlen], ptr - wlen);
 				self->tcp_rxlen -= wlen;
 			}
@@ -672,6 +673,9 @@ void *pair_thread(void *data)
 	fd_set rfds;
 	fd_set wfds;
 	struct timeval *tv;
+	struct timeval zerotv;
+
+	timerclear(&zerotv);
 	printf("pair thread created\n");
 
 	do{
@@ -742,9 +746,17 @@ void *pair_thread(void *data)
 			continue;
 		}
 
+		if(self->ssl_rb == 0 && 
+			SSL_pending(self->ssl)){
+			//printf("SSL pending data....\n");
+			tv = &zerotv;
+		}
+
+
 		ret = select(maxfd + 1, &rfds, &wfds, 0, tv);
 		if(ret < 0){
 			printf("select ret = %d\n", ret);
+			self->free_pair(self);
 
 		}
 
@@ -1151,6 +1163,18 @@ int main(int argc, char **argv)
 
 		__set_nonblock(pair->tcp_sock);
 		__set_nonblock(pair->ssl_sock);
+
+		int flag = 1;
+		setsockopt(pair->tcp_sock,
+				IPPROTO_TCP,
+				TCP_NODELAY,
+				(char *) &flag,
+				sizeof(int));
+		setsockopt(pair->ssl_sock,
+				IPPROTO_TCP,
+				TCP_NODELAY,
+				(char *) &flag,
+				sizeof(int));
 
 		if(pthread_create(&tid, 0, pair_thread, pair) != 0){
 			printf("failed to create pthread\n");
