@@ -19,7 +19,7 @@ vcom.csr:
 	openssl req -new -key vcomdsa.pem -out vcom.csr -config ./vcom.conf
 
 vcom_cert.pem: vcom_pub.pem vcom.csr rootCA.key rootCA.pem
-	openssl x509 -req -in vcom.csr -CAkey ./rootCA.key -CA ./rootCA.pem -force_pubkey vcom_pub.pem -out $@ -CAcreateserial
+	openssl x509 -req -in vcom.csr -days 1024 -CAkey ./rootCA.key -CA ./rootCA.pem -force_pubkey vcom_pub.pem -out $@ -CAcreateserial
 
 vcom.pem: vcom_cert.pem vcom.key
 	cat $^ > $@

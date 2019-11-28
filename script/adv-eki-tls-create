@@ -80,7 +80,7 @@ fi
 `openssl ec -in $PRIV_KEY -pubout -out $UNSIGNED_PUB`
 
 #sign public key
-`openssl x509 -req -in $CSR -CAkey $ROOTCA_PRIV -CA $ROOTCA_PUB -force_pubkey $UNSIGNED_PUB -out $PUB_KEY -CAserial $ROOTCA_SERIAL`
+`openssl x509 -req -days 1024 -in $CSR -CAkey $ROOTCA_PRIV -CA $ROOTCA_PUB -force_pubkey $UNSIGNED_PUB -out $PUB_KEY -CAserial $ROOTCA_SERIAL`
 
 #create key pair
 `cat $PUB_KEY  $PRIV_KEY> $KEYPAIR`
