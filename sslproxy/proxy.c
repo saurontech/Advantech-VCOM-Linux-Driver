@@ -477,7 +477,7 @@ int tcp_recv(pair_info * self)
 				break;
 				/* Some other error */
 			default:	      
-				printf("TCP Read problem %d\n", errno);
+				//printf("TCP Read problem %d\n", errno);
 				return -1;
 				break;
 		}
@@ -486,7 +486,7 @@ int tcp_recv(pair_info * self)
 		self->tcp_rxlen += rlen;
 		return rlen;
 	}else{
-		printf("tcp closed by remote client\n");
+		//printf("tcp closed by remote client\n");
 		return -1;
 	}
 
@@ -496,18 +496,20 @@ int tcp_recv(pair_info * self)
 
 int berr(char * string)
 {
-	BIO_printf(bio_err,"%s\n",string);
-	ERR_print_errors(bio_err);
-	syslog(LOG_DEBUG, "%s", string);
+	//BIO_printf(bio_err,"%s\n",string);
+	//ERR_print_errors(bio_err);
+	//syslog(LOG_DEBUG, "%s", string);
+	printf("berr %s\n", string);
 	return 0;
 }
 
 void berr_exit(string)
 	char *string;
 {
-	BIO_printf(bio_err,"%s\n",string);
-	ERR_print_errors(bio_err);
-	syslog(LOG_DEBUG, "%s", string);
+	//BIO_printf(bio_err,"%s\n",string);
+	//ERR_print_errors(bio_err);
+	//syslog(LOG_DEBUG, "%s", string);
+	printf("berr_exit %s\n", string);
 	exit(-1);
 	//
 	//return 0;
@@ -633,7 +635,7 @@ int ssl_recv(pair_info * self)
 
 void free_pair(pair_info * self)
 {
-	printf("%s(%d)\n", __func__, __LINE__);
+	//printf("%s(%d)\n", __func__, __LINE__);
 	__set_block(self->tcp_sock);
 	__set_block(self->ssl_sock);
 	close(self->tcp_sock);
@@ -676,7 +678,7 @@ void *pair_thread(void *data)
 	struct timeval zerotv;
 
 	timerclear(&zerotv);
-	printf("pair thread created\n");
+	//printf("pair thread created\n");
 
 	do{
 		if(self->tcp_rxlen < sizeof(self->tcp_rxbuf)){
@@ -1078,6 +1080,7 @@ int main(int argc, char **argv)
 
 	printf("system standby\n");
 	syslog(LOG_DEBUG,"system standby\n");
+
 	do{
 		addrlen = sizeof(struct sockaddr_storage);
 		client = accept(server, (struct sockaddr *)&addr, &addrlen);
@@ -1102,6 +1105,7 @@ int main(int argc, char **argv)
 		inode = __search_port_inode(service);
 		//printf("inode = %d\n", inode);
 		if(inode < 0){
+			printf("\ncannot find inode for port %hu\n", service);
 			close(client);
 			continue;
 		}
@@ -1109,7 +1113,10 @@ int main(int argc, char **argv)
 		//printf("ready to find socket: %s\n", sockname);
 		pid = __cmd_search_file("vcomd", sockname, cmd, sizeof(cmd));
 		if(pid < 0){
-			return -1;
+			printf("\n%s not fount\n", sockname);
+			close(client);
+			continue;
+			//return -1;
 		}
 		//printf("found pid = %d\n", pid);
 		addr_str = __pid_vcomd_get_address(pid, buf, sizeof(buf));
@@ -1137,7 +1144,7 @@ int main(int argc, char **argv)
 			close(client);
 			continue;
 		}
-		printf("ready to allocate pair info\n");
+		//printf("ready to allocate pair info\n");
 		pair = alloc_pair_info();
 		pair->tcp_sock = client;
 		pair->ssl_sock = sk;
