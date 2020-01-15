@@ -60,7 +60,7 @@ install_daemon:
 	ln -sf $(INSTALL_PATH)advps /sbin/advps
 	
 
-install: install_daemona install_ssl
+install: install_daemon install_ssl
 	cp ./driver/advvcom.ko $(INSTALL_PATH)
 	
 uninstall:
