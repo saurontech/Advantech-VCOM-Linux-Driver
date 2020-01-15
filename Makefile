@@ -19,6 +19,21 @@ clean:
 	make clean -C ./sslproxy
 	make clean -C ./keys
 
+./keys/rootCA.srl:
+	mv ./keys/.srl ./keys/rootCA.srl
+
+install_ssl: ./keys/rootCA.srl
+	cp ./sslproxy/advsslvcom $(INSTALL_PATH)
+	cp ./sslproxy/config.json $(INSTALL_PATH)
+	cp ./keys/rootCA.key $(INSTALL_PATH)
+	cp ./keys/rootCA.pem $(INSTALL_PATH)
+	cp ./keys/rootCA.srl $(INSTALL_PATH)
+	cp ./keys/vcom.pem $(INSTALL_PATH)
+	cp ./script/adv-eki-tls-create $(INSTALL_PATH)
+	chmod 111 $(INSTALL_PATH)adv-eki-tls-create
+	ln -sf $(INSTALL_PATH)advsslvcom /sbin/advsslvcom
+	ln -sf $(INSTALL_PATH)adv-eki-tls-create /sbin/adv-eki-tls-create
+
 install_daemon:
 	install -d $(INSTALL_PATH)
 	cp ./daemon/vcomd $(INSTALL_PATH)
@@ -29,32 +44,23 @@ install_daemon:
 	cp ./script/advadd $(INSTALL_PATH)
 	cp ./script/advrm $(INSTALL_PATH)
 	cp ./script/advman $(INSTALL_PATH)
-	cp ./script/adv-eki-tls-create $(INSTALL_PATH)
 	cp ./inotify/vcinot $(INSTALL_PATH)
 	cp ./advps/advps $(INSTALL_PATH)
-	cp ./sslproxy/advsslvcom $(INSTALL_PATH)
-	cp ./sslproxy/config.json $(INSTALL_PATH)
-	cp ./keys/rootCA.key $(INSTALL_PATH)
-	cp ./keys/rootCA.pem $(INSTALL_PATH)
-	cp ./keys/rootCA.srl $(INSTALL_PATH)
-	cp ./keys/vcom.pem $(INSTALL_PATH)
 	chmod 111 $(INSTALL_PATH)advls
 	chmod 111 $(INSTALL_PATH)advadd
 	chmod 111 $(INSTALL_PATH)advrm
 	chmod 111 $(INSTALL_PATH)advman
 	chmod 111 $(INSTALL_PATH)vcinot
 	chmod 111 $(INSTALL_PATH)advps
-	chmod 111 $(INSTALL_PATH)adv-eki-tls-create
 	ln -sf $(INSTALL_PATH)advls /sbin/advls
 	ln -sf $(INSTALL_PATH)advrm /sbin/advrm
 	ln -sf $(INSTALL_PATH)advadd /sbin/advadd
 	ln -sf $(INSTALL_PATH)advman /sbin/advman
 	ln -sf $(INSTALL_PATH)vcinot /sbin/vcinot
 	ln -sf $(INSTALL_PATH)advps /sbin/advps
-	ln -sf $(INSTALL_PATH)advsslvcom /sbin/advsslvcom
-	ln -sf $(INSTALL_PATH)adv-eki-tls-create /sbin/adv-eki-tls-create
+	
 
-install: install_daemon
+install: install_daemona install_ssl
 	cp ./driver/advvcom.ko $(INSTALL_PATH)
 	
 uninstall:
