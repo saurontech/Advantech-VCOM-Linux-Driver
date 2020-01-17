@@ -35,7 +35,7 @@ char * _config_password;
 char * _config_keyfile;
 char * _config_rootca;
 
-
+char * nopass="";
 
 BIO *bio_err=0;
 static char *pass;
@@ -865,14 +865,15 @@ SSL_CTX *initialize_ctx(keyfile,password)
 			berr_exit("Can't read certificate file");
 
 		if(strlen(password) != 0){
+			//printf("found password\n");
 			pass=password;
 			SSL_CTX_set_default_passwd_cb(ctx,
 					password_cb);
 
-			if(!(SSL_CTX_use_PrivateKey_file(ctx,
-							keyfile,SSL_FILETYPE_PEM)))
-				berr_exit("Can't read key file");
 		}
+		if(!(SSL_CTX_use_PrivateKey_file(ctx,
+				keyfile,SSL_FILETYPE_PEM)))
+			berr_exit("Can't read key file");
 	}
 	//syslog(LOG_DEBUG, "rootCA.pem path %s", _config_rootca);
 	/* Load the CAs we trust*/
@@ -915,7 +916,6 @@ void load_dh_params(ctx,file)
 	if(SSL_CTX_set_tmp_dh(ctx,ret)<0)
 		berr_exit("Couldn't set DH parameters");
 }
-
 
 int loadconfig(char * filepath)
 {
@@ -986,7 +986,7 @@ int loadconfig(char * filepath)
 	_config_keyfile = rnode->data.data;
 
 	if(readJSTree(result.node->r, &rnode, "ssl", "rootca")!= 2){
-		printf("didn't find keyfile\n");
+		printf("didn't find rootCA\n");
 		return -1;
 	}
 	//printf("found rootca = %s\n", rnode->data.data);
@@ -994,12 +994,14 @@ int loadconfig(char * filepath)
 	_config_rootca = rnode->data.data;
 
 	if(readJSTree(result.node->r, &rnode, "ssl", "password")!= 2){
-		printf("didn't find keyfile\n");
-		return -1;
+		printf("didn't find password\n");
+		_config_password = nopass;
+	}else{
+		_config_password = rnode->data.data;
 	}
-	//printf("found password = %s\n", rnode->data.data);
 
-	_config_password = rnode->data.data;
+	//printf("found password = %s\n", _config_password);
+
 
 	close(fd);
 
