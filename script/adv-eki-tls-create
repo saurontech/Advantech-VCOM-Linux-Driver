@@ -7,6 +7,7 @@ ROOTCA_PUB="$ROOTCA_PATH/$ROOTCA_NAME.pem"
 ROOTCA_PRIV="$ROOTCA_PATH/$ROOTCA_NAME.key"
 ROOTCA_SERIAL="$ROOTCA_PATH/$ROOTCA_NAME.srl"
 EKI=
+PASSPHRASE=
 
 usage()
 {
@@ -21,6 +22,7 @@ OPTIONS:
 	-k	RootCA private key(default:$ROOTCA_PRIV)
 	-p	RootCA public key(default:$ROOTCA_PUB)
 	-s	RootCA serial(default:$ROOTCA_SERIAL)
+	-e	Encyption Pass-Phrase(Password) for the PEM output
 
 EXAMPLE:
 	$0 -n EKI1
@@ -34,6 +36,7 @@ createkey()
 DH_FILENAME="${EKI}_dh1024.pem"
 PUB_KEY="${EKI}_cert.pem"
 UNSIGNED_PUB="${EKI}_pub.pem"
+PRIV_KEY_NOPASS="${EKI}_nopass.key"
 PRIV_KEY="$EKI.key"
 CSR="$EKI.csr"
 DSA="${EKI}dsa.pem"
@@ -70,14 +73,20 @@ fi
 
 #create private key
 `openssl ecparam -name prime256v1 -out s_prime256v1.pem`
+if [[ -z "$PASSPHRASE" ]]
+then
 `openssl ecparam -in s_prime256v1.pem -genkey -noout -out $PRIV_KEY`
+else
+#echo "passphrase = $PASSPHRASE."
+`openssl ecparam -in s_prime256v1.pem -genkey |openssl ec -passout pass:$PASSPHRASE -out $PRIV_KEY -aes256`
+fi
 
 #create CSR
 `openssl dsaparam -genkey -out serverdsa.pem 1024`
 `openssl req -new -key serverdsa.pem -out $CSR`
 
 #create unsigned pub key
-`openssl ec -in $PRIV_KEY -pubout -out $UNSIGNED_PUB`
+`openssl ec -in $PRIV_KEY -passin pass:$PASSPHRASE -pubout -out $UNSIGNED_PUB`
 
 #sign public key
 `openssl x509 -req -days 1024 -in $CSR -CAkey $ROOTCA_PRIV -CA $ROOTCA_PUB -force_pubkey $UNSIGNED_PUB -out $PUB_KEY -CAserial $ROOTCA_SERIAL`
@@ -86,7 +95,7 @@ fi
 `cat $PUB_KEY  $PRIV_KEY> $KEYPAIR`
 }
 
-while getopts “hn:k:p:s:” OPTION
+while getopts “hn:k:p:s:e:” OPTION
 do
 	case $OPTION in
 		h)
@@ -104,6 +113,9 @@ do
 			;;
 		n)
 			EKI=$OPTARG
+			;;
+		e)
+			PASSPHRASE=$OPTARG
 			;;
 		?)
 			;;	
