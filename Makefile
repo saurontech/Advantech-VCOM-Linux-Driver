@@ -75,7 +75,7 @@ uninstall:
 	rm -f /sbin/adv-eki-tls-create
 	
 # use dkms
-install_dkms: install_daemon
+install_dkms: install_daemon install_ssl
 	make -C ./driver clean
 	dkms add ./driver
 	dkms build -m $(MODNAME) -v $(VERSION)
