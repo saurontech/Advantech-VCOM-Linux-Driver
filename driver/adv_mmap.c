@@ -16,7 +16,52 @@ void adv_vma_close(struct vm_area_struct *vma)
 {
 //	printk("%s(%d)\n", __func__, __LINE__);
 }
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,17,0)
+vm_fault_t adv_vma_nopage(struct vm_fault *vmf)
+{
+	unsigned long offset;
+	struct adv_vcom * data;
+	struct vm_area_struct *vma = vmf->vma;
+	struct page *page = NULL;
+//	void * pageptr = NULL;
+	vm_fault_t ret = 0;
 
+//	printk("%s(%d)\n", __func__, __LINE__);
+	data = vma->vm_private_data;
+
+//	printk("data = %x\n", data);
+	offset = (unsigned long)(vmf->address - vma->vm_start) + (vma->vm_pgoff << PAGE_SHIFT);
+//	printk("offset = %u \n", offset);
+//	printk("totalsize = %d\n", (data->rx.size + data->tx.size));
+
+
+	if(offset > (data->rx.size + data->tx.size) ){
+		printk("%s(%d)\n", __func__, __LINE__);
+		goto out;
+	}
+	
+//	page = virt_to_page(data->data);
+	if(offset < (data->tx.size + data->tx.begin)){
+//		printk("mapping tx page\n");
+		page = virt_to_page(data->tx.data);
+	}else if(offset < (data->rx.size + data->rx.begin)){
+//		printk("mapping rx page\n");
+		page = virt_to_page(data->rx.data);
+	}else if(offset < (data->attr.size + data->attr.begin)){
+//		printk("mapping attr page\n");
+		page = virt_to_page(data->attr.data);
+	}else{
+//		printk("%s(%d)\n", __func__, __LINE__);
+		goto out;
+	}
+
+	get_page(page);
+	vmf->page = page;
+		
+	out:
+	return ret;
+}
+#else
 #if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
 int adv_vma_nopage(struct vm_fault *vmf)
 {
@@ -96,6 +141,7 @@ int adv_vma_nopage(struct vm_area_struct *vma, struct vm_fault *vmf)
 	out:
 	return ret;
 }
+#endif
 #endif
 
 struct vm_operations_struct adv_vm_ops = {
