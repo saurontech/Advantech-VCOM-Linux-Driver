@@ -146,7 +146,7 @@ void usage(char * cmd)
 int startup(int argc, char **argv, struct vc_attr *port)
 {
 	char *addr;
-	char ch;
+	int ch;
 
 	port->ttyid = -1;
 	port->devid = 0;

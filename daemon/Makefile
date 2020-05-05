@@ -6,6 +6,6 @@ SRC = $(shell find  $(CPATH) -name '*.c' -print)
 all: vcomd
 
 vcomd: ${SRC} ${KHDR} ${HDR}
-	gcc -Wall -I $(DPATH) -o $@ ${SRC} 
+	$(CC) -Wall -Werror -I $(DPATH) -o $@ ${SRC} 
 clean:
 	find ./ -name 'vcomd' -exec rm {} \;

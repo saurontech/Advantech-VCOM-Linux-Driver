@@ -1,5 +1,5 @@
 all: advps.c
-	gcc -o advps $^ -I ../driver
+	$(CC) -Wall -Werror -o advps $^ -I ../driver
 clean:
 	rm -f ./advps
 

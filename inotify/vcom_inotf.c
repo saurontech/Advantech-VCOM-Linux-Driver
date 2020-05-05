@@ -62,7 +62,7 @@ int main(int argc, char **argv)
 	int fd;
 	int wd;
 	char buf[EVENT_BUF_LEN];
-	char ch;
+	int ch;
 	char path[FPATH_LEN];
 
 	if(argc < 2){

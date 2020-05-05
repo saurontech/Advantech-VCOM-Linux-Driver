@@ -18,9 +18,7 @@ int _pid_findfd(int pid, char * file)
 	char status[1204];
 	char buf[1024];
 	char fdpath[1024];
-	FILE *fp;
 	struct stat sb;
-	char fdname[1024];
 	snprintf(fdpath, 1024, "/proc/%d/fd", pid);
 	if (!dir) {
 		dir = opendir(fdpath);
