@@ -22,6 +22,12 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
     2.1.1 Dependancy
 	You should install the kernel header files to compile this driver.
 
+	This driver is built with the following options, turned on as a default:
+	  1. OpenSSL
+	  2. DKMS
+
+	To disable these options, edit the "Config.mk" according the instructions of section 6.1 and 7.1
+
       2.1.1.1 Ubuntu
 	# sudo apt-get install build-essential linux-headers-generic
 
@@ -46,6 +52,7 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 
   3.1 Configure the VCOM mapping
 	modify the "config/advttyd.conf" file to match the VCOM mapping that you desire.
+	After installation, this file will be copied to the installation directory(default: /usr/local/advtty)
 
     3.1.1 Configuration format
 	The configure format is defined as:
@@ -220,3 +227,63 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 	[minor number] [device-type] [IP address] [serial number]
 	example:
 	   0	1524	10.0.0.1	1
+
+
+6. VCOM over TLS
+
+  6.1 Building the Driver with or without TLS support
+
+	Advantech VCOM driver supports TLS by leveraging the OpenSSL library.
+	One might wish to build this driver with or without TLS based on the capacity of the platform environment.
+	Therefore, this driver offers the option to include or exclude the TLS library, before building it with the command "make".
+	By editing the "TLS" option in the "Config.mk" file to "y" or "n", the drive will be built with or without TLS support.
+
+	* Example 1:
+	// building the source code with OpenSSL included
+	// in the Config.mk file
+	  TLS = y
+
+	* Example 2:
+	// building the source code with OpenSSL excluded
+	// in the Config.mk file
+	  TLS = n
+
+  6.2 System overview
+
+    6.2.1 Files and Binaries 
+	If one choses to build the driver with TLS support, multiple files needed to run TLS will be generated at build time including:
+	1. keys/rootCA.pem //the default rootCA file created at build time
+	2. keys/vcom.pem // the default public/private key for the VCOM driver created at build time
+	3. sslproxy/advsslvcom //the TLS service
+
+	After installation, all of the files will be copied to the installation directory (default: /usr/local/advtty).
+
+    6.2.2 Configuration the default CA file
+	The default rootCA.pem is created based on the "keys/rootca.conf" file. 
+	One can edit the file to change the default info, which is used to generate the rootCA.
+
+    6.2.3 Configuration of the TLS service.
+	The configuration is stored in the "sslproxy/config.json" file, if one wishes to use customized files, please edit the file accordingly.
+	
+	After installation, the file will be copied to the installation directory (default: /usr/local/advtty).
+
+  6.3 Building DH files and Private/Public Key pairs for a EKI device server.
+	
+	* Build a Private/Public Key "EKI123.pem" based on /usr/local/advtty/rootCA.pem
+	# adv-eki-tls-create -n EKI123
+	
+	For more details on "adv-eki-tls-create" command, use the "-h" option to get the full help message.
+	#adv-eki-tls-create -h
+
+  6.4 Configuring a ttyADV node to operate over a TLS conneciton.
+	Please Notice: Not all EKI devices support TLS!
+	Adding the "ssl:" tag before a "device type" option will configure the spacific node operate over TLS.
+	#advadd -a 10.0.0.1 -t ssl:1224 -p 1 -m 0
+	
+7. DKMS(Dynamic Kernel Module Support)
+
+  7.1 Installing the driver with or without DKMS
+	By editing the "DKMS" option in the "Config.mk" file to "y" or "n", the drive will be installed("make install") with or without DKMS.
+
+
+	

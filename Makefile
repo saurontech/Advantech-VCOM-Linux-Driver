@@ -1,15 +1,35 @@
-INSTALL_PATH = /usr/local/advtty/
-MODNAME = advvcom
-VERSION = 1
+include Config.mk
+_build =
+_install =
+y_build=
+y_install=
+y_build = build_basic
+y_install = install_daemon
+y_uninstall =
 
-all:
+$(TLS)_build	+= build_ssl
+$(TLS)_install	+= install_ssl
+$(DKMS)_install	+= install_dkms
+$(DKMS)_uninstall	+= uninstall_dkms
+
+ifneq ($(DKMS), y)
+y_install += install_driver
+endif
+
+all: $(y_build)
+	
+build_basic:
 	make -C ./daemon
 	make -C ./driver
 	make -C ./initd
 	make -C ./inotify
 	make -C ./advps
+
+build_ssl:
 	make -C ./sslproxy
 	make -C ./keys
+
+	
 clean:
 	make clean -C ./driver
 	make clean -C ./daemon
@@ -22,7 +42,9 @@ clean:
 ./keys/rootCA.srl:
 	mv ./keys/.srl ./keys/rootCA.srl
 
-install_ssl: ./keys/rootCA.srl
+rename_srl: ./keys/rootCA.srl
+
+install_ssl: rename_srl
 	cp ./sslproxy/advsslvcom $(INSTALL_PATH)
 	cp ./sslproxy/config.json $(INSTALL_PATH)
 	cp ./keys/rootCA.key $(INSTALL_PATH)
@@ -59,11 +81,12 @@ install_daemon:
 	ln -sf $(INSTALL_PATH)vcinot /sbin/vcinot
 	ln -sf $(INSTALL_PATH)advps /sbin/advps
 	
-
-install: install_daemon install_ssl
+install_driver:
 	cp ./driver/advvcom.ko $(INSTALL_PATH)
+
+install: $(y_install)
 	
-uninstall:
+uninstall: $(y_uninstall)
 	rm -Rf $(INSTALL_PATH)
 	rm -f /sbin/advrm
 	rm -f /sbin/advls
@@ -75,13 +98,13 @@ uninstall:
 	rm -f /sbin/adv-eki-tls-create
 	
 # use dkms
-install_dkms: install_daemon install_ssl
+install_dkms: 
 	make -C ./driver clean
 	dkms add ./driver
 	dkms build -m $(MODNAME) -v $(VERSION)
 	dkms install -m $(MODNAME) -v $(VERSION)
 
-uninstall_dkms: uninstall
+uninstall_dkms:
 	-dkms uninstall -m $(MODNAME) -v $(VERSION)
 	dkms remove -m $(MODNAME) -v $(VERSION) --all
 	rm -rf /usr/src/$(MODNAME)-$(VERSION)
