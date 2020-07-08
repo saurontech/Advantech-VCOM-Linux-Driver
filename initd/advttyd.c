@@ -356,8 +356,10 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 			//syslog(LOG_DEBUG, "nrport %d, found ssl\n", nrport);
 		}
 		//syslog(LOG_DEBUG,"dev_type = %s\n", dev_type);
+		/*
 		if ((int_tmp = hexstr(dev_type)) <= 0 || int_tmp <= 0x1000)
 			continue;
+		*/
 		/*
 		   ulong_tmp = device_ipaddr(dev_ipaddr_str);
 		   if ((ulong_tmp == (u_long)0xFFFFFFFF) || (ulong_tmp == 0))
@@ -365,8 +367,10 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 		 */
 		syslog(LOG_DEBUG,"dev_type success = %x\n", int_tmp);
 
-		if ((int_tmp = atoi(dev_portidx_str)) <= 0 || int_tmp > 16)
+		if ((int_tmp = atoi(dev_portidx_str)) <= 0 /*|| int_tmp > 16*/){
+			syslog("advvcom/unsupported port index(%d) on port %d", int_tmp, nrport);
 			continue;
+		}
 		strcpy(ttyinfo[nrport].mpt_nameidx_str, mpt_nameidx_str);
 		strcpy(ttyinfo[nrport].dev_type_str, dev_type);
 		strcpy(ttyinfo[nrport].dev_ipaddr_str, dev_ipaddr_str);
