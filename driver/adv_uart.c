@@ -611,6 +611,7 @@ int adv_uart_init(struct adv_vcom * vcomdata, int index)
 	adv_serial_port->port.ops = &adv_uart_ops;
 	adv_serial_port->port.line = index;
 	adv_serial_port->port.fifosize = 2048;
+	adv_serial_port->port.status |= (UPSTAT_AUTOCTS|UPSTAT_AUTORTS|UPSTAT_AUTOXOFF);
 	
 	ret = uart_add_one_port(&adv_uart_driver, &adv_serial_port->port);
 
