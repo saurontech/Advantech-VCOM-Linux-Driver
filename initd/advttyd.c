@@ -52,7 +52,7 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[]);
 //static void shutdown_ttyp(int nrport, TTYINFO ttyinfo[]);
 //static void restart_handle();
 //static u_long device_ipaddr(char * ipaddr);
-static int  hexstr(char * strp);
+//static int  hexstr(char * strp);
 //static int  log_open(char * log_name);
 //static void log_close(void);
 #ifdef ADVTTY_DEBUG
@@ -368,7 +368,7 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 		syslog(LOG_DEBUG,"dev_type success = %x\n", int_tmp);
 
 		if ((int_tmp = atoi(dev_portidx_str)) <= 0 /*|| int_tmp > 16*/){
-			syslog("advvcom/unsupported port index(%d) on port %d", int_tmp, nrport);
+			syslog(LOG_INFO ,"advvcom/unsupported port index(%d) on port %d", int_tmp, nrport);
 			continue;
 		}
 		strcpy(ttyinfo[nrport].mpt_nameidx_str, mpt_nameidx_str);
@@ -546,7 +546,7 @@ static void shutdown_ttyp(int nrport, TTYINFO ttyinfo[])
 	_restart = 1;
 	return;
 } */
-
+/*
 static int hexstr(char * strp)
 {
 	int i, ch, val;
@@ -563,7 +563,7 @@ static int hexstr(char * strp)
 	}
 	return val;
 }
-
+*/
 /*static int log_open(char * log_name)
 {
 	return __log_fd = open(log_name,

@@ -30,6 +30,8 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 
       2.1.1.1 Ubuntu
 	# sudo apt-get install build-essential linux-headers-generic
+	# sudo apt-get install dkms
+	# sudo apt-get install openssl libssl-dev
 
       2.1.1.2 OpenSUSE
 	Open YaST / Software / Software Management.
@@ -273,7 +275,7 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 	# adv-eki-tls-create -n EKI123
 	
 	For more details on "adv-eki-tls-create" command, use the "-h" option to get the full help message.
-	#adv-eki-tls-create -h
+	# adv-eki-tls-create -h
 
   6.4 Configuring a ttyADV node to operate over a TLS conneciton.
 	Please Notice: Not all EKI devices support TLS!
