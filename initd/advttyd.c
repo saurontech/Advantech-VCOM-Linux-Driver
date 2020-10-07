@@ -221,6 +221,9 @@ int main(int argc, char * argv[])
 	TTYINFO ttyinfo[CF_MAXPORTS];
 	char work_path[PATH_MAX];
 	char file_name[PATH_MAX];
+	int ret;
+	int wp_len;
+	int cf_len;
 
 	nrport = 0;
 
@@ -229,7 +232,14 @@ int main(int argc, char * argv[])
 	if(parse_env(argv[0], work_path) < 0)
 		return -1;
 
-	sprintf(file_name,"%s/%s", work_path, CF_CONFNAME);
+	wp_len = strlen(work_path);
+	cf_len = strlen(CF_CONFNAME);
+
+	ret = snprintf(file_name, sizeof(file_name), "%s/%s", work_path, CF_CONFNAME);
+	if(ret < wp_len + cf_len){
+		syslog(LOG_DEBUG, "filename + configname trunc !!!");	
+	}
+
 	if((nrport = paser_config(file_name, ttyinfo)) <= 0) {
 		syslog(LOG_DEBUG, "failed to paser config file");
 		return 0;
@@ -507,8 +517,16 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 	}
 
 	if(sslproxy){
-		snprintf(syscmd, sizeof(syscmd), "%s %s &", sslcmd, sslconf);
-		system(syscmd);
+		int syscmd_len = strlen(syscmd);
+		int conflen = strlen(sslconf);
+		int ret;
+		char ssl_cmd[2048];
+		ret = snprintf(ssl_cmd, sizeof(ssl_cmd), "%s %s &", syscmd, sslconf);
+		if(ret < syscmd_len + conflen){
+			syslog(LOG_DEBUG, "ssl command trunc!!!\n");
+		}else{
+			system(ssl_cmd);
+		}
 	}
 
 	return;

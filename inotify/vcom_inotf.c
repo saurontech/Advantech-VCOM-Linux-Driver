@@ -16,7 +16,7 @@
 
 int parse_ievent(char *buf, int *i, const char *path)
 {
-#define CMDBUF_LEN		256
+#define CMDBUF_LEN		512
 	char fpath[FPATH_LEN];
 	char cmd[CMDBUF_LEN];
 	struct inotify_event *event = (struct inotify_event *)&buf[*i];
