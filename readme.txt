@@ -41,9 +41,15 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 	[X] Base Development
 	[X] Linux Kernel Development
 	[X] C/C++ Development
+	 
+	[X] libopenssl-devel
+	[X] dkms
 
       2.1.1.3 CentOS/RHEL/Fedora
 	# yum install kernel-devel kernel-headers gcc make
+	# yum install openssl-devel
+	# ymm install dkms
+	
 	
     2.1.2 Compile the source code
 	This driver comes with a Makefile, therefore you can compile the driver with a single command.
