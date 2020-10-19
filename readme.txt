@@ -42,13 +42,22 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 	[X] Linux Kernel Development
 	[X] C/C++ Development
 	 
+	Utilize the Search Button to install the following packages:
 	[X] libopenssl-devel
 	[X] dkms
 
       2.1.1.3 CentOS/RHEL/Fedora
 	# yum install kernel-devel kernel-headers gcc make
 	# yum install openssl-devel
+	# yum install openssl
 	# ymm install dkms
+
+	* RedHat systems later than (CentOS 8/RHEL 8/Fedora 22) might require you to use "dnf" instead of "yum".
+
+	# dnf install kernel-devel kernel-headers gcc make
+	# dnf install openssl-devel
+	# dnf install openssl
+	# dnf install dkms
 	
 	
     2.1.2 Compile the source code
