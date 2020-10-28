@@ -517,11 +517,11 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 	}
 
 	if(sslproxy){
-		int syscmd_len = strlen(syscmd);
+		int syscmd_len = strlen(sslcmd);
 		int conflen = strlen(sslconf);
 		int ret;
 		char ssl_cmd[2048];
-		ret = snprintf(ssl_cmd, sizeof(ssl_cmd), "%s %s &", syscmd, sslconf);
+		ret = snprintf(ssl_cmd, sizeof(ssl_cmd), "%s %s &", sslcmd, sslconf);
 		if(ret < syscmd_len + conflen){
 			syslog(LOG_DEBUG, "ssl command trunc!!!\n");
 		}else{
