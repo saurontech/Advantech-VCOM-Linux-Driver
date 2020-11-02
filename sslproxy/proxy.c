@@ -1141,7 +1141,7 @@ int main(int argc, char **argv)
 		//printf("sk = %d\n", sk);
 
 		if(connect(sk, (struct sockaddr *)&remote, sizeof(remote)) < 0){
-			printf("failed to connect:(%d)%s\n", errno, strerror(errno));
+			printf("%s failed to connect:(%d)%s\n", addr_str, errno, strerror(errno));
 			close(sk);
 			close(client);
 			continue;
@@ -1153,7 +1153,7 @@ int main(int argc, char **argv)
 		pair->ssl = SSL_new(ctx);
 		//printf("pair ssl_sock %d tcp_sock %d\n", pair->ssl_sock, pair->tcp_sock);
 		if(SSL_set_fd(pair->ssl, pair->ssl_sock) == 0){
-			printf("SSL_set_fd failed\n");
+			printf("%s SSL_set_fd failed\n", addr_str);
 			SSL_free(pair->ssl);
 			free(pair);
 			close(client);
@@ -1162,7 +1162,7 @@ int main(int argc, char **argv)
 		}
 		
 		if(SSL_connect(pair->ssl) <= 0){
-			printf("SSL_connect failed\n");
+			printf("%s SSL_connect failed\n", addr_str);
 			SSL_free(pair->ssl);
 			free(pair);
 			close(client);
