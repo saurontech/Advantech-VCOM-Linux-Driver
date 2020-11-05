@@ -275,14 +275,22 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 
 	After installation, all of the files will be copied to the installation directory (default: /usr/local/advtty).
 
-    6.2.2 Configuration the default CA file
+    6.2.2 Configuration of the default CA file
 	The default rootCA.pem is created based on the "keys/rootca.conf" file. 
 	One can edit the file to change the default info, which is used to generate the rootCA.
+	The langth and validation period of the CA file is defined in the Config.mk file;
+	change the CA_DSA_LEN and CA_DAYS accoding to your needs.
 
     6.2.3 Configuration of the TLS service.
 	The configuration is stored in the "sslproxy/config.json" file, if one wishes to use customized files, please edit the file accordingly.
 	
 	After installation, the file will be copied to the installation directory (default: /usr/local/advtty).
+
+    6.2.4 Configuration of the default certification file
+	The default vcom.pem is created based on the "keys/vcom.conf" file. 
+	One can edit the file to change the default info, which is used to generate the vcom.pem.
+	The langth and validation period of the CA file is defined in the Config.mk file;
+	change the CERT_DSA_LEN and CERT_DAYS accoding to your needs.
 
   6.3 Building DH files and Private/Public Key pairs for a EKI device server.
 	

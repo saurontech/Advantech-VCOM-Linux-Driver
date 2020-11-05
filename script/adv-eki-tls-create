@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 ROOTCA_PATH=/usr/local/advtty
 ROOTCA_NAME=rootCA
 ROOTCA_PUB="$ROOTCA_PATH/$ROOTCA_NAME.pem"
@@ -8,6 +7,9 @@ ROOTCA_PRIV="$ROOTCA_PATH/$ROOTCA_NAME.key"
 ROOTCA_SERIAL="$ROOTCA_PATH/$ROOTCA_NAME.srl"
 EKI=
 PASSPHRASE=
+DH_LEN=1024
+CERT_DSA_LEN=2048
+CERT_DAYS=1024
 
 usage()
 {
@@ -23,6 +25,9 @@ OPTIONS:
 	-p	RootCA public key(default:$ROOTCA_PUB)
 	-s	RootCA serial(default:$ROOTCA_SERIAL)
 	-e	Encyption Pass-Phrase(Password) for the PEM output
+	-d	Certification validation period(in days; default:$CERT_DAYS)
+	-l	DSA length(default:$CERT_DSA_LEN)
+	-L	DH length(default:$DH_LEN)
 
 EXAMPLE:
 	$0 -n EKI1
@@ -33,7 +38,8 @@ EOF
 
 createkey()
 {
-DH_FILENAME="${EKI}_dh1024.pem"
+
+DH_FILENAME="${EKI}_dh${DH_LEN}.pem"
 PUB_KEY="${EKI}_cert.pem"
 UNSIGNED_PUB="${EKI}_pub.pem"
 PRIV_KEY_NOPASS="${EKI}_nopass.key"
@@ -41,6 +47,7 @@ PRIV_KEY="$EKI.key"
 CSR="$EKI.csr"
 DSA="${EKI}dsa.pem"
 KEYPAIR="$EKI.pem"
+
 
 #check for rootCA files
 echo "checking for rootCA files:"
@@ -69,7 +76,7 @@ else
 fi
 
 #create DH
-`openssl dhparam -out $DH_FILENAME 1024`
+`openssl dhparam -out $DH_FILENAME $DH_LEN`
 
 #create private key
 `openssl ecparam -name prime256v1 -out s_prime256v1.pem`
@@ -82,20 +89,20 @@ else
 fi
 
 #create CSR
-`openssl dsaparam -genkey -out serverdsa.pem 1024`
+`openssl dsaparam -genkey -out serverdsa.pem $CERT_DSA_LEN`
 `openssl req -new -key serverdsa.pem -out $CSR`
 
 #create unsigned pub key
 `openssl ec -in $PRIV_KEY -passin pass:$PASSPHRASE -pubout -out $UNSIGNED_PUB`
 
 #sign public key
-`openssl x509 -req -days 1024 -in $CSR -CAkey $ROOTCA_PRIV -CA $ROOTCA_PUB -force_pubkey $UNSIGNED_PUB -out $PUB_KEY -CAserial $ROOTCA_SERIAL`
+`openssl x509 -req -days $CERT_DAYS -in $CSR -CAkey $ROOTCA_PRIV -CA $ROOTCA_PUB -force_pubkey $UNSIGNED_PUB -out $PUB_KEY -CAserial $ROOTCA_SERIAL`
 
 #create key pair
 `cat $PUB_KEY  $PRIV_KEY> $KEYPAIR`
 }
 
-while getopts “hn:k:p:s:e:” OPTION
+while getopts “hn:k:p:s:e:l:L:d” OPTION
 do
 	case $OPTION in
 		h)
@@ -116,6 +123,15 @@ do
 			;;
 		e)
 			PASSPHRASE=$OPTARG
+			;;
+		d)
+			CERT_DAYS=$OPTARG
+			;;
+		l)
+			CERT_DSA_LEN=$OPTARG
+			;;
+		L)
+			DH_LEN=$OPTARG
 			;;
 		?)
 			;;	
