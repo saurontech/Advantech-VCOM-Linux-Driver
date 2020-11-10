@@ -9,7 +9,6 @@ SSLPROXY=advsslvcom
 CONFIGFILE=$INSTALLPATH/advttyd.conf
 DEAMONFILE=$INSTALLPATH/$DEAMON
 DKMSFILE=/lib/modules/`uname -r`/updates/dkms/$DRIVER.ko
-DKMSFILE_SUSE=/lib/modules/`uname -r`/updates/$DRIVER.ko
 KERNEL=`uname -r|cut -c1-3`
 if [ $KERNEL = "2.4" ] 
 then
@@ -38,19 +37,15 @@ insdriver()
 {
 	if [ $KERNEL = "2.4" ] 
 	then
-	echo "inserting kernel moduel $DRIVER.o..."
+	echo "inserting kernel moduel $DRIVER.o ..."
 	insmod $DRIVERFILE
-	elif [ -e $DKMSFILE ]
+	elif [ -e $DRIVERFILE ]
 	then
-	echo "inserting DKMS module $DRIVER.ko..."
-	insmod $DKMSFILE
-	elif [ -e $DKMSFILE_SUSE ]
-	then
-	echo "inserting DKMS module $DRIVER.ko..."
-	insmod $DKMSFILE_SUSE
+	echo "inserting kernel module $DRIVER.ko ..."
+	insmod $DRIVERFILE
 	else
-	echo "inserting kernel moduel $DRIVER.ko..."
-	insmod $DRIVERFILE
+	echo "inserting DKMS moduel $DRIVER ..."
+	modprobe $DRIVER
 	fi
 }
 
