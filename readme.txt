@@ -50,7 +50,7 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 	# yum install kernel-devel kernel-headers gcc make
 	# yum install openssl-devel
 	# yum install openssl
-	# ymm install dkms
+	# yum install dkms
 
 	* RedHat systems later than (CentOS 8/RHEL 8/Fedora 22) might require you to use "dnf" instead of "yum".
 
