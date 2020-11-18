@@ -13,6 +13,9 @@
 
 #define CF_MAXPORTS	VCOM_PORTS
 
+#define MON_PATH "/tmp/advmon"
+#define SSL_LOG_DIR "/tmp/advsslmsg"
+
 //#define ADVTTYD_DEBUG
 #ifdef ADVTTYD_DEBUG
 #define ADV_LOGMSG(FMT, ...) \

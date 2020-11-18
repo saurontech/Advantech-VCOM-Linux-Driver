@@ -29,7 +29,8 @@
 #include "jsmn.h"
 #include "jstree.h"
 #include "jstree_readhelper.h"
-
+#include <sys/mman.h>
+#include "proxy_dbg.h"
 
 char * _config_password;
 char * _config_keyfile;
@@ -316,6 +317,41 @@ char* __pid_vcomd_get_address(int pid, char * buf, int len)
 
 }
 
+char* __pid_vcomd_get_minor(int pid, char * buf, int len)
+{
+	int cnt;
+	int fd;
+	int i;
+	char path[1024];
+	char *ptr;
+
+	snprintf(path, sizeof(path), "/proc/%d/cmdline", pid);
+	//printf("path = %s\n", path);
+
+	fd = open(path, O_RDONLY);
+	//printf("fd = %d\n", fd);
+	cnt = read(fd, buf, len);
+	close(fd);
+	//printf("cnt = %d buf= %s\n", cnt, buf);
+	//for (i = 0; i < cnt; i++){
+	//	printf("[%d]%c(0x%hhx)\n", i, buf[i], buf[i]);
+	//}
+	i = 0;
+	do{
+		ptr = strstr(&buf[i], "-t");
+		//printf("ptr = %p buf[%d]= %s\n", (void *)ptr, i, &buf[i]);
+		if(ptr > 0){
+			//printf("minor: %s\n", ptr+2);
+			break;
+		}
+		i += strlen(&buf[i]);
+	}while(++i < cnt);
+
+	return ptr+2;
+
+}
+
+
 int init_serversock(char * service)
 {
 	struct addrinfo hints;
@@ -420,6 +456,8 @@ typedef struct pair_info_t{
 	int (*ssl_recv)(struct pair_info_t *self);
 
 	void (*free_pair)(struct pair_info_t *self);
+
+	dbg_mon * dbg;
 }pair_info;
 
 int tcp_send(pair_info * self)
@@ -642,6 +680,7 @@ void free_pair(pair_info * self)
 	SSL_shutdown(self->ssl);
 	SSL_free(self->ssl);
 	close(self->ssl_sock);
+	pmon_close(self->dbg);
 	free(self);
 }
 
@@ -663,6 +702,8 @@ pair_info * alloc_pair_info()
 	ret->ssl_send = ssl_send;
 	ret->ssl_recv = ssl_recv;
 	ret->free_pair = free_pair;
+
+	ret->dbg = 0;
 
 	return ret;
 }
@@ -757,9 +798,9 @@ void *pair_thread(void *data)
 
 		ret = select(maxfd + 1, &rfds, &wfds, 0, tv);
 		if(ret < 0){
-			printf("select ret = %d\n", ret);
+			//printf("select ret = %d\n", ret);
 			self->free_pair(self);
-
+			return 0;
 		}
 
 	}while(1);
@@ -790,7 +831,7 @@ int check_cert_chain(SSL *ssl)
 	char peer_CN[256];
 
 	if(SSL_get_verify_result(ssl)!=X509_V_OK){
-		berr("Certificate doesn't verify");
+		printf("Certificate doesn't verify\n");
 		return -1;
 	}
 	/*Check the common name*/
@@ -1007,6 +1048,15 @@ int loadconfig(char * filepath)
 
 	return 0;
 }
+
+void usage(char * cmd)
+{
+	printf("Usage : %s [-l/c] [argument]\n", cmd);
+	printf("The most commonly used commands are:\n");
+	printf("	-l	Log directory\n");
+	printf("	-c	config file\n");
+}
+
 #define SSL_PORT "5555"
 int main(int argc, char **argv)
 {
@@ -1015,12 +1065,17 @@ int main(int argc, char **argv)
 	socklen_t addrlen;
 	int inode;
 	int pid;
+	int ch;
+	int ret;
 	char sockname[1024];
 	char cmd[1024];
 	char buf[2048];
 	char *addr_str;
+	char *minor_str;
 	char *wd_end;
-	//char dbug_tmp[1024];
+	char *config_file;
+	char *log_dir;
+	char orig_wd[1024];
 	SSL_CTX *ctx;
 
 	struct sockaddr_storage addr;
@@ -1031,38 +1086,65 @@ int main(int argc, char **argv)
 	pair_info *pair;
 	pthread_t tid;
 
-	if(argc != 2){
-		printf("%s [config.json]\n", argv[0]);
-		return -1;
-	}
+	char log_file[2048];
+	
+	dbg_mon * dbg;
 
 	if(geteuid() != 0){
 		printf("need to execuate as root\n");
 		return -1;
 	}
 
-	/*if(getcwd(dbug_tmp, sizeof(dbug_tmp))){
-		syslog(LOG_DEBUG, "cwd = %s\n", dbug_tmp);
-	}*/
-	if((wd_end = memrchr(argv[1], '/', strlen(argv[1])))){
-		int wdlen = wd_end - argv[1] + 1;
-		char *wd;
+	config_file = 0;
+	log_dir = 0;
+	while((ch = getopt(argc, argv, "l:c:")) != -1)  {
+		switch(ch){
+			case 'l':
+				printf("setting log directory : %s ...\n", optarg);
+				log_dir = optarg;
+				break;
+			case 'c':            
+				printf("setting config file : %s ...\n", optarg);
+				config_file = optarg;
+				break;
+			default:
+				usage(argv[0]);
+				return -1;
+		}
+	}
+	if(config_file == NULL ){
+		usage(argv[0]);
+		return -1;
+	}
+
+	SSL_load_error_strings();
+	ERR_load_crypto_strings();
+
+	printf("config %s log %s\n", config_file, log_dir);
+	if(getcwd(orig_wd, sizeof(orig_wd))){
+		printf("orig wd = %s\n", orig_wd);
+	}
+	char *wd;
+	if((wd_end = memrchr(config_file, '/', strlen(config_file)))){
+		int wdlen = wd_end - config_file + 1;
+		
 
 		wd = malloc(wdlen + 1);
 		if(wd == 0){
 			syslog(LOG_DEBUG, "can't malloc for chdir");
 			printf("can't malloc for chdir\n");
+			return 0;
 		}
 		wd[wdlen] = '\0';
 
-		memcpy(wd, argv[1] , wdlen);
+		memcpy(wd, config_file , wdlen);
 		syslog(LOG_DEBUG, "changing work dir to %s", wd);
 		printf("changing work dir to %s\n", wd);
 		chdir(wd);
 	}	
 	
 	printf("loading configurations\n");
-	if(loadconfig(argv[1])){
+	if(loadconfig(config_file)){
 		printf("cannot load config file");
 		return -1;
 
@@ -1082,6 +1164,8 @@ int main(int argc, char **argv)
 
 	printf("system standby\n");
 	syslog(LOG_DEBUG,"system standby\n");
+
+	chdir(orig_wd);
 
 	do{
 		addrlen = sizeof(struct sockaddr_storage);
@@ -1121,12 +1205,25 @@ int main(int argc, char **argv)
 			//return -1;
 		}
 		//printf("found pid = %d\n", pid);
+
+		minor_str = __pid_vcomd_get_minor(pid, buf, sizeof(buf));
+		//printf("minor_str = %s\n", minor_str);
+
+		log_file[0] = '\0';
+		if(log_dir){
+			snprintf(log_file, sizeof(log_file), "%s/%s", log_dir, minor_str);
+		}
+		
+		dbg = pmon_open(log_file);	
+		//printf("dbg = %p\n", (void *)dbg);
+
 		addr_str = __pid_vcomd_get_address(pid, buf, sizeof(buf));
 		//printf("address is -->%s\n", addr_str);
 		
 		if(inet_pton(AF_INET, addr_str, &remote.sin_addr) <= 0){
 			printf("failed to create remote address\n");
 			close(client);
+			pmon_close(dbg);
 			continue;
 		}
 		remote.sin_port = htons(5202);
@@ -1136,12 +1233,15 @@ int main(int argc, char **argv)
 		if(sk < 0){
 			printf("failed to create remote socket\n");
 			close(client);
+			pmon_close(dbg);
 			continue;
 		}
 		//printf("sk = %d\n", sk);
 
 		if(connect(sk, (struct sockaddr *)&remote, sizeof(remote)) < 0){
 			printf("%s failed to connect:(%d)%s\n", addr_str, errno, strerror(errno));
+			pmon_log(dbg, "%s failed to connect:(%d)%s\n", addr_str, errno, strerror(errno));
+			pmon_close(dbg);
 			close(sk);
 			close(client);
 			continue;
@@ -1154,15 +1254,8 @@ int main(int argc, char **argv)
 		//printf("pair ssl_sock %d tcp_sock %d\n", pair->ssl_sock, pair->tcp_sock);
 		if(SSL_set_fd(pair->ssl, pair->ssl_sock) == 0){
 			printf("%s SSL_set_fd failed\n", addr_str);
-			SSL_free(pair->ssl);
-			free(pair);
-			close(client);
-			close(sk);
-			continue;
-		}
-		
-		if(SSL_connect(pair->ssl) <= 0){
-			printf("%s SSL_connect failed\n", addr_str);
+			pmon_log(dbg, "%s SSL_set_fd failed\n", addr_str);
+			pmon_close(dbg);
 			SSL_free(pair->ssl);
 			free(pair);
 			close(client);
@@ -1172,6 +1265,74 @@ int main(int argc, char **argv)
 
 		__set_nonblock(pair->tcp_sock);
 		__set_nonblock(pair->ssl_sock);
+		int sel_ret;
+		struct timeval conn_to;
+		conn_to.tv_sec = 1;
+		conn_to.tv_usec = 0;
+		do{
+			int __exit;
+			int ssl_errno;
+			fd_set rfds;
+			fd_set wfds;
+
+			__exit = 0;
+			FD_ZERO(&rfds);
+			FD_ZERO(&wfds);
+			ret = SSL_connect(pair->ssl);
+			if(ret > 0)
+				break;
+				
+			ssl_errno = SSL_get_error(pair->ssl, ret);
+			long v_err;
+			switch(ssl_errno){
+				case SSL_ERROR_WANT_READ:
+					FD_SET(pair->ssl_sock, &rfds);
+					break;
+				case SSL_ERROR_WANT_WRITE:
+					FD_SET(pair->ssl_sock, &wfds);
+					break;
+				case SSL_ERROR_ZERO_RETURN:
+					printf("connect closed by remote peer\n");
+					pmon_log(dbg, "SSL_connect closed by %s", addr_str);
+					__exit = 1;
+					break;
+				case SSL_ERROR_SYSCALL:
+					printf("SSL_connection error: %s\n", strerror(errno));
+					pmon_log(dbg, "SSL_connection error: %s\n", strerror(errno));
+					__exit = 1;
+					break;
+				default :
+					__exit = 1;
+					pmon_log(dbg, 
+						"SSL_connect failed(%d):%s\n", 
+						ssl_errno, 
+						ERR_reason_error_string(ERR_get_error())
+						);
+					v_err = SSL_get_verify_result(pair->ssl);
+					if(v_err != X509_V_OK){
+						pmon_log(dbg, 
+						"X509 error(%ld):%s\n",
+						v_err,
+						X509_verify_cert_error_string(v_err));
+					}
+						
+					break;
+			}
+			if(__exit){
+				break;
+			}
+
+			sel_ret = select(pair->ssl_sock + 1, &rfds, &wfds, 0, &conn_to);
+		}while(sel_ret > 0);
+		if( ret <= 0){
+			printf("closed connection\n");
+			pmon_close(dbg);
+			SSL_free(pair->ssl);
+			free(pair);
+			close(client);
+			close(sk);
+			continue;
+		}
 
 		int flag = 1;
 		setsockopt(pair->tcp_sock,
@@ -1187,6 +1348,8 @@ int main(int argc, char **argv)
 
 		if(pthread_create(&tid, 0, pair_thread, pair) != 0){
 			printf("failed to create pthread\n");
+			pmon_log(dbg, "failed to create pthread\n");
+			pmon_close(dbg);
 		}
 		pthread_detach(tid);
 	}while(1);

@@ -29,8 +29,6 @@
 
 #include "advttyd.h"
 
-#define MON_PATH "/tmp/advmon"
-
 typedef struct _TTYINFO {
 	pid_t   advttyp_pid;                        // process id for the port	                 
 	char	mpt_nameidx_str[CF_MAXSTRLEN];      // Master pseudo TTY index
@@ -521,7 +519,7 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 		int conflen = strlen(sslconf);
 		int ret;
 		char ssl_cmd[2048];
-		ret = snprintf(ssl_cmd, sizeof(ssl_cmd), "%s %s &", sslcmd, sslconf);
+		ret = snprintf(ssl_cmd, sizeof(ssl_cmd), "%s -c %s -l %s &", sslcmd, sslconf, SSL_LOG_DIR);
 		if(ret < syscmd_len + conflen){
 			syslog(LOG_DEBUG, "ssl command trunc!!!\n");
 		}else{
