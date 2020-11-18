@@ -86,6 +86,7 @@ startDeamon()
 	fi
 	echo "invoking local deamon..."
 	install -m 777 -d /tmp/advmon
+	install -m 777 -d /tmp/advsslmsg
 	#`$DEAMONFILE`
 	$DEAMONFILE
 
@@ -166,7 +167,7 @@ case $OBJECTIVE in
 			insdriver
 			startDeamon
 		fi
-		exit 1
+		exit 0
 	;;
 	restart)
 		hasdriver
@@ -179,24 +180,24 @@ case $OBJECTIVE in
 			insdriver
 			startDeamon
 		fi
-		exit 1
+		exit 0
 
 	;;
 	stop)
 		echo stop
 		stopService
 		stopDeamon
-		exit 1
+		exit 0
 	;;
 	insert)
 		insdriver
-		exit 1
+		exit 0
 	;;
 	remove)
 		stopService
 		stopDeamon
 		rmdriver
-		exit 1
+		exit 0
 	;;
 esac
 usage

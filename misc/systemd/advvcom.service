@@ -1,0 +1,20 @@
+[Unit]
+Description=Advantech
+After=network.target
+
+ 
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/sbin/advman -o start
+RemainAfterExit=yes
+ExecStop=/sbin/advman -o stop
+
+# Other restart options: always, on-abort, etc
+
+ 
+
+[Install]
+WantedBy=multi-user.target
+
