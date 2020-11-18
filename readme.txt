@@ -47,31 +47,37 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 	[X] dkms
 
       2.1.1.3 CentOS/RHEL/Fedora
-	# yum install kernel-devel kernel-headers gcc make
-	# yum install openssl-devel
-	# yum install openssl
-	# yum install dkms
-
-	* RedHat systems later than (CentOS 8/RHEL 8/Fedora 22) might require you to use "dnf" instead of "yum".
-
 	# dnf install kernel-devel kernel-headers gcc make
 	# dnf install openssl-devel
 	# dnf install openssl
 	# dnf install dkms
+
+	* Early RedHat systems (before CentOS 7/RHEL 7/Fedora 21) might require you to use "yum" instead of "dnf".
+
+	# yum install kernel-devel kernel-headers gcc make
+	# yum install openssl-devel
+	# yum install openssl
+	# yum install dkms
 	
 	
     2.1.2 Compile the source code
+	
+    2.1.2.1 Customizeing build options
+	Modify "Config.mk" to build the VCOM service with/without certain options.
+	For example, one might wish to build a minimal VCOM service without TLS support.
+	Reference section 6 & 7 for more detail.
+	
+    2.1.2.2 Building the source code
 	This driver comes with a Makefile, therefore you can compile the driver with a single command.
 	# make
-	
-	
-3. install and uninstall the driver, start and stop the daemon
 
-  3.1 Configure the VCOM mapping
+    2.2 Configure the initial VCOM mapping
 	modify the "config/advttyd.conf" file to match the VCOM mapping that you desire.
 	After installation, this file will be copied to the installation directory(default: /usr/local/advtty)
+	  Additional helper scripts will be installed alongside the VCOM driver to aide with future modificaitons of the VCOM mapping.
+	For more detail, please reference section "5.2 Modifying the daemon configuartions".
 
-    3.1.1 Configuration format
+    2.2.1 Configuration format
 	The configure format is defined as:
 		[Minor] [Device-Type] [Device-IP] [Port-Idx]
 
@@ -85,7 +91,7 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 		1	1322	10.0.0.100	2
 		2	B526	192.168.1.12	8
 
-    3.1.2 Device-Type Table
+    2.2.2 Device-Type Table
 	 _______________________________________
 	| Device Name		| Device-Type	|			
         |=======================+===============|
@@ -119,31 +125,59 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 	| ADAM-4571L-DE		| E571		|
 	+-----------------------+---------------+
 
-    3.1.3 Ignore Device-Type
+    2.2.3 Ignore Device-Type
 	Some devices can ignore the "Device-Type" parameter.
 	  Enable the "VCOM Ignore Device ID" in the "System" column of the Web Configure GUI, and reboot the device;
 	afterwards the device will accept a connection discarding a "Device-Type" mismatch during the "Open Port" handshake.
 	
-  3.2 install
+    2.2.4 install
 	# make install        # install driver at /usr/local/advtty and application at /sbin
 
-  3.3 unisntall
+    2.3.5 unisntall
 	# make uninstall      # uninstall the driver and application
 	
 	If vcom service is running, it must be stopped and removed before uninstalling.
-	(for details on how to remove the service, checkout section 3.5)
+	(for more detail on how to remove the service, checkout section 3.2)
+	
+	
+3. Insert and remove the driver, start and stop the daemon
 
-  3.4 start the daemon
+  After installation, the driver and daemon are installed; 
+  however, before using the VCOM service, one must insert the driver and start the daemons.
+  A helper script (advman) is installed alongside the driver to help start/stop/manage the VCOM service.
+  Refer to section "5. Daemon configuration/managment" for more detail.
+
+  3.1 start the daemon
 	# advman -o insert      # insert the driver
 	# advman -o start       # start the application
 
-  3.5 stop the daemon
+  3.2 stop the daemon
 	# advman -o stop         # stop the daemon
 	# advman -o remove       # remove the driver from kernel
+  
+  3.3 auto-starting the VCOM service at boot time
+	Linux is a highly customizable environment.
+	Starting the VCOM service during boot time depends on the choise of your initial daemon.
+	However, we do provide a sample service file for systemd.
 
+  3.3.1 Systemd
+	A systemd service file is provided as a reference, if one choses to use systemd as the initial daemon.
+	It is located at "misc/systemd/advvcom.service"
+
+  3.3.1.1 Install advvcom.service
+	# make install -C ./misc/systemd/
+
+  3.3.1.2 Enabling advvcom.service
+	Enabling the service on systemd will allow VCOM to auto-start during bootup.
+	# systemctrl enable advvcom.service
+
+  3.3.1.3 Starting advvcom.service
+	This will start the VCOM service via systemd right away.
+	# systemctrl start advvcom.service
 
 
 4. System managment.
+  Several tools were designed to help system administrators check on the status and historys of each VCOM connection.
 
   4.1 Checking the on-line/off-line status of the daemons.
 	# advps            # this command shows all the tty interfaces that are currently supported by a on-line/running daemon
@@ -200,8 +234,17 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 	# vcinot -p /tmp/advmon/advtty0 -l &          # push exceptions of "ttyADV0" only.
 	# vcinot -p /tmp/advmon/advtty0 &             # only push the fist exception of "ttyADV0".
 
+  4.4 Checking TLS/SSL logs
+	The log messages assosiated with the TLS/SSL communications are stored in the "tmp/advsslmsg/" directory.
+	
+	# cat /tmp/advsslmsg/0 				# checking the TLS/SSL log messages of the /dev/ttyADV0
+	2020-11-18|15:11:14:X509 error(67):CA certificate key too weak
+	2020-11-18|15:11:14:SSL_connect failed(1):certificate verify failed
+	2020-11-18|15:11:11:X509 error(67):CA certificate key too weak
+	2020-11-18|15:11:11:SSL_connect failed(1):certificate verify failed
 
-5. Daemon configuration
+
+5. Daemon configuration/managment
 
   5.1 Managing the daemons
 	"advman" is used to manage the driver and the daemons.
@@ -220,7 +263,11 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
     5.1.4 Stop all daemons
 	# advman -o stop
 
-  5.2 Modifying the daemon configuartions
+  5.2 Modifying the daemon configuartions(VCOM mapping)
+
+	Several tools are here to aide with modifying the VCOM mapping.
+	Please notice that, after modifying the VCOM mapping, one must update the system to make it effective.
+	Please refer to section 5.2.4 for more detail.
 
     5.2.1 Adding a connection
 	# advadd -a 10.0.0.1 -t C524 -p 1 -m 0			# Connecting /dev/ttyADV0 to the first serial port of a EKI-1524-CE with the IP address of 10.0.0.1
@@ -245,6 +292,9 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 	example:
 	   0	1524	10.0.0.1	1
 
+    5.2.4 Update the system with the new configuration.
+	After changing the daemon configurations(VCOM mapping), one must update the system to make the configuration effective.
+	# advman -o start
 
 6. VCOM over TLS
 
