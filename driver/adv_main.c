@@ -61,17 +61,25 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		return -ENOTTY;
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0)
+#	define __ACCESS_OK_5_0_0
+#elif defined(RHEL_RELEASE_CODE)
+#	if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8,1)
+#		define __ACCESS_OK_5_0_0
+#	endif
+#endif
+
 	if (_IOC_DIR(cmd) & _IOC_READ){
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0)
-		err = !access_ok(VERIFY_WRITE, (void __user *)arg, _IOC_SIZE(cmd));
-#else
+#ifdef	__ACCESS_OK_5_0_0
 		err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
+#else
+		err = !access_ok(VERIFY_WRITE, (void __user *)arg, _IOC_SIZE(cmd));
 #endif
 	}else if (_IOC_DIR(cmd) & _IOC_WRITE){
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0)
-		err =  !access_ok(VERIFY_READ, (void __user *)arg, _IOC_SIZE(cmd));
-#else
+#ifdef	__ACCESS_OK_5_0_0
 		err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
+#else
+		err = !access_ok(VERIFY_READ, (void __user *)arg, _IOC_SIZE(cmd));
 #endif
 	}
 	if (err)
