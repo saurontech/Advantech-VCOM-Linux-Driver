@@ -169,11 +169,11 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 
   3.3.1.2 Enabling advvcom.service
 	Enabling the service on systemd will allow VCOM to auto-start during bootup.
-	# systemctrl enable advvcom.service
+	# systemctl enable advvcom.service
 
   3.3.1.3 Starting advvcom.service
 	This will start the VCOM service via systemd right away.
-	# systemctrl start advvcom.service
+	# systemctl start advvcom.service
 
 
 4. System managment.
