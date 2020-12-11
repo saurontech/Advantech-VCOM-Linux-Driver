@@ -102,7 +102,7 @@ fi
 `cat $PUB_KEY  $PRIV_KEY> $KEYPAIR`
 }
 
-while getopts “hn:k:p:s:e:l:L:d” OPTION
+while getopts “hn:k:p:s:e:l:L:d:” OPTION
 do
 	case $OPTION in
 		h)
