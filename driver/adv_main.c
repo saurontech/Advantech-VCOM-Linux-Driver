@@ -252,6 +252,15 @@ unsigned int adv_proc_poll(struct file *filp, poll_table *wait)
 
 extern int adv_proc_mmap(struct file *filp, struct vm_area_struct *vma);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0)
+static const struct proc_ops adv_proc_fops = {
+	.proc_open 	= adv_proc_open,
+	.proc_release	= adv_proc_release,
+	.proc_mmap	= adv_proc_mmap,
+	.proc_ioctl	= adv_proc_ioctl,
+	.proc_poll	= adv_proc_poll,
+};
+#else
 static const struct file_operations adv_proc_fops = {
 	.owner		= THIS_MODULE,
 	.open		= adv_proc_open,
@@ -260,7 +269,7 @@ static const struct file_operations adv_proc_fops = {
 	.unlocked_ioctl	= adv_proc_ioctl,
 	.poll		= adv_proc_poll,
 };
-
+#endif
 
 void adv_main_interrupt(struct adv_vcom * data, int mask)
 {
