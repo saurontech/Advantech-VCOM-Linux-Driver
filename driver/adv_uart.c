@@ -430,10 +430,12 @@ adv_uart_set_termios(struct uart_port *port, struct ktermios *termios,
 		attr->flowctl = ADV_FLOW_RTSCTS;
 		port->status |= UPSTAT_AUTOCTS;
 		port->status |= UPSTAT_AUTORTS;
-
+		port->status &= ~UPSTAT_AUTOXOFF;
 	}else if(termios->c_iflag & IXOFF){
 		attr->flowctl = ADV_FLOW_XONXOFF;
 		port->status |= UPSTAT_AUTOXOFF;
+		port->status &= ~UPSTAT_AUTOCTS;
+		port->status &= ~UPSTAT_AUTORTS;
 	}else{
 		attr->flowctl = ADV_FLOW_NONE;
 		port->status &= ~UPSTAT_AUTOCTS;
