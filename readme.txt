@@ -115,6 +115,8 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 	| EKI-1322		| 1322		|
 	| EKI-1361		| 1361		|
 	| EKI-1362		| 1362		|
+	| EKI-1361-BE		| B361		|
+	| EKI-1362-BE		| B362		|
 	| ADAM-4570-BE		| 4570		|
 	| ADAM-4570-CE		| D570		|
 	| ADAM-4571-BE		| 4571		|
