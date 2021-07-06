@@ -11,6 +11,8 @@ $(TLS)_build	+= build_ssl
 $(TLS)_install	+= install_ssl
 $(DKMS)_install	+= install_dkms
 $(DKMS)_uninstall	+= uninstall_dkms
+$(SYSTEMD)_install += install_systemd
+$(SYSTEMD)_uninstall += uninstall_systemd
 
 ifneq ($(DKMS), y)
 y_install += install_driver
@@ -108,3 +110,9 @@ uninstall_dkms:
 	dkms uninstall -m $(MODNAME) -v $(VERSION)
 	dkms remove -m $(MODNAME) -v $(VERSION) --all
 	rm -rf /usr/src/$(MODNAME)-$(VERSION)
+
+install_systemd:
+	make install -C ./misc/systemd
+
+uninstall_systemd:
+	make uninstall -C ./misc/systemd
