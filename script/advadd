@@ -99,9 +99,9 @@ then
 else
 	# Guider:: check for valid IPv4 & IPv6
 	#if [ `echo $ADDRESS|egrep "[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+" -c` -lt 1 ]
-	ADDRESS_SPACE="$ADDRESS[[:space:]]"
+	ADDRESS_SPACE="$ADDRESS "
 	_PAT_ADDRESS_SPACE="$_PAT_ADDRESS[[:space:]]"
-	if [ `echo $ADDRESS_SPACE|egrep "$_PAT_ADDRESS_SPACE" -c` -lt 1 ]
+	if [ `echo "$ADDRESS_SPACE"|egrep "$_PAT_ADDRESS_SPACE" -c` -lt 1 ]
 	then
 		echo "Bad IP address:$ADDRESS"
 		exit 1
