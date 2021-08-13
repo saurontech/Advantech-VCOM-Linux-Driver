@@ -19,7 +19,7 @@ ifneq ($(KERNELRELEASE),)
 
 advvcom-objs := adv_main.o adv_mmap.o adv_uart.o 
 advvcom-objs += ./legacy/mmap/ops_fault.o
-advvcom-objs += ./legacy/uart/adv_uart_init.o ./legacy/uart/adv_uart_set_termios.o
+advvcom-objs += ./legacy/uart/adv_uart_set_termios.o
 advvcom-objs += ./legacy/main/adv_proc_ioctl.o
 
 obj-m	:= advvcom.o

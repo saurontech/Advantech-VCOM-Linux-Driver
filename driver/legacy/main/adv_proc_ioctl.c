@@ -1,4 +1,39 @@
+#include <linux/module.h>                           
+#include <linux/moduleparam.h>                      
+#include <linux/init.h>                             
+#include <linux/kernel.h>       /* printk() */      
+#include <linux/slab.h>         /* kmalloc() */     
+#include <linux/fs.h>           /* everything... */ 
+#include <linux/errno.h>        /* error codes */   
+#include <linux/types.h>        /* size_t */        
+#include <linux/proc_fs.h>                          
+#include <linux/fcntl.h>        /* O_ACCMODE */     
+#include <linux/aio.h>          
+#include <linux/poll.h>      
+#include <linux/moduleparam.h>  
+#include <linux/init.h>         
+#include <linux/kernel.h>       /* printk() */      
+#include <linux/slab.h>         /* kmalloc() */     
+#include <linux/fs.h>           /* everything... */ 
+#include <linux/errno.h>        /* error codes */   
+#include <linux/types.h>        /* size_t */        
+#include <linux/proc_fs.h>                          
+#include <linux/fcntl.h>        /* O_ACCMODE */ 
+#include <linux/aio.h>                              
+#include <asm/uaccess.h>
+#include <linux/wait.h>
 #include <linux/version.h>
+#include "advioctl.h"
+#include "advvcom.h"
+
+
+extern void adv_uart_update_xmit(struct uart_port *);
+extern void adv_uart_recv_chars(struct uart_port *);
+extern void adv_main_interrupt(struct adv_vcom *, int);
+extern void adv_main_clear(struct adv_vcom * data, int mask);
+extern unsigned int adv_uart_ms(struct uart_port *, unsigned int);
+
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0)
 //@ current
 #else
