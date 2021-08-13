@@ -23,17 +23,20 @@
 #include <asm/uaccess.h>
 #include <linux/wait.h>
 #include <linux/version.h>
-#include "../../advioctl.h"
-#include "../../advvcom.h"
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0)
-//@ current
-#else
+#include "advioctl.h"
+#include "advvcom.h"
+
+
 extern void adv_uart_update_xmit(struct uart_port *);
 extern void adv_uart_recv_chars(struct uart_port *);
 extern void adv_main_interrupt(struct adv_vcom *, int);
 extern void adv_main_clear(struct adv_vcom * data, int mask);
 extern unsigned int adv_uart_ms(struct uart_port *, unsigned int);
 
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0)
+//@ current
+#else
 long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	struct adv_vcom * data;
