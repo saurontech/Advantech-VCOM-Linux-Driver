@@ -23,19 +23,10 @@
 #include <asm/io.h>
 #include <asm/uaccess.h>
 
-
 #include "advvcom.h"
+#include "adv_uart.h"
 
 LIST_HEAD(uart_list);
-
-struct adv_uart_port {
-	struct uart_port	port;
-	struct adv_port_att *	attr;
-	struct ring_buf	*	rx;
-	struct ring_buf *	tx;
-	struct list_head	list;
-};
-
 
 void adv_uart_xmit(struct uart_port *);
 
@@ -599,7 +590,6 @@ int adv_uart_register(void)
 	return ret;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
 int adv_uart_init(struct adv_vcom * vcomdata, int index)
 {
 	int ret;
@@ -618,7 +608,9 @@ int adv_uart_init(struct adv_vcom * vcomdata, int index)
 	adv_serial_port->port.ops = &adv_uart_ops;
 	adv_serial_port->port.line = index;
 	adv_serial_port->port.fifosize = 2048;
-	adv_serial_port->port.status |= (UPSTAT_AUTOCTS|UPSTAT_AUTORTS|UPSTAT_AUTOXOFF);
+//	these values are set in set_termios, don't need to set here
+//	otherwise, we would need to make adv_uart_ops global, which we really don't want.
+//	adv_serial_port->port.status |= (UPSTAT_AUTOCTS|UPSTAT_AUTORTS|UPSTAT_AUTOXOFF);
 	
 	ret = uart_add_one_port(&adv_uart_driver, &adv_serial_port->port);
 
@@ -632,9 +624,6 @@ int adv_uart_init(struct adv_vcom * vcomdata, int index)
 
 	return ret;	
 }
-#else
-#include "legacy/uart/adv_uart_set_termios.h"
-#endif
 
 int adv_uart_rm_port(int index)
 {

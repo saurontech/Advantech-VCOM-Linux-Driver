@@ -1,9 +1,35 @@
+#include <linux/module.h>
+#include <linux/tty.h>
+#include <linux/ioport.h>
+#include <linux/init.h>
+#include <linux/console.h>
+#include <linux/sysrq.h>
+#include <linux/delay.h>
+#include <linux/device.h>
+#include <linux/pci.h>
+#include <linux/sched.h>
+#include <linux/string.h>
+#include <linux/kernel.h>
+#include <linux/slab.h>
+#include <linux/tty_flip.h>
+#include <linux/serial_reg.h>
+#include <linux/serial.h>
+#include <linux/serial_core.h>
 #include <linux/version.h>
+
+#include <asm/bitops.h>
+#include <asm/byteorder.h>
+#include <asm/serial.h>
+#include <asm/io.h>
+#include <asm/uaccess.h>
+
+#include "../../advvcom.h"
+#include "../../adv_uart.h"
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
 //@ current
 #else
-static void
+void
 adv_uart_set_termios(struct uart_port *port, struct ktermios *termios,
 		       struct ktermios *old)
 {

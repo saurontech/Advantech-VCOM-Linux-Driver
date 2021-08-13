@@ -1,4 +1,11 @@
+#include <linux/module.h>
+
+#include <linux/mm.h>           /* everything */
+#include <linux/errno.h>        /* error codes */
+#include <linux/fs.h>
+#include <asm/pgtable.h>
 #include <linux/version.h>
+#include "../../advvcom.h"
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,17,0)
 //@ current
