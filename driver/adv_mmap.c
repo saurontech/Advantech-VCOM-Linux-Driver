@@ -61,8 +61,7 @@ vm_fault_t adv_vma_nopage(struct vm_fault *vmf)
 	out:
 	return ret;
 }
-#else
-#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
+#elif  LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
 int adv_vma_nopage(struct vm_fault *vmf)
 {
 	unsigned long offset;
@@ -141,7 +140,6 @@ int adv_vma_nopage(struct vm_area_struct *vma, struct vm_fault *vmf)
 	out:
 	return ret;
 }
-#endif
 #endif
 
 struct vm_operations_struct adv_vm_ops = {
