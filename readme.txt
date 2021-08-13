@@ -54,6 +54,11 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 
 	* Early RedHat systems (before CentOS 7/RHEL 7/Fedora 21) might require you to use "yum" instead of "dnf".
 
+	* On CentOS 7, DKMS is included in the "EPEL"(Extended Packages for Enterpirse Linux),
+	* One would need to enable EPEL with the following command:
+
+	# yum install -y epel-release
+
 	# yum install kernel-devel kernel-headers gcc make
 	# yum install openssl-devel
 	# yum install openssl
