@@ -23,8 +23,8 @@
 #include <asm/io.h>
 #include <asm/uaccess.h>
 
-#include "advvcom.h"
-#include "adv_uart.h"
+#include "../../advvcom.h"
+#include "../../adv_uart.h"
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
 //@ current

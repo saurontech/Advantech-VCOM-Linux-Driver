@@ -23,8 +23,8 @@
 #include <asm/uaccess.h>
 #include <linux/wait.h>
 #include <linux/version.h>
-#include "advioctl.h"
-#include "advvcom.h"
+#include "../../advioctl.h"
+#include "../../advvcom.h"
 
 
 extern void adv_uart_update_xmit(struct uart_port *);
