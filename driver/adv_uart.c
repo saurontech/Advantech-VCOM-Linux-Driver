@@ -26,14 +26,6 @@
 
 #include "advvcom.h"
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
-#define __PORT_STATES_AUTOFLOWCTRL
-#else
-#ifdef UPSTAT_AUTORTS
-#define __PORT_STATES_AUTOFLOWCTRL
-#endif
-#endif
-
 LIST_HEAD(uart_list);
 
 struct adv_uart_port {
@@ -404,7 +396,7 @@ static void adv_uart_shutdown(struct uart_port *port)
 	}
 }
 
-
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
 static void
 adv_uart_set_termios(struct uart_port *port, struct ktermios *termios,
 		       struct ktermios *old)
@@ -438,25 +430,19 @@ adv_uart_set_termios(struct uart_port *port, struct ktermios *termios,
 	//flow control
 	if(termios->c_cflag & CRTSCTS){
 		attr->flowctl = ADV_FLOW_RTSCTS;
-#ifdef __PORT_STATES_AUTOFLOWCTRL
 		port->status |= UPSTAT_AUTOCTS;
 		port->status |= UPSTAT_AUTORTS;
 		port->status &= ~UPSTAT_AUTOXOFF;
-#endif
 	}else if(termios->c_iflag & IXOFF){
 		attr->flowctl = ADV_FLOW_XONXOFF;
-#ifdef __PORT_STATES_AUTOFLOWCTRL
 		port->status |= UPSTAT_AUTOXOFF;
 		port->status &= ~UPSTAT_AUTOCTS;
 		port->status &= ~UPSTAT_AUTORTS;
-#endif
 	}else{
 		attr->flowctl = ADV_FLOW_NONE;
-#ifdef __PORT_STATES_AUTOFLOWCTRL
 		port->status &= ~UPSTAT_AUTOCTS;
 		port->status &= ~UPSTAT_AUTORTS;
 		port->status &= ~UPSTAT_AUTOXOFF;
-#endif
 	}
 	//pairity
 	switch(termios->c_cflag & (PARODD|CMSPAR|PARENB)){
@@ -491,6 +477,9 @@ adv_uart_set_termios(struct uart_port *port, struct ktermios *termios,
 		wake_up_interruptible(&adv_attr->wait);
 	}
 }
+#else
+#include "./legacy/uart/adv_uart_set_termios.h"
+#endif
 
 
 static int
@@ -610,6 +599,7 @@ int adv_uart_register(void)
 	return ret;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
 int adv_uart_init(struct adv_vcom * vcomdata, int index)
 {
 	int ret;
@@ -628,9 +618,7 @@ int adv_uart_init(struct adv_vcom * vcomdata, int index)
 	adv_serial_port->port.ops = &adv_uart_ops;
 	adv_serial_port->port.line = index;
 	adv_serial_port->port.fifosize = 2048;
-#ifdef __PORT_STATES_AUTOFLOWCTRL
 	adv_serial_port->port.status |= (UPSTAT_AUTOCTS|UPSTAT_AUTORTS|UPSTAT_AUTOXOFF);
-#endif
 	
 	ret = uart_add_one_port(&adv_uart_driver, &adv_serial_port->port);
 
@@ -644,6 +632,9 @@ int adv_uart_init(struct adv_vcom * vcomdata, int index)
 
 	return ret;	
 }
+#else
+#include "legacy/uart/adv_uart_set_termios.h"
+#endif
 
 int adv_uart_rm_port(int index)
 {

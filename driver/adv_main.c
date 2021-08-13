@@ -44,6 +44,7 @@ extern unsigned int adv_uart_ms(struct uart_port *, unsigned int);
 
 MODULE_LICENSE("GPL");
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0)
 long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	struct adv_vcom * data;
@@ -61,26 +62,10 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		return -ENOTTY;
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0)
-#	define __ACCESS_OK_5_0_0
-#elif defined(RHEL_RELEASE_CODE)
-#	if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8,1)
-#		define __ACCESS_OK_5_0_0
-#	endif
-#endif
-
 	if (_IOC_DIR(cmd) & _IOC_READ){
-#ifdef	__ACCESS_OK_5_0_0
 		err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
-#else
-		err = !access_ok(VERIFY_WRITE, (void __user *)arg, _IOC_SIZE(cmd));
-#endif
 	}else if (_IOC_DIR(cmd) & _IOC_WRITE){
-#ifdef	__ACCESS_OK_5_0_0
 		err = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
-#else
-		err = !access_ok(VERIFY_READ, (void __user *)arg, _IOC_SIZE(cmd));
-#endif
 	}
 	if (err)
 		return -EFAULT;
@@ -182,7 +167,9 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 	return (long)ret;
 }
-
+#else
+#include "./legacy/main/adv_proc_ioctl.h"
+#endif
 
 int adv_proc_open(struct inode *inode, struct file *filp)
 {
@@ -261,14 +248,7 @@ static const struct proc_ops adv_proc_fops = {
 	.proc_poll	= adv_proc_poll,
 };
 #else
-static const struct file_operations adv_proc_fops = {
-	.owner		= THIS_MODULE,
-	.open		= adv_proc_open,
-	.release	= adv_proc_release,
-	.mmap		= adv_proc_mmap,
-	.unlocked_ioctl	= adv_proc_ioctl,
-	.poll		= adv_proc_poll,
-};
+#include "./legacy/main/adv_proc_fops.h"
 #endif
 
 void adv_main_interrupt(struct adv_vcom * data, int mask)
