@@ -56,6 +56,7 @@ int __search_lport_stat_inode(int ipfamily, unsigned short port,  unsigned short
 	unsigned int connection_state;
 	char tmp[1024];
 	int inode;
+	int i;
 	snprintf(path, sizeof(path), "/proc/net/tcp%s", ipfamily==4?"":"6");
 	//printf("path = %s\n", path);
 
@@ -68,7 +69,7 @@ int __search_lport_stat_inode(int ipfamily, unsigned short port,  unsigned short
 		return -1;
 	}
 	// skip first two lines
-	for (int i = 0; i < 1; i++) {
+	for (i = 0; i < 1; i++) {
 		fgets(buf, sizeof(buf), fp);
 	}
 

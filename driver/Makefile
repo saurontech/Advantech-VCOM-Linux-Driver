@@ -17,7 +17,10 @@ TARGET = advvcom
 
 ifneq ($(KERNELRELEASE),)
 
-advvcom-objs := adv_main.o adv_mmap.o adv_uart.o
+advvcom-objs := adv_main.o adv_mmap.o adv_uart.o 
+advvcom-objs += ./legacy/mmap/ops_fault.o
+advvcom-objs += ./legacy/uart/adv_uart_set_termios.o
+advvcom-objs += ./legacy/main/adv_proc_ioctl.o
 
 obj-m	:= advvcom.o
 
@@ -37,8 +40,10 @@ install:
 	install -c $(TARGET).o $(INSTALLDIR)
 
 clean:
-	rm -rf *.o *~ core .depend .*.cmd *.ko *.mod.c .tmp_versions *.symvers *.order *.a *.mod
-
+	rm -rf *.o *~ core .depend .*.cmd *.ko *.mod.c .tmp_versions *.symvers *.order *.a *.mod *.dwo
+	find ./legacy -name '*.o' -exec rm {} \;
+	find ./legacy -name '*.dwo' -exec rm {} \;
+	find ./legacy -name '*.cmd' -exec rm {} \;
 
 depend .depend dep:
 	$(CC) -M *.c > .depend

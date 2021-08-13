@@ -30,3 +30,4 @@ clean:
 	rm -f *.csr
 	rm -f *.key
 	rm -f *.srl
+	rm -f .srl
