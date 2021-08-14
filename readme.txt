@@ -369,3 +369,5 @@ This README file describes the HOW-TO of driver installation and VCOM service ma
 
 
 	
+
+Codacy Badge
