@@ -13,8 +13,13 @@ typedef struct _t_treenode{
 
 
 static inline void *realloc_it(void *ptrmem, size_t size) {
-	void *p = realloc(ptrmem, size);
-	if (p == 0 && size != 0)  {
+	void *p;
+	if(size == 0 ){
+		free(ptrmem);
+		return 0;
+	}
+	p = realloc(ptrmem, size);
+	if (!p)  {
 		free (ptrmem);
 		//fprintf(stderr, "realloc(): errno=%d\n", errno);
 	}
