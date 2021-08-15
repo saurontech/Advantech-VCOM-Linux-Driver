@@ -14,9 +14,9 @@ typedef struct _t_treenode{
 
 static inline void *realloc_it(void *ptrmem, size_t size) {
 	void *p = realloc(ptrmem, size);
-	if (!p)  {
+	if (p == 0)  {
 		free (ptrmem);
-		fprintf(stderr, "realloc(): errno=%d\n", errno);
+		//fprintf(stderr, "realloc(): errno=%d\n", errno);
 	}
 	return p;
 }
