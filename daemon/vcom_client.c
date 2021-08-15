@@ -183,8 +183,8 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				printf("setting IP addr : %s ...\n", port->ip_ptr);
 				break;
 			case 'p':
-				sscanf(optarg, "%d", &(port->port));
-				printf("setting device port : %d ...\n", port->port);
+				sscanf(optarg, "%u", &(port->port));
+				printf("setting device port : %u ...\n", port->port);
 				break;  
 			case 'r':
 				addr = optarg;
