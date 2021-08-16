@@ -95,7 +95,7 @@ static inline int pmon_log(dbg_mon * dbg, /*int sig, int time,*/ char * __form, 
 	mem = (char *)dbg->addr;
 
 	va_start(args, __form);
-	len = vsnprintf(tmp, MSIZE, __form, args);
+	len = vsnprintf(tmp, sizeof(tmp), __form, args);
 	va_end(args);
 	
 	memmove(dbg->addr + len + tm_strlen, dbg->addr, MSIZE - len - tm_strlen);
