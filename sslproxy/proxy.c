@@ -55,10 +55,21 @@ int __search_lport_stat_inode(int ipfamily, unsigned short port,  unsigned short
 	char * ptr;
 	unsigned int connection_state;
 	char tmp[1024];
+	char scan_format[512];
 	int inode;
 	int i;
+
 	snprintf(path, sizeof(path), "/proc/net/tcp%s", ipfamily==4?"":"6");
 	//printf("path = %s\n", path);
+	snprintf(scan_format, sizeof(scan_format),
+			"%%d: %%%zus %%%zus %%x %%%zus %%%zus %%%zus %%%zus %%%zus %%d",
+			sizeof(laddr) - 1, 
+			sizeof(raddr)  - 1, 
+			sizeof(tmp) - 1,
+			sizeof(tmp) - 1, 
+			sizeof(tmp) - 1, 
+			sizeof(tmp) - 1, 
+			sizeof(tmp) - 1);
 
 	found = 0;
 
@@ -74,8 +85,9 @@ int __search_lport_stat_inode(int ipfamily, unsigned short port,  unsigned short
 	}
 
 	while (fgets(buf, sizeof(buf), fp)) {
-	//	printf("buf = %s\n", buf);
-		ret = sscanf(buf, "%d: %s %s %x %s %s %s %s %s %d", 
+		//printf("buf(%d) = %s\n", buf, strlen(buf));
+		
+		ret = sscanf(buf, scan_format, 
 				&sl, 
 				laddr,
 				raddr,
@@ -101,7 +113,7 @@ int __search_lport_stat_inode(int ipfamily, unsigned short port,  unsigned short
 			continue;
 		}
 		sscanf(ptr+1, "%hx", &lport);
-//		printf("ret = %d sl = %d laddr = %s port = %u state = %u inode= %d\n", ret, sl, laddr, lport, connection_state, inode);
+		//printf("ret = %d sl = %d laddr = %s port = %u state = %u inode= %d\n", ret, sl, laddr, lport, connection_state, inode);
 		if(lport == port){
 			found = 1;
 			break;
@@ -135,15 +147,13 @@ int __search_port_inode( unsigned short port)
 	return inode;
 }
 
-int __pid_search_fd(int pid, char * file)
+int __pid_search_fd_inode(int pid, int inode)
 {
 	static DIR *dir = 0;
 	struct dirent *entry;
 	char *name;
-	int n;
 	int fd;
 	char status[1204];
-	char buf[1024];
 	char fdpath[1024];
 	struct stat sb;
 	snprintf(fdpath, 1024, "/proc/%d/fd", pid);
@@ -172,43 +182,43 @@ int __pid_search_fd(int pid, char * file)
 			printf( "stat failed");
 			continue;
 		}
-		if(lstat(status, &sb) < 0){
-			printf( "lstat failed");
-			continue;
-		}
-
-		n = readlink(status, buf, sizeof(buf));
-
-		if(n <= 0){
-			printf("readlink failed");
-			closedir(dir);
-			return -1;
-		}
-
-		if(n !=  strlen(file) ){
-			//can't be the same file since the langth is different
-			continue;
-		}
-
-		if(memcmp(buf, file, strlen(file)) == 0){
-			closedir(dir);
-			dir = 0;
+		
+		if(sb.st_ino == inode){
+			//printf("found inode %ju  at pid %d\n", sb.st_ino, pid);
 			return pid;
 		}
+		
 	}
 
 }
 
-int __cmd_search_file(char * cmd, char * file, char *retcmd, int len)
+static int __get_pid_cmd(char * pidpath, char * cmd, int cmdlen)
+{
+	int fd;
+	int cnt;
+
+	if((fd = open(pidpath, O_RDONLY)) == 0){
+		printf( "%s(%d)fopen failed", __func__, __LINE__);
+		return -1;
+	}
+
+	cnt = read(fd, cmd, cmdlen);
+	close(fd);
+	
+	if(cnt <= 0){
+		return -1;
+	}
+
+
+	return cnt;
+}
+
+int __cmd_search_fd_inode(char * cmd, int inode, char * buf, int buflen, int *retlen)
 {
 	static DIR *dir = 0;
 	struct dirent *entry;
 	char *name;
-	int n;
 	char status[32];
-	char buf[1024];
-	int retlen;
-	FILE *fp;
 	int pid;
 	struct stat sb;
 
@@ -219,10 +229,13 @@ int __cmd_search_file(char * cmd, char * file, char *retcmd, int len)
 			return -1;
 		}
 	}
+
 	for(;;) {
+
+		int cmdlen;
 		if((entry = readdir(dir)) == NULL) {
 			//syslog(LOG_DEBUG, "%s(%d)readdir failed", __func__, __LINE__);
-			printf( "no %s were found operating %s", cmd, file);
+			//printf( "(%d/%d)no %s were found operating %d", found_vcomd, i, cmd, inode);
 			closedir(dir);
 			dir = 0;
 			return -1;
@@ -239,39 +252,15 @@ int __cmd_search_file(char * cmd, char * file, char *retcmd, int len)
 		if(stat(status, &sb))
 			continue;
 		sprintf(status, "/proc/%d/cmdline", pid);
-		if((fp = fopen(status, "r")) == NULL){
-			printf( "%s(%d)fopen failed", __func__, __LINE__);
+
+		if((cmdlen = __get_pid_cmd(status, buf, buflen)) <= 0){
 			continue;
 		}
 
-		if((n=fread(buf, 1, sizeof(buf)-1, fp)) > 0) {
-
-			if(buf[n-1]=='\n'){
-				buf[--n] = 0;
-			}
-			name = buf;
-			while(n) {
-				if(((unsigned char)*name) < ' ')
-					*name = ' ';
-				name++;
-				n--;
-			}
-			*name = 0;
-			/* if NULL it work true also */
-		}
-		fclose(fp);
-
 		if(strstr(buf, cmd) > 0){
-			if(__pid_search_fd(pid, file) > 0){
 
-				if(strlen(buf) > len){
-					retlen = len -1;
-				}else{
-					retlen = strlen(buf);
-				}
-
-				memcpy(retcmd, buf, retlen);
-				retcmd[retlen] = '\0';
+			if(__pid_search_fd_inode(pid, inode) > 0){
+				*retlen = cmdlen;
 
 				closedir(dir);
 				dir = 0;
@@ -284,74 +273,29 @@ int __cmd_search_file(char * cmd, char * file, char *retcmd, int len)
 	}
 }
 
-char* __pid_vcomd_get_address(int pid, char * buf, int len)
+char * __cmd_get_opts(char * cmd, int cmdlen, char * opt)
 {
-	int cnt;
-	int fd;
 	int i;
-	char path[1024];
 	char *ptr;
 
-	snprintf(path, sizeof(path), "/proc/%d/cmdline", pid);
-	//printf("path = %s\n", path);
-
-	fd = open(path, O_RDONLY);
-	//printf("fd = %d\n", fd);
-	cnt = read(fd, buf, len);
-	close(fd);
-	/*printf("cnt = %d buf= %s\n", cnt, buf);
-	for (i = 0; i < cnt; i++){
-		printf("[%d]%c(0x%hhx)\n", i, buf[i], buf[i]);
-	}*/
 	i = 0;
 	do{
-		ptr = strstr(&buf[i], "-a");
-	//	printf("ptr = %x buf[%d]= %s\n", ptr, i, &buf[i]);
+		ptr = strstr(&cmd[i], opt);
+
 		if(ptr > 0){
-			//printf("addr: %s\n", ptr+2);
+			ptr += strlen(opt);
+
+			if(strcmp(&cmd[i], opt) == 0){
+				ptr++;				
+			}
 			break;
 		}
-		i += strlen(&buf[i]);
-	}while(++i < cnt);
+		i += strlen(&cmd[i]);
+		
+	}while(++i < cmdlen);
 
-	return ptr+2;
-
+	return ptr;
 }
-
-char* __pid_vcomd_get_minor(int pid, char * buf, int len)
-{
-	int cnt;
-	int fd;
-	int i;
-	char path[1024];
-	char *ptr;
-
-	snprintf(path, sizeof(path), "/proc/%d/cmdline", pid);
-	//printf("path = %s\n", path);
-
-	fd = open(path, O_RDONLY);
-	//printf("fd = %d\n", fd);
-	cnt = read(fd, buf, len);
-	close(fd);
-	//printf("cnt = %d buf= %s\n", cnt, buf);
-	//for (i = 0; i < cnt; i++){
-	//	printf("[%d]%c(0x%hhx)\n", i, buf[i], buf[i]);
-	//}
-	i = 0;
-	do{
-		ptr = strstr(&buf[i], "-t");
-		//printf("ptr = %p buf[%d]= %s\n", (void *)ptr, i, &buf[i]);
-		if(ptr > 0){
-			//printf("minor: %s\n", ptr+2);
-			break;
-		}
-		i += strlen(&buf[i]);
-	}while(++i < cnt);
-
-	return ptr+2;
-
-}
-
 
 int init_serversock(char * service)
 {
@@ -1058,6 +1002,32 @@ void usage(char * cmd)
 	printf("	-c	config file\n");
 }
 
+static int _wait_proc_update(int socket, int msecs)
+{
+	int s_ret;
+	fd_set __rfds;
+	struct timeval __zerotv;
+	char __buff[1];
+
+	timerclear(&__zerotv);
+
+	FD_SET(socket, &__rfds);
+	s_ret = select(socket + 1, &__rfds, 0, 0, &__zerotv);
+
+	if(s_ret <= 0){
+		printf("no select\n");
+		return 0;
+	}
+	if(recv(socket, __buff, sizeof(__buff), MSG_PEEK | MSG_DONTWAIT) == 0)
+	{
+		printf("socket closed NNNNNNN\n");
+		return 0;
+	}
+
+	usleep(msecs * 1000);
+	return 1;
+}
+
 #define SSL_PORT "5555"
 int main(int argc, char **argv)
 {
@@ -1068,9 +1038,8 @@ int main(int argc, char **argv)
 	int pid;
 	int ch;
 	int ret;
-	char sockname[1024];
-	char cmd[1024];
-	char buf[2048];
+	//char cmd[1024];
+//	char buf[2048];
 	char *addr_str;
 	char *minor_str;
 	char *wd_end;
@@ -1169,6 +1138,10 @@ int main(int argc, char **argv)
 	chdir(orig_wd);
 
 	do{
+		char cmd[2048];
+		int cmdlen;
+		int __retry;
+
 		addrlen = sizeof(struct sockaddr_storage);
 		client = accept(server, (struct sockaddr *)&addr, &addrlen);
 
@@ -1196,20 +1169,27 @@ int main(int argc, char **argv)
 			close(client);
 			continue;
 		}
-		snprintf(sockname, sizeof(sockname), "socket:[%d]", inode);
-		//printf("ready to find socket: %s\n", sockname);
-		pid = __cmd_search_file("vcomd", sockname, cmd, sizeof(cmd));
+		
+		__retry = 10;
+		do{
+			pid = __cmd_search_fd_inode("vcomd", inode, cmd, sizeof(cmd), &cmdlen);
+
+			if(pid >= 0){
+				break;
+			}
+			
+		}while(__retry-- > 0 && 
+			_wait_proc_update(client, 300));
+			
 		if(pid < 0){
-			printf("\n%s not fount\n", sockname);
+			printf(" %d not fount on any vcomd\n", inode);
 			close(client);
 			continue;
 			//return -1;
 		}
-		//printf("found pid = %d\n", pid);
-
-		minor_str = __pid_vcomd_get_minor(pid, buf, sizeof(buf));
-		//printf("minor_str = %s\n", minor_str);
-
+		//printf("found pid = %d argc = %d\n", pid, __argc);
+		minor_str = __cmd_get_opts(cmd, cmdlen, "-t");
+		
 		log_file[0] = '\0';
 		if(log_dir){
 			snprintf(log_file, sizeof(log_file), "%s/%s", log_dir, minor_str);
@@ -1218,7 +1198,7 @@ int main(int argc, char **argv)
 		dbg = pmon_open(log_file);	
 		//printf("dbg = %p\n", (void *)dbg);
 
-		addr_str = __pid_vcomd_get_address(pid, buf, sizeof(buf));
+		addr_str = __cmd_get_opts(cmd, cmdlen, "-a");
 		//printf("address is -->%s\n", addr_str);
 		
 		if(inet_pton(AF_INET, addr_str, &remote.sin_addr) <= 0){
