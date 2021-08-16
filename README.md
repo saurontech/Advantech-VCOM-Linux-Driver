@@ -95,6 +95,13 @@ We've included the following tools to asist with the process:
 
 ### Add connections to the VCOM connection map
 Use **advadd** to add a VCOM connection.
+| option | discription | info|
+| :-----: |:----------- |:---|
+| -a | IP Address| |
+| -t | DeviceID | |
+| -m | MinorID of the driver node| starts from 0 |
+| -p | Port Number on the Device | starts from 1 |
+
 the following examples shows how to add a connection with/without TLS.
 > **Add a VCOM connection connecting "/dev/ttyADV0" with a EKI-1524-CE's 1st serial port**
 > 
@@ -118,42 +125,6 @@ Use **advrm** to remove connectons from the map.
 >
 > $ sudo advrm -t c522
 
-#### Device ID table
-The device ID is specified by **-t** when using **advadd** or **advrm**.  
-If one uses an EKI Device server with **ignore device ID** enabled or with the VCOM service switched to version **2.0**, 
-this value dosn't matter anymore.  Just give it any ID, for example "1524", for backword compatability.
-|Device | Device ID|
-|:-----:|:--------:|
-| EKI-1521-AE		| 1521		|
-| EKI-1522-AE		| 1522		|
-| EKI-1524-AE		| 1524		|
-| EKI-1528-AE		| 1528		|
-| EKI-1526-AE		| 1526		|
-| EKI-1521-BE		| B521		|
-| EKI-1522-BE		| B522		|
-| EKI-1524-BE		| B524		|
-| EKI-1528-BE		| B528		|
-| EKI-1526-BE		| B526		|
-| EKI-1521-CE		| C521		|
-| EKI-1522-CE		| C522		|
-| EKI-1524-CE		| C524		|
-| EKI-1528-CE		| D528		|
-| EKI-1528DR		| C528		|
-| EKI-1526-CE		| D526		|
-| EKI-1321		| 1321		|
-| EKI-1322		| 1322		|
-| EKI-1361		| 1361		|
-| EKI-1362		| 1362		|
-| EKI-1361-BE		| B361		|
-| EKI-1362-BE		| B362		|
-| ADAM-4570-BE		| 4570		|
-| ADAM-4570-CE		| D570		|
-| ADAM-4571-BE		| 4571		|
-| ADAM-4571-CE		| D571		|
-| ADAM-4570L-CE		| B570		|
-| ADAM-4570L-DE		| E570		|
-| ADAM-4571L-CE		| B571		|
-| ADAM-4571L-DE		| E571		|
 
 ### startup/updating the service with the current map
 Use **advman** to starup or update the VCOM service everytime the VCOM map is modified.
