@@ -298,10 +298,10 @@ static inline int fdcheck(int fd, int type, struct timeval * ctv)
 
 	FD_ZERO(&rfds);
 	FD_ZERO(&wfds);
-	if(type| FD_RD_RDY){
+	if(type& FD_RD_RDY){
 		FD_SET(fd, &rfds);
 	}
-	if(type| FD_WR_RDY){
+	if(type& FD_WR_RDY){
 		FD_SET(fd, &wfds);
 	}
 	if(ctv > 0){
