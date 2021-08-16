@@ -98,11 +98,11 @@ static inline int pmon_log(dbg_mon * dbg, /*int sig, int time,*/ char * __form, 
 	len = vsnprintf(tmp, sizeof(tmp), __form, args);
 	va_end(args);
 	
-	memmove(dbg->addr + len + tm_strlen, dbg->addr, MSIZE - len - tm_strlen);
+	memmove((char *)(dbg->addr) + len + tm_strlen, dbg->addr, MSIZE - len - tm_strlen);
 	if(tm_strlen > 0){
 		memcpy(dbg->addr, tm_str, tm_strlen);
 	}
-	memcpy(dbg->addr + tm_strlen, tmp, len);
+	memcpy((char *)(dbg->addr) + tm_strlen, tmp, len);
 	mem = dbg->addr;
 	mem[MSIZE -1] ='\0';
 	/*msgl = snprintf(mem, MSIZE, "Pid : %d | State : %s ",
