@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,6 +17,10 @@
 #include "advtype.h"
 #include "vcom_proto.h"
 #include "vcom.h"
+#include "jsmn.h"
+#include "jstree.h"
+#include "jstree_read.h"
+#include "vcom_load_sslcfg.h"
 //#include "vcom_debug.h"
 
 #define RBUF_SIZE	4096
@@ -146,12 +151,14 @@ void usage(char * cmd)
 int startup(int argc, char **argv, struct vc_attr *port)
 {
 	char *addr;
+	char *sslcfg;
 	int ch;
 
 	port->ttyid = -1;
 	port->devid = 0;
 	port->port = -1;
 	port->ssl = 0;
+	port->ssl_proxy = 0;
 	addr = 0;
 
 	if(argc < 2) {
@@ -160,9 +167,10 @@ int startup(int argc, char **argv, struct vc_attr *port)
 	}
 
 	mon_init(0);
-	while((ch = getopt(argc, argv, "shl:t:d:a:p:r:")) != -1)  {
+	while((ch = getopt(argc, argv, "sS:hl:t:d:a:p:r:")) != -1)  {
 		switch(ch){
 			case 'h':
+
 				usage(argv[0]);
 				return -1;
 			case 'l':
@@ -192,8 +200,34 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				printf("setting RIP addr : %s ...\n", port->ip_red);
 				break;
 			case 's':
-				port->ssl = 1;
+				port->ssl_proxy = 1;
 				printf("ssl enabled\n");
+				break;
+			case 'S':
+				sslcfg = optarg;
+				printf("ssl config %s\n", sslcfg);
+				if(loadconfig(sslcfg)){
+					printf("cannot load config file");
+				}
+				
+				port->ssl = sslinfo_alloc();
+				init_ssl_lib();
+				char wd_orig[1024];
+				char * wd_new;
+				if(getcwd(wd_orig, sizeof(wd_orig))){
+					printf("original cwd is %s\n", wd_orig);
+				}
+
+				wd_new = create_cfg_cwd(sslcfg);
+				chdir(wd_new);
+				free(wd_new);
+				printf("keyfile %s\n", _config_keyfile);
+				printf("rootCA %s\n", _config_rootca);
+				port->ssl->ctx = initialize_ctx( _config_rootca, 
+								_config_keyfile, 
+								_config_password);
+				printf("create ctx @%p\n", port->ssl->ctx);
+				chdir(wd_orig);
 				break;
 			default:
 				usage(argv[0]);
@@ -321,6 +355,7 @@ int main(int argc, char **argv)
 		if(FD_ISSET(port.fd, &efds)){
 			vc_buf_update(&port, VC_BUF_ATTR);
 		}
+
 
 		if(FD_ISSET(port.sk, &rfds)){
 			lrecv = 0;

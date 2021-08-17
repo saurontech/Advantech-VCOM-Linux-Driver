@@ -97,16 +97,10 @@ static int _sync_ms(struct vc_attr *attr, unsigned int uart_ms)
 			return -1;
 		}
 
-		if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
-			printf("cannot send %s\n", dbg_msg);
+		if(vc_check_send(attr, packet, plen, dbg_msg) != 0){
 			return -1;
-		}
-
-		if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
-			printf("failed to  send %s\n", dbg_msg);
-			return -1;
-		}
-		
+		}	
+	
 		step++;
 		attr->tid++;
 	}
@@ -150,15 +144,10 @@ static int _sync_event(struct vc_attr * attr)
 			break;
 		}
 
-		if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
-			printf("cannot send %s\n", dbg_msg);
+		if(vc_check_send(attr, packet, plen, dbg_msg) != 0){
 			break;
 		}
 
-		if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
-			printf("failed to  send %s\n", dbg_msg);
-			break;
-		}
 		attr->tid++;
 		init_step++;
 	}
@@ -182,15 +171,10 @@ static int _reg_sync_event(struct vc_attr * attr)
 		return -1;
 	}
 
-	if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
-		printf("cannot send WAIT_ON_MASK\n");
+	if(vc_check_send(attr, packet, plen, "WAIT_ON_MASK") != 0){
 		return -1;
 	}
 
-	if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
-		printf("failed to  send WAIT_ON_MASK\n");
-		return -1;
-	}
 	attr->tid++;
 
 	return 0;
@@ -218,15 +202,11 @@ static int _sync_queue(struct vc_attr * attr)
 		return -1;
 	}
 
-	if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
-		printf("cannot send QUEUE_FREE\n");
+	
+	if(vc_check_send(attr, packet, plen, "QUEUE_FREE") != 0){
 		return -1;
 	}
 
-	if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
-		printf("failed to  send QUEUE_FREE\n");
-		return -1;
-	}
 	attr->tid++;
 
 	return 0;

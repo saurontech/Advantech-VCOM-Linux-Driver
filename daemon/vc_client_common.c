@@ -40,26 +40,16 @@ struct vc_ops * vc_common_open(struct vc_attr * attr)
 
 	if(plen == 0){
 		printf("cannot create open packet\n");
-		close(attr->sk);
-		attr->sk = -1;
 		stk_excp(stk);
 		return stk_curnt(stk)->init(attr);
 
 	}
-	if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
-		printf("not ready to send\n");
-		close(attr->sk);
-		attr->sk = -1;
+
+	if(vc_check_send(attr, packet, plen, "OPEN") != 0){
 		stk_excp(stk);
 		return stk_curnt(stk)->init(attr);
 	}
-	if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
-		printf("send failed\n");
-		close(attr->sk);
-		attr->sk = -1;
-		stk_excp(stk);
-		return stk_curnt(stk)->init(attr);
-	}
+	
 
 	attr->tid++;
 	
@@ -112,20 +102,13 @@ struct vc_ops * vc_common_xmit(struct vc_attr * attr)
 		return stk_curnt(stk)->init(attr);
 	}
 
-	if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
+	if(vc_check_send(attr, packet, plen, "QUEUE_FREE") != 0){
 		printf("%s(%d)\n", __func__, __LINE__);
-		close(attr->sk);
-		attr->sk = -1;
-		stk_excp(stk);
-        return stk_curnt(stk)->init(attr);
-	}
-	if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
-		printf("%s(%d)\n", __func__, __LINE__);
-		close(attr->sk);
-		attr->sk = -1;
 		stk_excp(stk);
 		return stk_curnt(stk)->init(attr);
 	}
+
+	
 	attr->xmit_pending = len;
 	attr->tid++;
 	
@@ -264,15 +247,9 @@ struct vc_ops * vc_common_ioctl(struct vc_attr * attr)
 			break;
 		}
 
-		if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
-			printf("%s(%d)\n", __func__, __LINE__);
-			stk_excp(stk);
-  	        return stk_curnt(stk)->init(attr);
-		}
-		if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
-			printf("%s(%d)\n", __func__, __LINE__);
-			stk_excp(stk);
-            return stk_curnt(stk)->init(attr);
+		if(vc_check_send(attr, packet, plen, "ioctl") != 0){
+			//should check here
+			break;
 		}
 
 		attr->tid++;
@@ -460,12 +437,7 @@ void vc_common_purge(struct vc_attr * attr, unsigned int pflags)
 		return;
 	}
 
-	if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
-		printf("cannot send purge\n");
-		return;
-	}
-	if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
-		printf("failed to send purge\n");
+	if(vc_check_send(attr, packet, plen, "PURGE") != 0){
 		return;
 	}
 
@@ -491,20 +463,14 @@ struct vc_ops * vc_common_close(struct vc_attr * attr)
 
 	plen = vc_pack_close(packet, attr->tid, sizeof(pbuf));
 	if(plen == 0){
-		printf("failed to create purge packet\n");
+		printf("failed to create CLOSE packet\n");
 		stk_excp(stk);
-        return stk_curnt(stk)->init(attr);
+        	return stk_curnt(stk)->init(attr);
 	}
 
-	if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
-		printf("cannot send purge\n");
+	if(vc_check_send(attr, packet, plen, "CLOSE") != 0){
 		stk_excp(stk);
-        return stk_curnt(stk)->init(attr);
-	}
-	if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
-		printf("failed to send purge\n");
-		stk_excp(stk);
-        return stk_curnt(stk)->init(attr);
+		return stk_curnt(stk)->init(attr);
 	}
 
 	attr->tid++;	

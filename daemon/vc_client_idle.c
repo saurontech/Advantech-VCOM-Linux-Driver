@@ -94,20 +94,11 @@ struct vc_ops * vc_idle_init(struct vc_attr * attr)
 		return stk_curnt(stk)->init(attr);
 	}
 
-	if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
-		printf("%s(%d)\n", __func__, __LINE__);
-		close(attr->sk);
-		attr->sk = -1;
-		stk_excp(stk);                                                                         
-        return stk_curnt(stk)->init(attr);
+	if(vc_check_send(attr, packet, plen, "GET_WMASK") != 0){
+		stk_excp(stk);
+		return stk_curnt(stk)->init(attr);
 	}
-	if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
-		printf("%s(%d)\n", __func__, __LINE__);
-		close(attr->sk);
-		attr->sk = -1;
-		stk_excp(stk);                                                                         
-        return stk_curnt(stk)->init(attr);
-	}
+	
 	attr->tid++;
 	
 	return ADV_THIS;

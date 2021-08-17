@@ -142,7 +142,7 @@ int vc_connect(struct vc_attr * attr)
 	
 	FD_ZERO(&rfds);
 
-	if(attr->ssl){
+	if(attr->ssl_proxy){
 		printf("connecting to TLS proxy\n");
 		addr = "127.0.0.1";
 		vc_tcp_port = VC_SSL_PROXY;
@@ -198,6 +198,7 @@ int vc_connect(struct vc_attr * attr)
 		vc_config_sock(sk, VC_SKOPT_BLOCK, 0);
 		setsockopt(sk, IPPROTO_TCP, TCP_NODELAY, &enable, sizeof(enable));
 	}
+	
 
 	return sk;
 }
@@ -210,11 +211,18 @@ struct vc_ops * vc_netdown_close(struct vc_attr * attr)
 	printf("%s(%d)\n", __func__, __LINE__);
 	vc_buf_clear(attr, ADV_CLR_RX|ADV_CLR_TX);
 
-	if(attr->sk > 0){
-		printf("sk = %d\n", attr->sk);
+	if(attr->sk >= 0){
+		if(attr->ssl){
+			__set_block(attr->ssl->sk);
+			SSL_shutdown(attr->ssl->ssl);
+			SSL_free(attr->ssl->ssl);
+		}
 		close(attr->sk);
 		attr->sk = -1;
 	}
+
+	
+
 	return ADV_THIS;
 }
 
@@ -225,8 +233,29 @@ struct vc_ops * vc_netdown_open(struct vc_attr * attr)
 
 	ret = vc_connect(attr);
 
+
 	stk = &attr->stk;
 	attr->sk = ret;
+
+	if(attr->ssl){
+		ssl_info * _ssl = attr->ssl;
+		_ssl->sk = attr->sk;
+		_ssl->ssl = SSL_new(_ssl->ctx);
+		printf("using ctx@%p\n", _ssl->ctx);
+		if(SSL_set_fd(_ssl->ssl, _ssl->sk) == 0){
+			printf("SSL_set_fd failed\n");
+			return stk_curnt(stk)->init(attr);
+		}
+		printf("SSL_set_fd success\n");
+		__set_nonblock(_ssl->sk);
+		if(ssl_connect_simple(attr->ssl, 1000) < 0){
+			printf("ssl_connect_simple_fail\n");
+			return stk_curnt(stk)->init(attr);
+		}
+		printf("ssl_connect success\n");
+		
+	}
+
 	if(ret >= 0){
 		attr->sk = ret;
 		if(is_rb_empty(attr->tx))
@@ -249,7 +278,12 @@ struct vc_ops * vc_netdown_error(struct vc_attr * attr, char * str, int num)
 struct vc_ops * vc_netdown_init(struct vc_attr *attr)
 {
 	if(attr->sk >= 0){
-		printf("close socket\n");
+		if(attr->ssl){
+			__set_block(attr->ssl->sk);
+			SSL_shutdown(attr->ssl->ssl);
+			SSL_free(attr->ssl->ssl);
+		}
+
 		close(attr->sk);
 		attr->sk = -1;
 	}

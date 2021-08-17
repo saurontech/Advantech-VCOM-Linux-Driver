@@ -2,6 +2,8 @@
 #define __USER_SPACE_IF
 
 #include "advvcom.h"
+#include "vcom_proto.h"
+#include "ssl_select.h"
 
 #define VC_PULL_TIME	10000000
 #define VC_PULL_PSEC	(VC_PULL_TIME / 1000000)
@@ -23,7 +25,8 @@ struct vc_attr{
 	int attr_ptr;
 	int xmit_pending;
 	int ttyid;
-	int ssl;
+	int ssl_proxy;
+	ssl_info *ssl;
 	unsigned int port;
 	unsigned int tid;
 	unsigned short devid;
@@ -324,6 +327,30 @@ static inline int fdcheck(int fd, int type, struct timeval * ctv)
 	}
 
 	return ret;
+}
+
+static inline int vc_check_send(struct vc_attr *attr, 
+		struct vc_proto_packet *packet, int plen, char * dbg_msg)
+{
+	if(attr->ssl){
+		if(ssl_send_simple(attr->ssl, packet, plen, 1000) != plen){
+			printf("failed to send %s over SSL\n", dbg_msg);
+			return -1;
+		}
+		return 0;
+	}
+
+	if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
+		printf("cannot send %s\n", dbg_msg);
+		return -1;
+	}
+
+	if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
+		printf("failed to  send %s\n", dbg_msg);
+		return -1;
+	}
+
+	return 0;
 }
 
 #define VC_BUF_RX	0
