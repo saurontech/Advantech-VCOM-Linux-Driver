@@ -7,6 +7,8 @@ enum{ 	SSL_OPS_FAIL	= -1,
 	SSL_OPS_SELECT = -2
 };
 
+
+
 typedef struct {
 	int write;
 	int read;
@@ -37,8 +39,12 @@ int ssl_recv_direct(ssl_info * info, char * buf, int len);
 
 int ssl_connect_simple(ssl_info * info, int to_ms);
 int ssl_send_simple(ssl_info * info, void * buf, int len, int to_ms);
-
+int ssl_recv_simple(ssl_info * info, void * buf, int len, int to_ms);
 
 int ssl_set_fds(ssl_info *info, int maxfd, fd_set *rfds, fd_set *wfds);
+
+#define invoke_ssl_send	(1 << 0)
+#define invoke_ssl_recv	(1 << 1)
+#define invoke_ssl_connect (1 << 2)
 int ssl_handle_fds(ssl_info * info, fd_set *rfds, fd_set *wfds);
 #endif

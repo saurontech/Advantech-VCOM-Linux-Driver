@@ -287,7 +287,6 @@ int ssl_connect_simple(ssl_info * info, int to_ms)
 
 	tv.tv_sec = to_ms / 1000;
 	tv.tv_usec = (to_ms % 1000) * 1000;
-	printf("%s(%d) to %d\n", __func__, __LINE__, to_ms);
 	do{
 		conn = ssl_connect_direct(info);
 		if(conn > 0){
@@ -313,9 +312,7 @@ int ssl_send_direct(ssl_info * info, char *buf, int len)
 	info->send.write = 0;
 	info->send.read = 0;
 
-	printf("ssl ready to direct send %d bytes of data\n", len);
 	wlen = SSL_write(info->ssl, buf, len);
-	printf("ssl wlen = %d\n", wlen);
 	if(wlen > 0){
 		return wlen;
 	}
@@ -323,7 +320,6 @@ int ssl_send_direct(ssl_info * info, char *buf, int len)
 	ssl_errno = SSL_get_error(info->ssl, wlen);
 
 	return _ssl_update_wait_event(info, send, ssl_errno);
-
 }
 
 int ssl_recv_direct(ssl_info * info, char * buf, int len)
@@ -333,11 +329,11 @@ int ssl_recv_direct(ssl_info * info, char * buf, int len)
 
 	info->recv.write = 0;
 	info->recv.read = 0;
-
 	rlen = SSL_read(info->ssl, buf, len);
 	if(rlen > 0){
 		return rlen;
 	}
+
 	ssl_errno = SSL_get_error(info->ssl, rlen);
 
 	return _ssl_update_wait_event(info, recv, ssl_errno);
@@ -372,9 +368,36 @@ int ssl_send_simple(ssl_info * info, void * buf, int len, int to_ms)
 	return 0;
 }
 
-#define invoke_ssl_send	(1 << 0)
-#define invoke_ssl_recv	(1 << 1)
-#define invoke_ssl_connect (1 << 2)
+int ssl_recv_simple(ssl_info * info, void * buf, int len, int to_ms)
+{
+	int slen;
+	int ret;
+	struct timeval tv;
+	fd_set rfds, wfds;
+
+	FD_ZERO(&rfds);
+	FD_ZERO(&wfds);
+
+	tv.tv_sec = to_ms / 1000;
+	tv.tv_usec = (to_ms % 1000) * 1000;
+
+	do{
+		slen = ssl_recv_direct(info, buf, len);
+		if(slen > 0){
+			return slen;
+
+		}else if(slen == SSL_OPS_FAIL){
+			break;
+		}
+		ssl_set_fds(info, 0, &rfds, &wfds);
+		ret = select( info->sk + 1, &rfds, &wfds, 0, &tv);
+	
+	}while(ret > 0);
+
+	return 0;
+}
+
+
 
 #define __handle_flag(INFO, FLAG, IOTYPE, BFIELD) \
 		if((INFO)->FLAG.IOTYPE)\

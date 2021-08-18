@@ -425,10 +425,10 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 	char killcmd[256];
 
 
-	sprintf(cmd, "%s/%s", work_path, CF_PORTPROG);
-	sprintf(log, "%s/%s", work_path, CF_LOGNAME);
-	sprintf(sslcmd, "%s/%s", work_path, CF_SSLPROG);
-	sprintf(sslconf, "%s/%s", work_path, CF_SSLCONF);
+	snprintf(cmd, sizeof(cmd), "%s/%s", work_path, CF_PORTPROG);
+	snprintf(log, sizeof(log), "%s/%s", work_path, CF_LOGNAME);
+	snprintf(sslcmd, sizeof(sslcmd), "%s/%s", work_path, CF_SSLPROG);
+	snprintf(sslconf, sizeof(sslconf), "%s/%s", work_path, CF_SSLCONF);
 	
 	for(idx = 0; idx < nrport; ++idx) {
 		sprintf(mon, "%s/advtty%s", MON_PATH, ttyinfo[idx].mpt_nameidx_str);
@@ -440,14 +440,15 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 
 			if(ttyinfo[idx].dev_ssl){
 				cmdidx = snprintf(syscmd, sizeof(syscmd), 
-					"%s -l%s -t%s -d%s -a%s -p%s -r%s -s ", 
+					"%s -l%s -t%s -d%s -a%s -p%s -r%s -S%s", 
 						cmd,
 						mon, 
 						ttyinfo[idx].mpt_nameidx_str,
 						ttyinfo[idx].dev_type_str,
 						ttyinfo[idx].dev_ipaddr_str,
 						ttyinfo[idx].dev_portidx_str,
-						ttyinfo[idx].dev_redundant_ipaddr_str
+						ttyinfo[idx].dev_redundant_ipaddr_str,
+						sslconf
 						);
 			}else{
 				ADV_LOGMSG("executing command %s -l %s -t %s -d %s -a %s -p %s -r %s \n", 
@@ -473,13 +474,14 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 		}else{
 			if(ttyinfo[idx].dev_ssl){
 				cmdidx = snprintf(syscmd, sizeof(syscmd), 
-						"%s -l%s -t%s -d%s -a%s -p%s -s ", 
+						"%s -l%s -t%s -d%s -a%s -p%s -S%s", 
 						cmd,
 						mon, 
 						ttyinfo[idx].mpt_nameidx_str,
 						ttyinfo[idx].dev_type_str,
 						ttyinfo[idx].dev_ipaddr_str,
-						ttyinfo[idx].dev_portidx_str
+						ttyinfo[idx].dev_portidx_str,
+						sslconf
 						);
 			}else{
 				cmdidx = snprintf(syscmd, sizeof(syscmd), 
@@ -496,7 +498,7 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 		}
 
 		if(sslproxy == 0 && ttyinfo[idx].dev_ssl){
-			sslproxy = 1;
+			//sslproxy = 1;
 		}
 
 		//syslog(LOG_DEBUG, "spawn cmd = %s; old cmd = %s;", syscmd, oldcmd);

@@ -14,9 +14,11 @@ J_SRC = $(shell find $(JPATH) -name '*.c' -print)
 ALLSRC = ${SRC} ${S_SRC} ${J_SRC}
 ALLHDR = ${KHDR} ${HDR}  ${S_HDR} ${J_HDR}
 
+LIBS = -lssl -lcrypto
+
 all: vcomd
 
 vcomd: ${ALLSRC} ${ALLHDR}
-	$(CC) -Wall -Werror -I $(DPATH) -o $@ ${ALLSRC} ${LIBS} -I ${SPATH} -lssl -lcrypto -I ${JPATH}
+	$(CC) -Wall -Werror -I $(DPATH) -o $@ ${ALLSRC} ${LIBS} -I ${SPATH} -I ${JPATH}
 clean:
 	find ./ -name 'vcomd' -exec rm {} \;

@@ -60,7 +60,6 @@ struct vc_ops * vc_common_open(struct vc_attr * attr)
 
 struct vc_ops * vc_common_xmit(struct vc_attr * attr)
 {
-
 #define XMIT_LEN	1024
 	char pbuf[XMIT_LEN + sizeof(struct vc_proto_hdr) + 
 		sizeof(struct vc_attach_param)];
@@ -102,7 +101,7 @@ struct vc_ops * vc_common_xmit(struct vc_attr * attr)
 		return stk_curnt(stk)->init(attr);
 	}
 
-	if(vc_check_send(attr, packet, plen, "QUEUE_FREE") != 0){
+	if(vc_check_send(attr, packet, plen, "XMIT") != 0){
 		printf("%s(%d)\n", __func__, __LINE__);
 		stk_excp(stk);
 		return stk_curnt(stk)->init(attr);
@@ -248,8 +247,9 @@ struct vc_ops * vc_common_ioctl(struct vc_attr * attr)
 		}
 
 		if(vc_check_send(attr, packet, plen, "ioctl") != 0){
-			//should check here
-			break;
+			printf("%s(%d)\n", __func__, __LINE__);
+			stk_excp(stk);
+			return stk_curnt(stk)->init(attr);
 		}
 
 		attr->tid++;
@@ -396,7 +396,6 @@ struct vc_ops * vc_common_recv(struct vc_attr * attr, char *buf, int len)
 		unsigned int b = STATUS_DEVICE_BUSY;
 		int xmit_len = attr->xmit_pending;
 
-		
 		attr->xmit_pending = 0;
 		if(vc_check_xmit(packet, xmit_len, s, len) == 0){
 			if(ioctl(attr->fd, ADVVCOM_IOCSRXHEAD, &xmit_len) < 0){
