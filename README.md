@@ -105,7 +105,7 @@ Use **advadd** to add a VCOM connection.
 the following examples shows how to add a connection with/without TLS.
 > **Add a VCOM connection connecting "/dev/ttyADV0" with a EKI-1524-CE's 1st serial port**
 > 
-> $ sudo advadd -t ssl:c524 -a 172.17.8.100 -p 1 -m 0
+> $ sudo advadd -t c524 -a 172.17.8.100 -p 1 -m 0
 >
 >**Connect /dev/ttyADV0 with a "VCOM over TLS" connection**
 >
