@@ -1,0 +1,285 @@
+#define _GNU_SOURCE
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+#include <sys/wait.h>
+#include <sys/time.h>
+#include <sys/param.h>
+#include <sys/ioctl.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <stdarg.h> 
+#include <ctype.h>
+#include <dirent.h>
+#include <sys/socket.h>
+#include <pthread.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <sys/select.h>
+#include <syslog.h>
+#include <netinet/tcp.h>
+
+static int __search_lport_stat_inode(int ipfamily, unsigned short port,  unsigned short stat, ino_t *out)
+{
+	FILE *fp;
+	char buf[2048];
+	char path[1024];
+	int ret;
+	int found;
+	int sl;
+	char laddr[64];
+	unsigned short lport;
+	char raddr[64];
+	char * ptr;
+	unsigned int connection_state;
+	char tmp[1024];
+	char scan_format[512];
+	ino_t inode;
+	int i;
+
+	snprintf(path, sizeof(path), "/proc/net/tcp%s", ipfamily==4?"":"6");
+	//printf("path = %s\n", path);
+	snprintf(scan_format, sizeof(scan_format),
+			"%%d: %%%zus %%%zus %%x %%%zus %%%zus %%%zus %%%zus %%%zus %%ju",
+			sizeof(laddr) - 1, 
+			sizeof(raddr)  - 1, 
+			sizeof(tmp) - 1,
+			sizeof(tmp) - 1, 
+			sizeof(tmp) - 1, 
+			sizeof(tmp) - 1, 
+			sizeof(tmp) - 1);
+
+	found = 0;
+
+	fp = fopen(path, "r");
+	
+	//printf("fp= %x\n", fp);
+	if(fp == NULL){
+		return -1;
+	}
+	// skip first two lines
+	for (i = 0; i < 1; i++) {
+		fgets(buf, sizeof(buf), fp);
+	}
+
+	while (fgets(buf, sizeof(buf), fp)) {
+		//printf("buf(%d) = %s\n", buf, strlen(buf));
+		
+		ret = sscanf(buf, scan_format, 
+				&sl, 
+				laddr,
+				raddr,
+				&connection_state,
+				tmp,
+				tmp,
+				tmp,
+				tmp,
+				tmp,
+				&inode
+				);
+//		printf("sscanf ret = %d\n", ret);
+		if(ret < 10){
+			printf("!!!!!!!!!!!!!!!!!!!!!!!!!!! error scanf\n");
+			continue;
+		}
+		if(connection_state != stat){
+			continue;
+		}
+		ptr = strstr(laddr, ":");
+		if(ptr == 0){
+			//printf("didn't find :\n");
+			continue;
+		}
+		sscanf(ptr+1, "%hx", &lport);
+		//printf("ret = %d sl = %d laddr = %s port = %u state = %u inode= %d\n", ret, sl, laddr, lport, connection_state, inode);
+		if(lport == port){
+			found = 1;
+			break;
+		}
+	}
+	fclose(fp);
+
+	if(found){
+		*out = inode;
+		return 0;
+	}
+
+	return -1;
+
+}
+
+static int __search_port_inode( unsigned short port, ino_t * out)
+{
+	ino_t inode;
+	int ret;
+	do{
+		ret = __search_lport_stat_inode(4, port, 1, &inode);
+		if(ret == 0){
+			//printf("found tcp4 inode = %d", inode);
+			break;
+		}
+
+		ret = __search_lport_stat_inode(6, port, 1, &inode);
+		if(ret == 0){
+			//printf("found tcp4 inode = %d", inode);
+			break;
+		}
+		return -1;
+	}while(0);
+
+	return 0;
+}
+
+//search if pid is operating this inode
+//returns 0 on error
+static pid_t __pid_search_fd_inode(pid_t pid, ino_t  inode)
+{
+	static DIR *dir = 0;
+	struct dirent *entry;
+	char *name;
+	int fd;
+	char status[1204];
+	char fdpath[1024];
+	struct stat sb;
+	snprintf(fdpath, 1024, "/proc/%d/fd", pid);
+	if (!dir) {
+		dir = opendir(fdpath);
+		if(!dir){
+			printf("Can't open /proc/fd: %s", fdpath);
+			return 0;
+		}
+	}
+	for(;;) {
+		if((entry = readdir(dir)) == NULL) {
+			closedir(dir);
+			dir = 0;
+			return 0;
+		}
+		name = entry->d_name;
+		if (!(*name >= '0' && *name <= '9'))
+			continue;
+
+		fd = atoi(name);
+
+		sprintf(status, "/proc/%d/fd/%d", pid, fd);
+
+		if(stat(status, &sb)){
+			printf( "stat failed");
+			continue;
+		}
+		//printf("inode %ju st_ino = %ju\n", sb.st_ino, inode);
+		if(sb.st_ino == inode){
+			//printf("found inode %ju  at pid %d\n", sb.st_ino, pid);
+			return pid;
+		}
+		
+	}
+
+}
+
+static int __get_pid_cmd(char * pidpath, char * cmd, int cmdlen)
+{
+	int fd;
+	int cnt;
+
+	if((fd = open(pidpath, O_RDONLY)) == 0){
+		printf( "%s(%d)fopen failed", __func__, __LINE__);
+		return -1;
+	}
+
+	cnt = read(fd, cmd, cmdlen);
+	close(fd);
+
+	if(cnt <= 0){
+		return -1;
+	}
+
+	return cnt;
+}
+
+static pid_t __cmd_inode_search_pid(char * cmd, ino_t inode, char * buf, int buflen, int *retlen)
+{
+	static DIR *dir = 0;
+	struct dirent *entry;
+	char *name;
+	char status[32];
+	int pid;
+	struct stat sb;
+
+	if (!dir) {
+		dir = opendir("/proc");
+		if(!dir){
+			printf("Can't open /proc");
+			return 0;
+		}
+	}
+
+	for(;;) {
+
+		int cmdlen;
+		if((entry = readdir(dir)) == NULL) {
+			//syslog(LOG_DEBUG, "%s(%d)readdir failed", __func__, __LINE__);
+			//printf( "(%d/%d)no %s were found operating %d", found_vcomd, i, cmd, inode);
+			closedir(dir);
+			dir = 0;
+			return 0;
+		}
+
+		name = entry->d_name;
+		if (!(*name >= '0' && *name <= '9'))
+			continue;
+
+
+		pid = atoi(name);
+
+		sprintf(status, "/proc/%d", pid);
+		if(stat(status, &sb)){
+			continue;
+		}
+		sprintf(status, "/proc/%d/cmdline", pid);
+
+		if((cmdlen = __get_pid_cmd(status, buf, buflen)) <= 0){
+			continue;
+		}
+
+		if(strstr(buf, cmd) > 0){
+			if(__pid_search_fd_inode(pid, inode) > 0){
+				*retlen = cmdlen;
+
+				closedir(dir);
+				dir = 0;
+				return pid;
+			}else{
+				//printf("pid %dcmd %s\n", pid, cmd);
+			}
+		}
+	}
+}
+
+char * __cmd_get_opts(char * cmd, int cmdlen, char * opt)
+{
+	int i;
+	char *ptr;
+
+	i = 0;
+	do{
+		ptr = strstr(&cmd[i], opt);
+
+		if(ptr > 0){
+			ptr += strlen(opt);
+
+			if(strcmp(&cmd[i], opt) == 0){
+				ptr++;				
+			}
+			break;
+		}
+		i += strlen(&cmd[i]);
+		
+	}while(++i < cmdlen);
+
+	return ptr;
+}
+
