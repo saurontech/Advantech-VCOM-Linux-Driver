@@ -61,7 +61,8 @@ struct vc_ops * vc_idle_recv(struct vc_attr * attr, char * buf, int len)
 
 	stk = &attr->stk;	
 	stk_pop(stk);
-	return stk_curnt(stk)->init(attr);
+	//stk_curnt(stk)->init(attr);
+	return stk_curnt(stk)->recv(attr, buf, len);
 }
 
 struct vc_ops * vc_idle_error(struct vc_attr * attr, char * str, int num)

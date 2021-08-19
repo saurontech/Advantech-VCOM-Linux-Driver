@@ -400,9 +400,9 @@ int ssl_recv_simple(ssl_info * info, void * buf, int len, int to_ms)
 
 
 #define __handle_flag(INFO, FLAG, IOTYPE, BFIELD) \
-		if((INFO)->FLAG.IOTYPE)\
-		{(INFO)->FLAG.IOTYPE = 0;\
-		(BFIELD) |= (invoke_ssl_##FLAG);}
+		if((INFO)->FLAG.IOTYPE){ \
+		(BFIELD) |= (invoke_ssl_##FLAG);\
+		}
 
 int ssl_handle_fds(ssl_info * info, 
 			fd_set *rfds, fd_set *wfds)
@@ -419,6 +419,11 @@ int ssl_handle_fds(ssl_info * info,
 	if(FD_ISSET(info->sk, wfds)){
 		__handle_flag(info, connect, write, ret);
 		__handle_flag(info, send, write, ret);
+		__handle_flag(info, recv, write, ret);
+	}
+
+	if(SSL_pending(info->ssl)){
+		__handle_flag(info, recv, read, ret);
 		__handle_flag(info, recv, write, ret);
 	}
 

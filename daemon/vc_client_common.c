@@ -106,7 +106,6 @@ struct vc_ops * vc_common_xmit(struct vc_attr * attr)
 		stk_excp(stk);
 		return stk_curnt(stk)->init(attr);
 	}
-
 	
 	attr->xmit_pending = len;
 	attr->tid++;

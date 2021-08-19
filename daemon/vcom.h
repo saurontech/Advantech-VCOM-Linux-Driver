@@ -332,6 +332,7 @@ static inline int fdcheck(int fd, int type, struct timeval * ctv)
 static inline int vc_check_send(struct vc_attr *attr, 
 		struct vc_proto_packet *packet, int plen, char * dbg_msg)
 {
+
 	if(attr->ssl){
 		if(ssl_send_simple(attr->ssl, packet, plen, 1000) != plen){
 			printf("failed to send %s over SSL\n", dbg_msg);

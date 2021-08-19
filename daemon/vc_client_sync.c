@@ -263,13 +263,13 @@ struct vc_ops * vc_sync_recv(struct vc_attr * attr, char *buf, int len)
 		case VCOM_IOCTL_WAIT_ON_MASK:
 			if(_sync_event(attr)){
 				stk_excp(stk);
-        		return stk_curnt(stk)->init(attr);  
+        			return stk_curnt(stk)->init(attr);  
 			}
 			break;
 		case VCOM_IOCTL_SET_WAIT_MASK:
 			if(_reg_sync_event(attr)){
 				stk_excp(stk);
-        		return stk_curnt(stk)->init(attr);  
+        			return stk_curnt(stk)->init(attr);  
 			}
 			break;
 		case VCOM_IOCTL_GET_MODEMSTATUS:
@@ -279,7 +279,7 @@ struct vc_ops * vc_sync_recv(struct vc_attr * attr, char *buf, int len)
 			if(ioctl(attr->fd, ADVVCOM_IOCSMCTRL, &modem)){
 				printf("ioctl(mctrl) failed\n");
 				stk_excp(stk);
-        		return stk_curnt(stk)->init(attr);  
+        			return stk_curnt(stk)->init(attr);  
 			}
 			break;	
 		}
