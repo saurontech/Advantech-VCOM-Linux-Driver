@@ -338,8 +338,6 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 			sizeof(dev_portidx_str), 
 			sizeof(dev_redundant_ipaddr_str));
 	
-	printf("sscanf format %s\n", sscanf_fmt);
-	
 	while(nrport < CF_MAXPORTS) {
 		dev_type = dev_type_str;
 		if(fgets(conf_dp, sizeof(conf_dp), conf_fp) == NULL)
