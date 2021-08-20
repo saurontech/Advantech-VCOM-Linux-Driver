@@ -38,9 +38,9 @@ struct vc_ops * vc_sync_close(struct vc_attr * attr)
 
 	stk = &attr->stk;
 	printf("%s(%d)\n", __func__, __LINE__);
-	exit(0); //this function was designed never to be called
 	vc_buf_clear(attr, ADV_CLR_RX|ADV_CLR_TX);
 	stk_excp(stk);
+	exit(0); //this function was designed never to be called
 
 	return stk_curnt(stk)->init(attr);
 }
@@ -135,7 +135,7 @@ static int _sync_event(struct vc_attr * attr)
 			dbg_msg = "GET_MODEMSTATUS";
 			break;
 		default:
-			dbg_msg = "UNKNOWN";
+			//dbg_msg = "UNKNOWN";
 			return 0;
 		}	
 
