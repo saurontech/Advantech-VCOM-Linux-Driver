@@ -210,14 +210,16 @@ void __close_stdfd(void)
 
 void usage(char * cmd)
 {
-	printf("Usage : %s [-d]\n", cmd);
+	printf("Usage : %s [-d -t]\n", cmd);
 	printf("The most commonly used commands are:\n");
 	printf("	-d	run as deamon\n");
+	printf("	-t	run test, don't exec\n");
 	printf("	-h	For help\n");
 }
 
 
 static int run_as_daemon;
+static int testrun;
 int setup_options(int argc, char *argv[])
 {
 	int ch;
@@ -229,6 +231,10 @@ int setup_options(int argc, char *argv[])
 			case 'd':
 				run_as_daemon = 1;
 				break;
+			case 't':
+				testrun = 1;
+				break;
+
 		}
 	}
 
@@ -247,6 +253,7 @@ int main(int argc, char * argv[])
 
 	nrport = 0;
 	run_as_daemon = 0;
+	testrun = 0;
 
 	if(setup_options(argc, argv)){
 		usage(argv[0]);
@@ -298,51 +305,7 @@ static int parse_env(char * cmdpath, char * workpath)
 	chdir(currpath);
 	return 0;
 }
-/*
-static int daemon_init(void)   
-{   
-	pid_t   pid;  
 
-	if(getppid() == 1)
-		goto L_EXIT; 
-
-#ifdef SIGTTOU
-	signal(SIGTTOU, SIG_IGN);
-#endif
-#ifdef SIGTTIN
-	signal(SIGTTIN, SIG_IGN);
-#endif
-#ifdef SIGTSTP
-	signal(SIGTSTP, SIG_IGN);
-#endif
-
-	if((pid = fork()) < 0)
-		return(-1);
-	if(pid != 0)                // parent process
-		exit(0);
-
-	if(setpgrp() == -1) {
-		return(-1);
-	}
-	signal(SIGHUP, SIG_IGN);	// immune from pgrp leader death
-	setsid();                   // become session leader
-	if((pid = fork()) < 0)
-		return(-1);
-	if(pid != 0)                // parent process
-		exit(0);
-
-L_EXIT:
-	signal(SIGCLD, SIG_IGN);
-	signal(SIGTERM, SIG_IGN);
-	errno = 0;
-	close(0);
-	close(1);
-	close(2);
-	chdir("/");                 // change working directory
-	umask(0);                   // clear   file   mode   creation
-	return(0);   
-}   
-*/
 
 static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 {
@@ -354,6 +317,7 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 	char dev_portidx_str[CF_MAXSTRLEN];
 	char dev_ipaddr_str[INET6_ADDRSTRLEN];
 	char dev_redundant_ipaddr_str[INET6_ADDRSTRLEN];
+	char sscanf_fmt[1024];
 	char *dev_type;
 	int matchCount=0;
 	char conf_dp[256];
@@ -365,6 +329,16 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 		syslog(LOG_DEBUG, "Open the configuration file [%s] fail", conf_name);
 		return nrport;
 	}
+
+	snprintf(sscanf_fmt, sizeof(sscanf_fmt), 
+			"%%%zus%%%zus%%%zus%%%zus%%%zus", 
+			sizeof(mpt_nameidx_str),
+			sizeof(dev_type_str),
+			sizeof(dev_ipaddr_str), 
+			sizeof(dev_portidx_str), 
+			sizeof(dev_redundant_ipaddr_str));
+	
+	printf("sscanf format %s\n", sscanf_fmt);
 	
 	while(nrport < CF_MAXPORTS) {
 		dev_type = dev_type_str;
@@ -375,7 +349,9 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 		 * Read configuration & the data format of every data line is :
 		 * [Minor] [Device-Type] [Device-IP] [Port-Idx] [redundant-ip]
 		 */
-		matchCount = sscanf(conf_dp, "%s%s%s%s%s",
+		
+
+		matchCount = sscanf(conf_dp, sscanf_fmt,
 				mpt_nameidx_str, dev_type_str,
 				dev_ipaddr_str, dev_portidx_str, dev_redundant_ipaddr_str);
 
@@ -654,12 +630,16 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 		if(oldpid > 0){
 			snprintf(killcmd, sizeof(killcmd), "kill -9 %d", oldpid);
 			printf("exec killcmd:%s\n", killcmd);
-			system(killcmd);
+			if(!testrun){
+				system(killcmd);
+			}
 		}
 
 		snprintf(&syscmd[cmdidx], sizeof(syscmd) - cmdidx - 1, "&");
 		printf("exec cmd: %s\n", syscmd);
-		system(syscmd);
+		if(!testrun){
+			system(syscmd);
+		}
 	}
 
 
