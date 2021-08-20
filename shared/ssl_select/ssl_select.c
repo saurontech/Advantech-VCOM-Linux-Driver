@@ -439,6 +439,7 @@ ssl_info * sslinfo_alloc(void)
 
 	if(info == 0){
 		printf("error allocating SSL info\n");
+		return 0;
 	}
 
 	info->sk = -1;
