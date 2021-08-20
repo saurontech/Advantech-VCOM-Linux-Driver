@@ -81,26 +81,12 @@ static struct vc_ops * vc_pause_recv(struct vc_attr * attr, char *buf, int len)
 static struct vc_ops * vc_pause_event(struct vc_attr * attr, 
 	struct timeval * tv, fd_set * rfds, fd_set * wfds, fd_set * efds)
 {
-	struct stk_vc * stk;
-	int buflen;
+	//struct stk_vc * stk;
 
-	stk = &attr->stk;
+	//stk = &attr->stk;
 	if(attr->sk < 0){
 		printf("shouldn't go here\n");
 	}
-	do{
-		if(attr->ssl){
-			break;
-		}
-		if(ioctl(attr->sk, SIOCINQ, &buflen)){
-			printf("resume: failed to get SIOCINQ\n");
-			stk_excp(stk);
-			return stk_curnt(stk)->init(attr);
-		}
-		if(buflen){
-			return ADV_THIS;
-		}
-	}while(0);
 
 	if(attr->xmit_pending == 0){
 		FD_SET(attr->fd, rfds);
@@ -138,25 +124,8 @@ static int _resume_queue(struct vc_attr * attr)
 static struct vc_ops * vc_pause_resume(struct vc_attr * attr)
 {
 	struct stk_vc * stk;
-	int buflen;
 
 	stk = &attr->stk;
-	do{
-		if(attr->ssl){
-			break;
-		}
-
-		if(ioctl(attr->sk, SIOCOUTQ, &buflen)){
-			printf("resume: failed to get SIOCOUTQ\n");
-			stk_excp(stk);
-
-			return stk_curnt(stk)->init(attr);
-		}
-		if(buflen){
-			return ADV_THIS;
-		}
-
-	}while(0);
 	
 	if(_resume_queue(attr)){
 		printf("%s(%d)\n", __func__, __LINE__);

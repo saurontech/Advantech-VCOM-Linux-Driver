@@ -3,7 +3,10 @@
 
 #include "advvcom.h"
 #include "vcom_proto.h"
+
+#ifdef _VCOM_SUPPORT_TLS
 #include "ssl_select.h"
+#endif
 
 #define VC_PULL_TIME	10000000
 #define VC_PULL_PSEC	(VC_PULL_TIME / 1000000)
@@ -25,8 +28,9 @@ struct vc_attr{
 	int attr_ptr;
 	int xmit_pending;
 	int ttyid;
-	int ssl_proxy;
+#ifdef _VCOM_SUPPORT_TLS
 	ssl_info *ssl;
+#endif
 	unsigned int port;
 	unsigned int tid;
 	unsigned short devid;
@@ -332,7 +336,7 @@ static inline int fdcheck(int fd, int type, struct timeval * ctv)
 static inline int vc_check_send(struct vc_attr *attr, 
 		struct vc_proto_packet *packet, int plen, char * dbg_msg)
 {
-
+#ifdef _VCOM_SUPPORT_TLS
 	if(attr->ssl){
 		if(ssl_send_simple(attr->ssl, packet, plen, 1000) != plen){
 			printf("failed to send %s over SSL\n", dbg_msg);
@@ -340,7 +344,7 @@ static inline int vc_check_send(struct vc_attr *attr,
 		}
 		return 0;
 	}
-
+#endif
 	if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
 		printf("cannot send %s\n", dbg_msg);
 		return -1;

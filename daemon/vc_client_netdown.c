@@ -141,13 +141,6 @@ int vc_connect(struct vc_attr * attr)
 	int max;
 	
 	FD_ZERO(&rfds);
-
-	if(attr->ssl_proxy){
-		printf("connecting to TLS proxy\n");
-		addr = "127.0.0.1";
-		vc_tcp_port = VC_SSL_PROXY;
-	}
-
 	sk = _create_sklist(sklist, VC_MAX_SKNUM, addr, &rfds, &sknum, &skmax);
 	if(sk < 0 && attr->ip_red > 0){
 		addr = attr->ip_red;
@@ -208,15 +201,17 @@ int vc_connect(struct vc_attr * attr)
 
 struct vc_ops * vc_netdown_close(struct vc_attr * attr)
 {
-	printf("%s(%d)\n", __func__, __LINE__);
+
 	vc_buf_clear(attr, ADV_CLR_RX|ADV_CLR_TX);
 
 	if(attr->sk >= 0){
+#ifdef _VCOM_SUPPORT_TLS
 		if(attr->ssl){
 			__set_block(attr->ssl->sk);
 			SSL_shutdown(attr->ssl->ssl);
 			SSL_free(attr->ssl->ssl);
 		}
+#endif
 		close(attr->sk);
 		attr->sk = -1;
 	}
@@ -240,7 +235,7 @@ struct vc_ops * vc_netdown_open(struct vc_attr * attr)
 	}
 
 	attr->sk = ret;
-
+#ifdef _VCOM_SUPPORT_TLS
 	if(attr->ssl){
 		ssl_info * _ssl = attr->ssl;
 		_ssl->sk = attr->sk;
@@ -260,7 +255,7 @@ struct vc_ops * vc_netdown_open(struct vc_attr * attr)
 		}
 		//printf("ssl_connect success\n");
 	}
-	
+#endif	
 	if(is_rb_empty(attr->tx))
 		stk_push(stk, &vc_netup_ops);
 	else
@@ -278,12 +273,13 @@ struct vc_ops * vc_netdown_error(struct vc_attr * attr, char * str, int num)
 struct vc_ops * vc_netdown_init(struct vc_attr *attr)
 {
 	if(attr->sk >= 0){
+#ifdef _VCOM_SUPPORT_TLS
 		if(attr->ssl){
 			__set_block(attr->ssl->sk);
 			SSL_shutdown(attr->ssl->ssl);
 			SSL_free(attr->ssl->ssl);
 		}
-
+#endif
 		close(attr->sk);
 		attr->sk = -1;
 	}
