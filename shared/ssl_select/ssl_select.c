@@ -150,6 +150,7 @@ int ssl_set_fds(ssl_info *info,
 	int ret_maxfd;
 
 	update_maxfd = 0;
+	ret_maxfd = maxfd;
 
 	if(info->recv.write || 
 	info->connect.write || 
