@@ -45,15 +45,9 @@ int __log_fd = -1;
 int _restart;
 
 static int  parse_env(char * cmdpath, char * workpath);
-//static int  daemon_init(void);
 static int  paser_config(char * conf_name, TTYINFO ttyinfo[]);
 static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[]);
-//static void shutdown_ttyp(int nrport, TTYINFO ttyinfo[]);
-//static void restart_handle();
-//static u_long device_ipaddr(char * ipaddr);
-//static int  hexstr(char * strp);
-//static int  log_open(char * log_name);
-//static void log_close(void);
+
 #ifdef ADVTTY_DEBUG
 static void log_msg(const char * msg);
 #endif
@@ -214,6 +208,33 @@ void __close_stdfd(void)
 	close(2);
 }
 
+void usage(char * cmd)
+{
+	printf("Usage : %s [-d]\n", cmd);
+	printf("The most commonly used commands are:\n");
+	printf("	-d	run as deamon\n");
+	printf("	-h	For help\n");
+}
+
+
+static int run_as_daemon;
+int setup_options(int argc, char *argv[])
+{
+	int ch;
+	while((ch = getopt(argc, argv, "dh")) != -1)  {
+		switch(ch){
+			case 'h':
+				usage(argv[0]);
+				return -1;
+			case 'd':
+				run_as_daemon = 1;
+				break;
+		}
+	}
+
+	return 0;
+}
+
 int main(int argc, char * argv[])
 {
 	int nrport;
@@ -225,8 +246,17 @@ int main(int argc, char * argv[])
 	int cf_len;
 
 	nrport = 0;
+	run_as_daemon = 0;
 
-//	__close_stdfd();
+	if(setup_options(argc, argv)){
+		usage(argv[0]);
+		return -1;
+	}
+
+	if(run_as_daemon){
+		__close_stdfd();
+	}
+	
 
 	if(parse_env(argv[0], work_path) < 0)
 		return -1;
