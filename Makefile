@@ -28,7 +28,6 @@ build_basic:
 	make -C ./advps
 
 build_ssl:
-	#make -C ./sslproxy
 	make -C ./keys
 
 	
@@ -38,7 +37,6 @@ clean:
 	make clean -C ./initd
 	make clean -C ./inotify
 	make clean -C ./advps
-	make clean -C ./sslproxy
 	make clean -C ./keys
 
 ./keys/rootCA.srl:
