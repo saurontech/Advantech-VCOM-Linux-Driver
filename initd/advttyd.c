@@ -595,6 +595,7 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 	
 	for(idx = 0; idx < nrport; ++idx) {
 		struct stat sb;
+		//int __ret;
 		sprintf(mon, "%s/advtty%s", MON_PATH, ttyinfo[idx].mpt_nameidx_str);
 		
 		snprintf(vcomif, sizeof(vcomif), 
@@ -608,13 +609,10 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 
 		printf("trying to find inode %ld\n", sb.st_ino);
 		
-		oldpid = __cmd_inode_search_pid("vcomd", sb.st_ino, 
+
+		if( __cmd_inode_search_pid("vcomd", sb.st_ino, 
 					oldcmd, sizeof(oldcmd), 
-					&oldcmdlen);
-
-		printf("oldpid =%d cmdlen = %d\n", oldpid, oldcmdlen);
-
-		if(oldpid == 0){
+					&oldcmdlen, &oldpid) < 0 ){
 			printf("no old pid no need to compare\n");
 		}else if(oldcmd_cmp(oldcmd, oldcmdlen, &ttyinfo[idx]) == 0){
 			printf("old command is the same\n");
@@ -625,83 +623,18 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 
 		if(oldpid > 0){
 			snprintf(killcmd, sizeof(killcmd), "kill -9 %d", oldpid);
-			//printf("%s\n", killcmd);
+			printf("exec killcmd:%s\n", killcmd);
 			system(killcmd);
 		}
 
 		snprintf(&syscmd[cmdidx], sizeof(syscmd) - cmdidx - 1, "&");
-		//printf("%s\n", syscmd);
+		printf("exec cmd: %s\n", syscmd);
 		system(syscmd);
 	}
 
 
 	return;
 }
-/*
-static void shutdown_ttyp(int nrport, TTYINFO ttyinfo[])
-{
-	int idx;
-	int wait_port;
-	pid_t pid;
-
-	for(idx = 0; idx < nrport; ++idx) {
-		kill(ttyinfo[idx].advttyp_pid, SIGTERM);
-	}
-
-	for(wait_port = nrport; wait_port;) {
-		for(idx = 0; idx < nrport; ++idx) {
-			if(ttyinfo[idx].advttyp_pid == 0)
-				continue;
-			pid = waitpid(ttyinfo[idx].advttyp_pid, NULL, WNOHANG);
-			if((pid == ttyinfo[idx].advttyp_pid) ||
-					((pid < 0) && (errno == ECHILD))) {
-				ttyinfo[idx].advttyp_pid = 0;
-				--wait_port;
-			}
-		}
-		if(wait_port)
-			usleep(200 * 1000);
-	}
-	return;
-}
-*/
-/*static void restart_handle()
-{
-	_restart = 1;
-	return;
-} */
-/*
-static int hexstr(char * strp)
-{
-	int i, ch, val;
-	for(i = val = 0; (ch = *(strp + i)) != '\0'; ++i) {
-		if(ch >= '0' && ch <= '9') {
-			val = 16 * val + ch - '0';
-		}
-		else if((ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F')) {
-			ch = toupper(ch);
-			val = 16 * val + ch - 'A' + 10;
-		}
-		else
-			return 0;
-	}
-	return val;
-}
-*/
-/*static int log_open(char * log_name)
-{
-	return __log_fd = open(log_name,
-			O_WRONLY | O_CREAT | O_APPEND | O_NDELAY, 0666);
-}*/
-/*
-static void log_close(void)
-{
-	if(__log_fd >= 0) {
-		close(__log_fd);
-		__log_fd = -1;
-	}
-	return;
-}*/
 #ifdef ADVTTYD_DEBUG
 static void log_msg(const char * msg)
 {

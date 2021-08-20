@@ -6,7 +6,7 @@ PTSRC = $(shell find ${PTPATH} -name "*.c" -print)
 PTHDR = $(shell find ${PTPATH} -name "*.h" -print)
 
 advttyd: advttyd.c advttyd.h $(DPATH)advconf.h ${PTSRC} ${PTHDR}
-	$(CC) -Wall -I $(DPATH) -o $@ advttyd.c -I ${PTPATH} ${PTSRC}
+	$(CC) -Wall -Werror -I $(DPATH) -o $@ advttyd.c -I ${PTPATH} ${PTSRC}
 
 clean:
 	find ./ -name 'advttyd' -exec rm {} \;
