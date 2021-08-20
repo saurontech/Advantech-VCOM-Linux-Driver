@@ -231,42 +231,42 @@ struct vc_ops * vc_netdown_open(struct vc_attr * attr)
 	int ret;
 	struct stk_vc * stk;
 
-	ret = vc_connect(attr);
-
-
 	stk = &attr->stk;
+
+	ret = vc_connect(attr);
+	if(ret < 0){
+		attr->sk = -1;
+		return ADV_THIS;
+	}
+
 	attr->sk = ret;
 
 	if(attr->ssl){
 		ssl_info * _ssl = attr->ssl;
 		_ssl->sk = attr->sk;
 		_ssl->ssl = SSL_new(_ssl->ctx);
-		printf("using ctx@%p\n", _ssl->ctx);
+		//printf("using ctx@%p\n", _ssl->ctx);
+
 		if(SSL_set_fd(_ssl->ssl, _ssl->sk) == 0){
 			printf("SSL_set_fd failed\n");
 			return stk_curnt(stk)->init(attr);
 		}
-		printf("SSL_set_fd success\n");
+		//printf("SSL_set_fd success\n");
+
 		__set_nonblock(_ssl->sk);
 		if(ssl_connect_simple(attr->ssl, 1000) < 0){
 			printf("ssl_connect_simple_fail\n");
 			return stk_curnt(stk)->init(attr);
 		}
-		printf("ssl_connect success\n");
-		
+		//printf("ssl_connect success\n");
 	}
+	
+	if(is_rb_empty(attr->tx))
+		stk_push(stk, &vc_netup_ops);
+	else
+		stk_push(stk, &vc_pause_ops);
 
-	if(ret >= 0){
-		attr->sk = ret;
-		if(is_rb_empty(attr->tx))
-			stk_push(stk, &vc_netup_ops);
-		else
-			stk_push(stk, &vc_pause_ops);
-		return stk_curnt(stk)->open(attr);
-	}else{
-		attr->sk = -1;
-		return ADV_THIS;
-	}
+	return stk_curnt(stk)->open(attr);
 }
 
 struct vc_ops * vc_netdown_error(struct vc_attr * attr, char * str, int num)
