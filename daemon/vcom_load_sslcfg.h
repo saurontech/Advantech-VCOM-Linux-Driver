@@ -19,6 +19,8 @@ static char * create_cfg_cwd(char * config_file)
 		}
 		wd[wdlen] = '\0';
 		memcpy(wd, config_file , wdlen);
+	}else{
+		return 0;
 	}
 	
 	return wd;

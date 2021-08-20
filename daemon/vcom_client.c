@@ -279,8 +279,10 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				}
 
 				wd_new = create_cfg_cwd(sslcfg);
-				chdir(wd_new);
-				free(wd_new);
+				if(wd_new){
+					chdir(wd_new);
+					free(wd_new);
+				}
 				printf("keyfile %s\n", _config_keyfile);
 				printf("rootCA %s\n", _config_rootca);
 				port->ssl->ctx = initialize_ctx( _config_rootca, 
