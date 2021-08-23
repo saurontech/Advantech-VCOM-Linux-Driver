@@ -129,7 +129,7 @@ static inline int mon_update(struct stk_vc * stk, int sig, const char * dbg)
 		}
 
 		memcpy(ptr, tmp, msglen);
-		memset(ptr+msglen, ' ', 1);
+		//memset(ptr+msglen, ' ', 1);
 	}
 	/* Trigger the inotify */
 	if(sig){
