@@ -277,238 +277,148 @@ int get_node_string(_tree_node *node, char *buf, int bufsize)
 }
 
 
+int tree2js(_tree_node * tree, char * out, int outlen, int indent);
+
+static int _tree2js_insert_tree(_tree_node * _jstree, char *out, int outlen, int indent)
+{
+	int slen; 
+	slen = tree2js(_jstree, out, outlen, indent);
+	if(slen <= 0){ 
+		return 0;
+	}
+
+	return slen;
+}
+
+static int _tree2js_insert_string(char * out, int outlen, char * _str)
+{
+	int slen;
+
+	slen = snprintf(out, outlen, "%s", _str);
+	if(slen <= 0){ 
+		return 0; 
+	}
+
+	return slen;
+}
+
+static int _tree2js_walk_object(_tree_node * _js_obj, char * out, int outlen, int indent)
+{
+	int retlen = 0;
+	int i;
+	_tree_node * node_tmp = _js_obj;
+
+	retlen += _tree2js_insert_string(&out[retlen], outlen - retlen, "{\n");
+
+	do{
+		if(_js_obj == 0){
+			break;
+		}
+
+		for(i = 0; i < indent; i++){
+			retlen += _tree2js_insert_string(&out[retlen],
+				outlen - retlen, "\t");
+		}
+
+		retlen += _tree2js_insert_tree(node_tmp, 
+					&out[retlen], outlen -retlen, indent);
+		
+		retlen += _tree2js_insert_string(&out[retlen], outlen -retlen, ":");
+		
+		retlen += _tree2js_insert_tree(node_tmp->r, 
+					&out[retlen], outlen - retlen, indent);
+		if(_js_obj->l != 0){			
+			retlen += _tree2js_insert_string(&out[retlen], outlen -retlen, ",");
+		}
+
+		retlen += _tree2js_insert_string(&out[retlen], outlen -retlen, "\n");
+
+		if(node_tmp->l != 0){
+			node_tmp = node_tmp->l;
+		}else{
+			break;
+		}
+	}while(1);
+
+	for(i = 0; i < indent - 1; i++){
+		retlen += _tree2js_insert_string(&out[retlen], outlen - retlen, "\t");
+	}
+
+	retlen += _tree2js_insert_string(&out[retlen], outlen - retlen, "}");
+	return retlen;
+}
+
+
+static int _tree2js_walk_array(_tree_node * js_array, char * out, int outlen, int indent)
+{
+	int retlen = 0;
+	int i;
+	_tree_node * node_tmp = js_array;
+
+	retlen += _tree2js_insert_string(&out[retlen], outlen -retlen, "[\n");
+
+	do{
+		if(js_array == 0){
+			break;
+		}
+
+		for(i = 0; i < indent; i++){
+			retlen += _tree2js_insert_string(&out[retlen], outlen - retlen, "\t");
+		}
+
+
+		retlen += _tree2js_insert_tree(node_tmp, 
+					&out[retlen], outlen -retlen, 
+					indent);
+
+		if(node_tmp->l != 0 ){
+			retlen += _tree2js_insert_string(&out[retlen], outlen - retlen, ",");
+		}
+
+
+		retlen += _tree2js_insert_string(&out[retlen], outlen - retlen, "\n");
+
+		if(node_tmp->l != 0){
+			node_tmp = node_tmp->l;
+
+		}else{
+			break;
+		}
+	}while(1);
+
+	for(i = 0; i < indent - 1; i++){
+		retlen += _tree2js_insert_string(&out[retlen], outlen - retlen, "\t");
+	}
+
+	retlen += _tree2js_insert_string(&out[retlen], outlen - retlen, "]");
+
+	return retlen;
+}
+
 int tree2js(_tree_node * tree, char * out, int outlen, int indent)
 {
-	int slen = 0;
 	int retlen = 0;
-	int outlen_tmp = outlen;
-	int i;
-	_tree_node ** node_tmp;
+	int slen = 0;
+
 	_treenode_data * node = &tree->data;
 
 	if(node->type == JSMN_STRING){
-
 		slen = snprintf(out, outlen, "\"%s\"", node->data);
 		return slen;
 	}else if(node->type == JSMN_PRIMITIVE){
+
 		slen = snprintf(out, outlen, "%s", node->data);
 		return slen;
 	}else if(node->type == JSMN_OBJECT){
-		slen = snprintf(&out[retlen], outlen_tmp, "{\n");
-		if(slen <= 0){
-			return 0;
-		}
-		outlen_tmp -= slen;
-		retlen += slen;
-		if(outlen_tmp <= 0){
-			return 0;
-		}
 
-		node_tmp = &tree->r;
-
-		do{
-			for(i = 0; i < indent; i++){
-				slen = snprintf(&out[retlen], outlen_tmp, "\t");
-				if(slen <= 0){
-					printf("%s(%d)\n", __func__, __LINE__);
-					return 0;
-				}
-				outlen_tmp -= slen;
-				retlen += slen;
-				if(outlen_tmp <= 0){
-					printf("%s(%d)\n", __func__, __LINE__);
-					return 0;
-				}
-			}
-
-			slen = tree2js(*node_tmp, &out[retlen], outlen_tmp, indent + 1);
-			if(slen <= 0){
-				printf("%s(%d)\n", __func__, __LINE__);
-				return 0;
-			}
-			outlen_tmp -= slen;
-			retlen += slen;
-			if(outlen_tmp <= 0){
-				printf("%s(%d)\n", __func__, __LINE__);
-				return 0;
-			}
-
-			slen = snprintf(&out[retlen], outlen_tmp, ":");
-			if(slen <= 0){
-				printf("%s(%d)\n", __func__, __LINE__);
-				return 0;
-			}
-			outlen_tmp -= slen;
-			retlen += slen;
-			if(outlen_tmp <= 0){
-				printf("%s(%d)\n", __func__, __LINE__);
-				return 0;
-			}
-			slen = tree2js((*node_tmp)->r, &out[retlen], outlen_tmp, indent + 1);
-			if(slen <= 0){
-printf("%s(%d)\n", __func__, __LINE__);
-				return 0;
-			}
-			outlen_tmp -= slen;
-			retlen += slen;
-			if(outlen_tmp <= 0){
-printf("%s(%d)\n", __func__, __LINE__);
-				return 0;
-			}
-
-			if((*node_tmp)->l != 0){
-				slen = snprintf(&out[retlen], outlen_tmp, ",");
-				if(slen <= 0){
-					printf("%s(%d)\n", __func__, __LINE__);
-					return 0;
-				}
-				outlen_tmp -= slen;
-				retlen += slen;
-				if(outlen_tmp <= 0){
-					printf("%s(%d)\n", __func__, __LINE__);
-					return 0;
-				}
-			}
-
-			slen = snprintf(&out[retlen], outlen_tmp, "\n");
-			if(slen <= 0){
-printf("%s(%d)\n", __func__, __LINE__);
-				return 0;
-			}
-			outlen_tmp -= slen;
-			retlen += slen;
-			if(outlen_tmp <= 0){
-printf("%s(%d)\n", __func__, __LINE__);
-				return 0;
-			}
-
-			if((*node_tmp)->l != 0){
-				node_tmp = &((*node_tmp)->l);
-			}else{
-				break;
-			}
-		}while(1);
-
-		for(i = 0; i < indent; i++){
-			slen = snprintf(&out[retlen], outlen_tmp, "\t");
-			if(slen <= 0){
-				return 0;
-			}
-			outlen_tmp -= slen;
-			retlen += slen;
-			if(outlen_tmp <= 0){
-				return 0;
-			}
-		}
-		slen = snprintf(&out[retlen], outlen_tmp, "}" );
-		if(slen <= 0){
-printf("%s(%d)\n", __func__, __LINE__);
-			return 0;
-		}
-		outlen_tmp -= slen;
-		retlen += slen;
-		if(outlen_tmp <= 0){
-printf("%s(%d)\n", __func__, __LINE__);
-			return 0;
-		}
+		retlen = _tree2js_walk_object(tree->r, &out[retlen], outlen, indent + 1);
+	
 		return retlen;
 
 	}else if(node->type == JSMN_ARRAY){
-		slen = snprintf(&out[retlen], outlen_tmp, "[\n");
-		if(slen <= 0){
-			return 0;
-		}
-		outlen_tmp -= slen;
-		retlen += slen;
-		if(outlen_tmp <= 0){
-			return 0;
-		}
-
-		node_tmp = &(tree->r);
-
-		do{
-			for(i = 0; i < indent; i++){
-				slen = snprintf(&out[retlen], outlen_tmp, "\t");
-				if(slen <= 0){
-					printf("%s(%d)\n", __func__, __LINE__);
-					return 0;
-				}
-				outlen_tmp -= slen;
-				retlen += slen;
-				if(outlen_tmp <= 0){
-					printf("%s(%d)\n", __func__, __LINE__);
-					return 0;
-				}
-			}
-
-			slen = tree2js(*node_tmp, &out[retlen], outlen_tmp, indent + 1);
-			if(slen <= 0){
-				printf("%s(%d)\n", __func__, __LINE__);
-				return 0;
-			}
-
-			outlen_tmp -= slen;
-			retlen += slen;
-			if(outlen_tmp <= 0){
-				printf("%s(%d)\n", __func__, __LINE__);
-				return 0;
-			}
-
-			if((*node_tmp)->l != 0 ){
-				slen = snprintf(&out[retlen], outlen_tmp, ",");
-				if(slen <= 0){
-					printf("%s(%d)\n", __func__, __LINE__);
-					return 0;
-				}
-				outlen_tmp -= slen;
-				retlen += slen;
-				if(outlen_tmp <= 0){
-					printf("%s(%d)\n", __func__, __LINE__);
-					return 0;
-				}
-			}
-
-			slen = snprintf(&out[retlen], outlen_tmp, "\n");
-			if(slen <= 0){
-printf("%s(%d)\n", __func__, __LINE__);
-				return 0;
-			}
-			outlen_tmp -= slen;
-			retlen += slen;
-			if(outlen_tmp <= 0){
-printf("%s(%d)\n", __func__, __LINE__);
-				return 0;
-			}
-
-			if((*node_tmp)->l != 0){
-				node_tmp = &((*node_tmp)->l);
-
-			}else{
-				break;
-			}
-		}while(1);
-
-		for(i = 0; i < indent; i++){
-			slen = snprintf(&out[retlen], outlen_tmp, "\t");
-			if(slen <= 0){
-				return 0;
-			}
-			outlen_tmp -= slen;
-			retlen += slen;
-			if(outlen_tmp <= 0){
-				return 0;
-			}
-		}
-		slen = snprintf(&out[retlen], outlen_tmp, "]" );
-		if(slen <= 0){
-printf("%s(%d)\n", __func__, __LINE__);
-			return 0;
-		}
-		outlen_tmp -= slen;
-		retlen += slen;
-		if(outlen_tmp <= 0){
-			return 0;
-		}
+				
+		retlen = _tree2js_walk_array(tree->r, &out[retlen], outlen, indent + 1);
+		
 		return retlen;
 	}
 
@@ -522,7 +432,7 @@ int tree2json(_tree_node * tree, char * buf, int bufsize)
 }
 
 
-_tree_node * _freewtree(_tree_node * node)
+static _tree_node * _freewtree(_tree_node * node)
 {
 	_tree_node * ret;
 	do{
@@ -546,7 +456,7 @@ _tree_node * _freewtree(_tree_node * node)
 	}while(1);
 }
 
-void freewtree(_tree_node * tree)
+void freejstree(_tree_node * tree)
 {
 	_tree_node * ret;
 

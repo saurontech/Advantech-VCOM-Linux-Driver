@@ -47,4 +47,4 @@ _tree_node * next_node( _tree_node *node, int step);
 int get_node_string( _tree_node *node, char *buf, int bufsize);
 int dumptree(_tree_node * tree, int indent);
 int tree2json(_tree_node * tree, char * buf, int bufsize);
-void freewtree(_tree_node * tree);
+void freejstree(_tree_node * tree);
