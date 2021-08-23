@@ -398,7 +398,7 @@ static int _tree2js_walk_array(_tree_node * js_array, char * out, int outlen, in
 int tree2js(_tree_node * tree, char * out, int outlen, int indent)
 {
 	int retlen = 0;
-	int slen = 0;
+	int slen;
 
 	_treenode_data * node = &tree->data;
 
