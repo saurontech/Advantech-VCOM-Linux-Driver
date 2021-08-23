@@ -223,7 +223,7 @@ static int testrun;
 int setup_options(int argc, char *argv[])
 {
 	int ch;
-	while((ch = getopt(argc, argv, "dh")) != -1)  {
+	while((ch = getopt(argc, argv, "dht")) != -1)  {
 		switch(ch){
 			case 'h':
 				usage(argv[0]);
