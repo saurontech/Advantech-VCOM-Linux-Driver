@@ -115,7 +115,7 @@ int __search_port_inode( unsigned short port, ino_t * out)
 //returns 0 on error
 int __pid_search_fd_inode(pid_t pid, ino_t  inode)
 {
-	static DIR *dir = 0;
+	DIR *dir;
 	struct dirent *entry;
 	char *name;
 	int fd;
@@ -123,13 +123,12 @@ int __pid_search_fd_inode(pid_t pid, ino_t  inode)
 	char fdpath[PATH_MAX];
 	struct stat sb;
 	snprintf(fdpath, 1024, "/proc/%d/fd", pid);
-	if (!dir) {
-		dir = opendir(fdpath);
-		if(!dir){
-			printf("Can't open /proc/fd: %s", fdpath);
-			return -1;
-		}
+	dir = opendir(fdpath);
+	if(!dir){
+		printf("Can't open /proc/fd: %s", fdpath);
+		return -1;
 	}
+
 	for(;;) {
 		if((entry = readdir(dir)) == NULL) {
 			closedir(dir);
@@ -151,6 +150,7 @@ int __pid_search_fd_inode(pid_t pid, ino_t  inode)
 		//printf("inode %ju st_ino = %ju\n", sb.st_ino, inode);
 		if(sb.st_ino == inode){
 			//printf("found inode %ju  at pid %d\n", sb.st_ino, pid);
+			closedir(dir);
 			return 0;
 		}
 		
@@ -163,7 +163,7 @@ int __pidpath_get_cmd(char * pidpath, char * cmd, int cmdlen)
 	int fd;
 	int cnt;
 
-	if((fd = open(pidpath, O_RDONLY)) == 0){
+	if((fd = open(pidpath, O_RDONLY)) < 0){
 		printf( "%s(%d)fopen failed", __func__, __LINE__);
 		return -1;
 	}
@@ -189,29 +189,25 @@ int __pid_get_cmd(pid_t pid, char * cmd, int cmdlen)
 
 int __cmd_inode_search_pid(char * cmd, ino_t inode, char * buf, int buflen, int *retlen, pid_t *pidret)
 {
-	static DIR *dir = 0;
+	DIR *dir;
 	struct dirent *entry;
 	char *name;
 	char status[PATH_MAX];
 	struct stat sb;
 	long pid; //pid is signed on linux
 
-	if (!dir) {
-		dir = opendir("/proc");
-		if(!dir){
-			printf("Can't open /proc");
-			return -1;
-		}
+	dir = opendir("/proc");
+	if(!dir){
+		printf("Can't open /proc");
+		return -1;
 	}
 
 	for(;;) {
 
 		int cmdlen;
 		if((entry = readdir(dir)) == NULL) {
-			//syslog(LOG_DEBUG, "%s(%d)readdir failed", __func__, __LINE__);
 			//printf( "(%d/%d)no %s were found operating %d", found_vcomd, i, cmd, inode);
 			closedir(dir);
-			dir = 0;
 			return -1;
 		}
 
@@ -237,9 +233,8 @@ int __cmd_inode_search_pid(char * cmd, ino_t inode, char * buf, int buflen, int 
 		if(strstr(buf, cmd) > 0){
 			if(__pid_search_fd_inode(pid, inode) == 0){
 				*retlen = cmdlen;
-
+				
 				closedir(dir);
-				dir = 0;
 				*pidret = (pid_t)pid;
 				return 0;
 			}else{
