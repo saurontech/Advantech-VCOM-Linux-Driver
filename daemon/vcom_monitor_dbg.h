@@ -1,6 +1,6 @@
 #ifndef _VCOM_MONITOR_H
 #define _VCOM_MONITOR_H
-#define MSIZE 1024		// 1K size file
+#define MSIZE 2048		// 2K size file
 #define FNAME_LEN 256
 #define CUTTER	"> "
 #define MON_MSGLEN_MAX 128
@@ -84,7 +84,7 @@ static inline int mon_update(struct stk_vc * stk, int sig, const char * dbg)
 	stat = stk_curnt(stk)->name();
 	mem = (char *)vc_mon.addr;
 	memset(tmp, ' ', sizeof(tmp));
-	statl = snprintf(tmp, sizeof(tmp), "Pid %d|State [%s]:", 
+	statl = snprintf(tmp, sizeof(tmp), "Pid %d|State[%s] ", 
 				vc_mon.pid, stat);
 
 	len = MSIZE - statl;
@@ -103,17 +103,18 @@ static inline int mon_update(struct stk_vc * stk, int sig, const char * dbg)
 	if(dbg != 0 ){
 		int msglen;
 		int dbgl;
+		msglen = 0;
 
 		ptr = mem + vc_mon.max_statl;
-		dbgl = time2str(tmp, sizeof(tmp));
-		msglen = dbgl;
 
-		dbgl = snprintf(&tmp[msglen], sizeof(tmp)- msglen, "%s%s\n", CUTTER, dbg);
+		msglen = snprintf(tmp, sizeof(tmp), "\n");
+
+		dbgl = time2str(&tmp[msglen], sizeof(tmp) -msglen);
 		msglen += dbgl;
-		if(dbgl == sizeof(tmp)){
-			tmp[msglen] = '\n';
-		}
-		
+
+		dbgl = snprintf(&tmp[msglen], sizeof(tmp)- msglen, "%s%s", CUTTER, dbg);
+		msglen += dbgl;
+
 		len = MSIZE - msglen - vc_mon.max_statl;
 		if(len <= 1){
 			printf("%s len <= 1\n", __func__);
@@ -121,10 +122,12 @@ static inline int mon_update(struct stk_vc * stk, int sig, const char * dbg)
 		}
 
 		if(!vc_mon.dbg_first){	
-			memmove(ptr+msglen+1, ptr, MSIZE-statl-msglen); 
+			
+			memmove(ptr+msglen, ptr, MSIZE-statl-msglen); 
 		}else{
 			vc_mon.dbg_first = 0;
 		}
+
 		memcpy(ptr, tmp, msglen);
 		memset(ptr+msglen, ' ', 1);
 	}

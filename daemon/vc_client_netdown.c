@@ -131,6 +131,7 @@ int _create_sklist(int * sklist, int maxlen, char * addr,
 
 }
 
+#define CONN_TO	10
 int vc_connect(struct vc_attr * attr)
 {
 	struct timeval tv;
@@ -165,14 +166,14 @@ int vc_connect(struct vc_attr * attr)
 			break;
 		}
 
-		tv.tv_sec = 10;
+		tv.tv_sec = CONN_TO;
 		tv.tv_usec = 0;
 
 		ret = select(skmax + 1, 0, &rfds, 0, &tv);
 		if(ret <= 0){
 			
 			//printf("connection timeout\n");
-			mon_update_check(stk, 0, "connection timeout");
+			_stk_log(stk, "connect timeout %d", CONN_TO);
 			break;
 		}
 
@@ -184,7 +185,7 @@ int vc_connect(struct vc_attr * attr)
 					serrmsg, sizeof(serrmsg), 
 						&retlen)){
 					//continue;
-					mon_update_check(stk, 0, serrmsg);
+					_stk_log(stk, "%s", serrmsg);
 					break;
 				}
 				sk = sklist[i];
@@ -242,7 +243,6 @@ struct vc_ops * vc_netdown_open(struct vc_attr * attr)
 	struct stk_vc * stk;
 
 	stk = &attr->stk;
-
 	ret = vc_connect(attr);
 	if(ret < 0){
 		attr->sk = -1;
@@ -271,7 +271,7 @@ struct vc_ops * vc_netdown_open(struct vc_attr * attr)
 			printf("ssl_connect_simple_fail\n");
 			ssl_errno_str(attr->ssl, ssl_errno, 
 					ssl_errstr, sizeof(ssl_errstr));
-			mon_update_check(stk, 0, ssl_errstr);
+			_stk_log(stk, "SSL_connect %s", ssl_errstr);
 			return stk_curnt(stk)->init(attr);
 		}
 		//printf("ssl_connect success\n");

@@ -98,7 +98,8 @@ static int vc_frame_recv_ssl(struct vc_attr *port, char *buf, int rlen)
 	}
 
 	ssl_errno_str(port->ssl, ssl_errno, ssl_errstr, sizeof(ssl_errstr));
-	mon_update_check(stk, 0, ssl_errstr);
+	
+	_stk_log(stk, "%s %s", __func__, ssl_errstr);
 	return SSL_OPS_FAIL;	
 }
 #endif
@@ -275,6 +276,7 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				printf("ssl config %s\n", sslcfg);
 				if(loadconfig(sslcfg)){
 					printf("cannot load config file");
+					return -1;
 				}
 				
 				port->ssl = sslinfo_alloc();

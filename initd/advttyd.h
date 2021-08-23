@@ -7,8 +7,7 @@
 #define CF_LOGNAME  	("advttyd.log")
 #define CF_CONFNAME 	("advttyd.conf")
 #define CF_PORTPROG 	("vcomd")
-#define CF_SSLPROG 	("advsslvcom")
-#define CF_SSLCONF	("config.json")
+#define CF_SSLCONF	("ssl.json")
 #define CF_VERSION	("1.20")
 
 #define CF_MAXPORTS	VCOM_PORTS

@@ -86,6 +86,10 @@ static int loadconfig(char * filepath)
 	result = js2tree(filedata, tok, p.toknext);
 	//dumptree(result.node, 0);
 
+	close(fd);
+	free(filedata);
+	free(tok);
+
 	if(jstree_read(result.node->r, &rnode, "ssl", "keyfile")!= 2){
 		printf("didn't find keyfile\n");
 		return -1;

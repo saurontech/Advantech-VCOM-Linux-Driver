@@ -107,11 +107,36 @@ static inline struct vc_ops * stk_curnt(struct stk_vc *stk);
 
 void * stk_mon;
 
+
+static inline int _stk_log(struct stk_vc *stk, char * __form, ...)
+{
+	char tmp[512];
+	int len;
+	va_list args;
+
+	len = 0;
+	
+	if(stk == 0 || stk->top < 0){
+		printf("%s on empty stk\n", __func__);
+		exit(0);
+	}
+
+	len += snprintf(tmp, sizeof(tmp), "(%s)", 
+			stk_curnt(stk)->name());
+
+	va_start(args, __form);
+	len += vsnprintf(&tmp[len], sizeof(tmp) -len , __form, args);
+	va_end(args);
+
+	mon_update_check(stk, 0, tmp);
+	
+	return len;
+}
 /* 
  *	state machine stack
  */
 #define _expmsg(msg, len) \
-do{ if(stk->top > 0)	\
+do{ if(stk->top >= 0)	\
 		snprintf(msg, len, "(%s)%s,%d", stk->stk_stat[stk->top]->name(), __func__, __LINE__);	\
 	else				\
 		snprintf(msg, len, "(NULL)%s,%d", __func__, __LINE__);	\
@@ -344,14 +369,11 @@ static inline int vc_check_send(struct vc_attr *attr,
 	if(attr->ssl){
 		if(ssl_send_simple(attr->ssl, packet, plen, 1000, &ssl_errno) != plen){
 			char ssl_errstr[256];
-			int dbg_strlen;
 			printf("failed to send %s over SSL\n", dbg_msg);
-			dbg_strlen = snprintf(ssl_errstr, sizeof(ssl_errstr),
-				"%s", dbg_msg);
 			ssl_errno_str(attr->ssl, ssl_errno, 
-				&ssl_errstr[dbg_strlen], 
-				sizeof(ssl_errstr) - dbg_strlen);
-			mon_update_check(stk, 0, ssl_errstr);
+				ssl_errstr, 
+				sizeof(ssl_errstr));
+			_stk_log(stk, "%s;%s", dbg_msg, ssl_errstr);
 			return -1;
 		}
 		return 0;

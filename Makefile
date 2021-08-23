@@ -44,16 +44,13 @@ clean:
 rename_srl: ./keys/rootCA.srl
 
 install_ssl: rename_srl
-	cp ./sslproxy/advsslvcom $(INSTALL_PATH)
-	cp ./sslproxy/config.json $(INSTALL_PATH)
+	cp ./config/ssl.json $(INSTALL_PATH)
 	cp ./keys/rootCA.key $(INSTALL_PATH)
 	cp ./keys/rootCA.pem $(INSTALL_PATH)
 	cp ./keys/rootCA.srl $(INSTALL_PATH)
 	cp ./keys/vcom.pem $(INSTALL_PATH)
-	cp ./config/ssl.json $(INSTALL_PATH)
 	cp ./script/adv-eki-tls-create $(INSTALL_PATH)
 	chmod 111 $(INSTALL_PATH)adv-eki-tls-create
-	ln -sf $(INSTALL_PATH)advsslvcom /sbin/advsslvcom
 	ln -sf $(INSTALL_PATH)adv-eki-tls-create /sbin/adv-eki-tls-create
 
 install_daemon:
@@ -94,7 +91,6 @@ uninstall: $(y_uninstall)
 	rm -f /sbin/advadd
 	rm -f /sbin/vcinot
 	rm -f /sbin/advps
-	rm -f /sbin/advsslvcom
 	rm -f /sbin/adv-eki-tls-create
 	
 # use dkms
@@ -112,7 +108,6 @@ uninstall_dkms:
 install_systemd:
 	make install -C ./misc/systemd
 	systemctl enable advvcom.service
-	systemctl start advvcom.service
 
 uninstall_systemd:
 	systemctl stop advvcom.service
