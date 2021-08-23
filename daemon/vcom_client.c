@@ -76,22 +76,29 @@ static int vc_frame_recv_tcp(struct vc_attr *port, char *buf, int rlen)
 static int vc_frame_recv_ssl(struct vc_attr *port, char *buf, int rlen)
 {
 	int len;
+	int ssl_errno;
+	struct stk_vc * stk;
+	char ssl_errstr[256];
+	
+	stk = &port->stk;
 
-	len = ssl_recv_direct(port->ssl, buf, rlen);
+	len = ssl_recv_direct(port->ssl, buf, rlen, &ssl_errno);
 	if(len == SSL_OPS_SELECT){
 		return len;
 	}else if(len <= 0){
-		return SSL_OPS_FAIL;
+		//share debug code with recv frame body
+		//return SSL_OPS_FAIL;
 	}else if(len == rlen){
 		return len;
 	}else if(len < rlen){
-		len += ssl_recv_simple(port->ssl, &buf[len], rlen - len, 500);
-	
+		len += ssl_recv_simple(port->ssl, &buf[len], rlen - len, 500, &ssl_errno);
 		if(len == rlen){
 			return len;
 		}
-
 	}
+
+	ssl_errno_str(port->ssl, ssl_errno, ssl_errstr, sizeof(ssl_errstr));
+	mon_update_check(stk, 0, ssl_errstr);
 	return SSL_OPS_FAIL;	
 }
 #endif
@@ -117,7 +124,7 @@ struct vc_ops * vc_recv_desp(struct vc_attr *port)
 		if(__ret == SSL_OPS_SELECT){
 			return stk_curnt(stk);
 		}else if(__ret <= 0){/*SSL_OPS_FAIL*/
-			printf("vc_frame_recv_ssl %d\n", __ret);
+			//printf("vc_frame_recv_ssl %d\n", __ret);
 			stk_excp(stk);
 			return stk_curnt(stk)->init(port);
 		}
@@ -151,7 +158,7 @@ struct vc_ops * vc_recv_desp(struct vc_attr *port)
 			__ret = vc_frame_recv_ssl(port,  &buf[hdr_len], packet_len);
 
 			if(__ret <= 0){
-				printf("%s(%d) cmd %hx\n",__func__,__LINE__, cmd);
+				//printf("%s(%d) cmd %hx\n",__func__,__LINE__, cmd);
 				stk_excp(stk);
 				return stk_curnt(stk)->init(port);
 			}

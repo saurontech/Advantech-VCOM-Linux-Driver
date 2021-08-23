@@ -29,7 +29,6 @@ build_basic:
 
 build_ssl:
 	make -C ./keys
-
 	
 clean:
 	make clean -C ./driver
@@ -51,6 +50,7 @@ install_ssl: rename_srl
 	cp ./keys/rootCA.pem $(INSTALL_PATH)
 	cp ./keys/rootCA.srl $(INSTALL_PATH)
 	cp ./keys/vcom.pem $(INSTALL_PATH)
+	cp ./config/ssl.json $(INSTALL_PATH)
 	cp ./script/adv-eki-tls-create $(INSTALL_PATH)
 	chmod 111 $(INSTALL_PATH)adv-eki-tls-create
 	ln -sf $(INSTALL_PATH)advsslvcom /sbin/advsslvcom
@@ -111,6 +111,11 @@ uninstall_dkms:
 
 install_systemd:
 	make install -C ./misc/systemd
+	systemctl enable advvcom.service
+	systemctl start advvcom.service
 
 uninstall_systemd:
+	systemctl stop advvcom.service
+	systemctl disable advvcom.service
 	make uninstall -C ./misc/systemd
+	

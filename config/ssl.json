@@ -1,0 +1,7 @@
+{
+	"ssl":{
+		"keyfile":"./vcom.pem",
+		"rootca":"./rootCA.pem",
+		"password":"password"
+	}
+}

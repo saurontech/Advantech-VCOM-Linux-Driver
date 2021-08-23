@@ -226,6 +226,22 @@ static void show_x509_err(ssl_info *info)
 	}
 }
 
+static int show_x509_err_str(ssl_info *info, char * buf, int len)
+{
+	long v_err;
+	int rlen = 0;
+	
+	v_err = SSL_get_verify_result(info->ssl);
+	if(v_err != X509_V_OK){
+		rlen = snprintf(buf, len,	
+			"X509 error(%ld):%s",
+			v_err,
+			X509_verify_cert_error_string(v_err));
+	}
+	return rlen;
+}
+
+
 static int _do_ssl_update_wait_event(ssl_info * info, wait_event * wevent, 
 		int ssl_errno, const char * func_str)
 {
@@ -255,10 +271,43 @@ static int _do_ssl_update_wait_event(ssl_info * info, wait_event * wevent,
 	return SSL_OPS_FAIL;
 }
 
+int ssl_errno_str(ssl_info * info, int ssl_errno, char * buf, int buflen)
+{
+	int len;
+	len = 0;
+	switch(ssl_errno){
+		case SSL_ERROR_WANT_READ:
+			len = snprintf(buf, buflen, "SSL wait on read");
+			break;
+		case SSL_ERROR_WANT_WRITE:
+			len = snprintf(buf, buflen, "SSL wait on write");
+			break;
+		case SSL_ERROR_ZERO_RETURN:
+			len = snprintf(buf, buflen, 
+					"SSL connection closed by peer");
+			break;
+		case SSL_ERROR_SYSCALL:
+			len = snprintf(buf, buflen,"SSL syscall: %s", 
+					strerror(errno));
+			break;
+		default :
+			len = snprintf(buf, buflen, "SSL error(%d):%s;", 
+				ssl_errno, 
+				ERR_reason_error_string(ERR_get_error())
+				);
+			if(len < 0)
+				break;
+			len += show_x509_err_str(info, &buf[len], buflen - len);
+			break;
+
+	}
+	return len;
+}
+
 #define _ssl_update_wait_event(INFO, WEVENT, ERRNO)	\
 	_do_ssl_update_wait_event(INFO, &(INFO->WEVENT), ERRNO, __func__)
 
-int ssl_connect_direct(ssl_info * info)
+int ssl_connect_direct(ssl_info * info, int * r_errno)
 {
 	int ret;
 	int ssl_errno;
@@ -272,11 +321,15 @@ int ssl_connect_direct(ssl_info * info)
 		return ret;
 
 	ssl_errno = SSL_get_error(info->ssl, ret);
+
+	if(r_errno){
+		*r_errno = ssl_errno;
+	}
 	
 	return _ssl_update_wait_event(info, connect, ssl_errno);
 }
 
-int ssl_connect_simple(ssl_info * info, int to_ms)
+int ssl_connect_simple(ssl_info * info, int to_ms, int *ssl_errno)
 {
 	int ret;
 	int conn;
@@ -289,7 +342,7 @@ int ssl_connect_simple(ssl_info * info, int to_ms)
 	tv.tv_sec = to_ms / 1000;
 	tv.tv_usec = (to_ms % 1000) * 1000;
 	do{
-		conn = ssl_connect_direct(info);
+		conn = ssl_connect_direct(info, ssl_errno);
 		if(conn > 0){
 			return 0;
 
@@ -305,7 +358,7 @@ int ssl_connect_simple(ssl_info * info, int to_ms)
 }
 
 
-int ssl_send_direct(ssl_info * info, char *buf, int len)
+int ssl_send_direct(ssl_info * info, char *buf, int len, int *r_errno)
 {
 	int wlen;
 	int ssl_errno;
@@ -320,10 +373,14 @@ int ssl_send_direct(ssl_info * info, char *buf, int len)
 
 	ssl_errno = SSL_get_error(info->ssl, wlen);
 
+	if(r_errno){
+		*r_errno = ssl_errno;
+	}
+
 	return _ssl_update_wait_event(info, send, ssl_errno);
 }
 
-int ssl_recv_direct(ssl_info * info, char * buf, int len)
+int ssl_recv_direct(ssl_info * info, char * buf, int len, int *r_errno)
 {
 	int rlen;
 	int ssl_errno;
@@ -337,10 +394,14 @@ int ssl_recv_direct(ssl_info * info, char * buf, int len)
 
 	ssl_errno = SSL_get_error(info->ssl, rlen);
 
+	if(r_errno){
+		*r_errno = ssl_errno;
+	}
+
 	return _ssl_update_wait_event(info, recv, ssl_errno);
 }
 
-int ssl_send_simple(ssl_info * info, void * buf, int len, int to_ms)
+int ssl_send_simple(ssl_info * info, void * buf, int len, int to_ms, int *ssl_errno)
 {
 	int slen;
 	int ret;
@@ -354,7 +415,7 @@ int ssl_send_simple(ssl_info * info, void * buf, int len, int to_ms)
 	tv.tv_usec = (to_ms % 1000) * 1000;
 
 	do{
-		slen = ssl_send_direct(info, buf, len);
+		slen = ssl_send_direct(info, buf, len, ssl_errno);
 		if(slen > 0){
 			return slen;
 
@@ -369,7 +430,7 @@ int ssl_send_simple(ssl_info * info, void * buf, int len, int to_ms)
 	return 0;
 }
 
-int ssl_recv_simple(ssl_info * info, void * buf, int len, int to_ms)
+int ssl_recv_simple(ssl_info * info, void * buf, int len, int to_ms, int *ssl_errno)
 {
 	int slen;
 	int ret;
@@ -383,7 +444,7 @@ int ssl_recv_simple(ssl_info * info, void * buf, int len, int to_ms)
 	tv.tv_usec = (to_ms % 1000) * 1000;
 
 	do{
-		slen = ssl_recv_direct(info, buf, len);
+		slen = ssl_recv_direct(info, buf, len, ssl_errno);
 		if(slen > 0){
 			return slen;
 

@@ -337,9 +337,21 @@ static inline int vc_check_send(struct vc_attr *attr,
 		struct vc_proto_packet *packet, int plen, char * dbg_msg)
 {
 #ifdef _VCOM_SUPPORT_TLS
+	int ssl_errno;
+	struct stk_vc * stk;
+
+	stk = &attr->stk;
 	if(attr->ssl){
-		if(ssl_send_simple(attr->ssl, packet, plen, 1000) != plen){
+		if(ssl_send_simple(attr->ssl, packet, plen, 1000, &ssl_errno) != plen){
+			char ssl_errstr[256];
+			int dbg_strlen;
 			printf("failed to send %s over SSL\n", dbg_msg);
+			dbg_strlen = snprintf(ssl_errstr, sizeof(ssl_errstr),
+				"%s", dbg_msg);
+			ssl_errno_str(attr->ssl, ssl_errno, 
+				&ssl_errstr[dbg_strlen], 
+				sizeof(ssl_errstr) - dbg_strlen);
+			mon_update_check(stk, 0, ssl_errstr);
 			return -1;
 		}
 		return 0;

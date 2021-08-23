@@ -24,7 +24,7 @@
 
 struct vc_ops vc_netdown_ops;
 
-int _sock_err(int sk)
+static int _sock_err(int sk, char * buff, int buflen, int *errstrlen)
 {
 	socklen_t len;
 	int arg;
@@ -33,10 +33,14 @@ int _sock_err(int sk)
 
 	if (getsockopt(sk, SOL_SOCKET, SO_ERROR, (void*)(&arg), &len) < 0){
 		printf("failed to get socket error\n");
+		if(buff != 0 && buflen != 0 && errstrlen != 0)
+			*errstrlen = snprintf(buff, buflen , "can't get SO_ERROR");
 		return -1;
 	}
 	if(arg){
 		printf("Socket ERR: %s\n", strerror(arg));
+		if(buff != 0 && buflen != 0 && errstrlen != 0)
+			*errstrlen = snprintf(buff, buflen , "sock err: %s", strerror(arg));
 		return -1;
 	}
 
@@ -153,6 +157,9 @@ int vc_connect(struct vc_attr * attr)
 	}
 
 	do{
+		struct stk_vc * stk;
+		stk = &attr->stk;
+
 		if(sk >= 0){
 //			printf("already connected\n");
 			break;
@@ -163,14 +170,22 @@ int vc_connect(struct vc_attr * attr)
 
 		ret = select(skmax + 1, 0, &rfds, 0, &tv);
 		if(ret <= 0){
-			printf("connection timeout\n");
+			
+			//printf("connection timeout\n");
+			mon_update_check(stk, 0, "connection timeout");
 			break;
 		}
 
 		for( i = 0; i < sknum; i++){
 			if(FD_ISSET(sklist[i], &rfds)){
-				if(_sock_err(sklist[i])){
-					continue;
+				char serrmsg[128];
+				int retlen;
+				if(_sock_err(sklist[i], 
+					serrmsg, sizeof(serrmsg), 
+						&retlen)){
+					//continue;
+					mon_update_check(stk, 0, serrmsg);
+					break;
 				}
 				sk = sklist[i];
 				break;
@@ -237,6 +252,7 @@ struct vc_ops * vc_netdown_open(struct vc_attr * attr)
 	attr->sk = ret;
 #ifdef _VCOM_SUPPORT_TLS
 	if(attr->ssl){
+		int ssl_errno;
 		ssl_info * _ssl = attr->ssl;
 		_ssl->sk = attr->sk;
 		_ssl->ssl = SSL_new(_ssl->ctx);
@@ -249,8 +265,13 @@ struct vc_ops * vc_netdown_open(struct vc_attr * attr)
 		//printf("SSL_set_fd success\n");
 
 		__set_nonblock(_ssl->sk);
-		if(ssl_connect_simple(attr->ssl, 1000) < 0){
+		if(ssl_connect_simple(attr->ssl, 1000, &ssl_errno) < 0){			
+			char ssl_errstr[256];
+
 			printf("ssl_connect_simple_fail\n");
+			ssl_errno_str(attr->ssl, ssl_errno, 
+					ssl_errstr, sizeof(ssl_errstr));
+			mon_update_check(stk, 0, ssl_errstr);
 			return stk_curnt(stk)->init(attr);
 		}
 		//printf("ssl_connect success\n");
