@@ -21,6 +21,7 @@
 //#include "vcom_debug.h"
 #include "vc_client_pause.h"
 #include "vc_client_netup.h"
+#include "advlist.h"
 
 struct vc_ops vc_netdown_ops;
 
@@ -47,17 +48,21 @@ static int _sock_err(int sk, char * buff, int buflen, int *errstrlen)
 	return 0;
 }
 
-unsigned short vc_tcp_port = VC_PROTO_PORT;
+//const unsigned short vc_tcp_port = VC_PROTO_PORT;
 
-int _create_sklist(int * sklist, int maxlen, char * addr, 
-	fd_set * rfds, int *retlen, int *retmax)
-{
-	int sknum;
+typedef struct	{
 	int sk;
-	int skmax;
+	struct list_head list;
+}_client_info;
+
+int _create_sklist(struct list_head *sklist, char * addr, char * port)
+{
+	int sk;
 	int ret;
 	struct addrinfo hints;
         struct addrinfo *result, *ptr;
+	_client_info * sk_info;
+	
 
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
@@ -65,14 +70,12 @@ int _create_sklist(int * sklist, int maxlen, char * addr,
 	hints.ai_flags = 0;
 	hints.ai_protocol = 0;
 
-        ret = getaddrinfo(addr , NULL, &hints, &result);
+        ret = getaddrinfo(addr , port, &hints, &result);
 	if (ret != 0){
 		printf("getaddrinfo: %s\n", gai_strerror(ret));
 		return -1;
 	}
 
-	skmax = sk = -1;
-	sknum = 0;
 
 	for (ptr = result; ptr != NULL; ptr = ptr->ai_next){
 		if(ptr->ai_family != AF_INET && 
@@ -81,51 +84,38 @@ int _create_sklist(int * sklist, int maxlen, char * addr,
 			continue;
 		}
 
-		if(sknum >= maxlen){
-			break;
-		}
-
-		sklist[sknum] = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-		if(sklist[sknum] < 0){
-			printf("create socket failed(%d)\n", sknum);
+		sk = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+		if(sk < 0){
+			printf("create socket failed(%d)\n", sk);
 			continue;
 		}
+		printf("create socket(%d)\n", sk);
+		vc_config_sock(sk, VC_SKOPT_NONBLOCK, 0);
 
-		vc_config_sock(sklist[sknum], VC_SKOPT_NONBLOCK, 0);
-
-		if( __set_sockaddr_port(ptr, vc_tcp_port)){
+/*		if( __set_sockaddr_port(ptr, vc_tcp_port)){
 			printf("cannot set client port\n");
-			close(sklist[sknum]);
+			close(sk);
 			continue;
-		}
+		}*/
 
-		ret = connect(sklist[sknum], ptr->ai_addr, ptr->ai_addrlen);
+		ret = connect(sk, ptr->ai_addr, ptr->ai_addrlen);
 		if(ret < 0 && errno != EINPROGRESS){
 			printf("cannot connect\n");
-			close(sklist[sknum]);
+			close(sk);
 			continue;
 		}else if(ret == 0){
-			sk = sklist[sknum];
-//			printf("connected successfully on %d\n", sk);
-		}
-
-		
-		if(sklist[sknum] > skmax){
-			skmax = sklist[sknum];
-//			printf("setting skmax to %d\n", skmax);
-		}
-
-		FD_SET(sklist[sknum], rfds);
-		sknum++;
-
-		if(sk >= 0)
+			printf("connected successfully on %d\n", sk);
 			break;
+		}
+		sk_info = malloc(sizeof(_client_info));
+		printf("adding socket(%d) to waitlist ptr %p\n", sk, sk_info);
+		sk_info->sk = sk;
+		list_add_tail(&sk_info->list, sklist);
+		sk = -1;
 	}
 
 	freeaddrinfo(result);
 
-	*retlen = sknum;
-	*retmax = skmax;
 
 	return sk;
 
@@ -137,28 +127,27 @@ int vc_connect(struct vc_attr * attr)
 	struct timeval tv;
 	fd_set rfds;
 	char * addr = attr->ip_ptr;
+	char service[16];
 	int ret;
-	int sklist[VC_MAX_SKNUM];
-	int sknum;
 	int sk;
-	int skmax;
-	int i;
-	int max;
+	LIST_HEAD(clients);
+	struct list_head * list_ptr;
+	struct list_head * next;
+	_client_info * cli_ptr;
 	
-	FD_ZERO(&rfds);
-	sk = _create_sklist(sklist, VC_MAX_SKNUM, addr, &rfds, &sknum, &skmax);
+	snprintf(service, sizeof(service), "%hu",VC_PROTO_PORT);
+	sk = _create_sklist(&clients, addr, service);
 	if(sk < 0 && attr->ip_red > 0){
 		addr = attr->ip_red;
-		sk = _create_sklist(&sklist[sknum], (VC_MAX_SKNUM - sknum), 
-					addr, &rfds, &ret, &max);
-		sknum += ret;
-		if(max > skmax){
-			skmax = max;
-		}
+		sk = _create_sklist(&clients, addr, "5202");
 	}
+
+	tv.tv_sec = CONN_TO;
+	tv.tv_usec = 0;
 
 	do{
 		struct stk_vc * stk;
+		int skmax;
 		stk = &attr->stk;
 
 		if(sk >= 0){
@@ -166,39 +155,56 @@ int vc_connect(struct vc_attr * attr)
 			break;
 		}
 
-		tv.tv_sec = CONN_TO;
-		tv.tv_usec = 0;
+		skmax = -1;
+		FD_ZERO(&rfds);
+		list_for_each(list_ptr, &clients){
+			cli_ptr = container_of(list_ptr, _client_info, list);
+			printf("checking socket(%d) at waitlist %p \n", cli_ptr->sk, cli_ptr);
+			FD_SET(cli_ptr->sk, &rfds);
+			if(cli_ptr->sk > skmax){
+				skmax = cli_ptr->sk;
+			}
+		}
 
 		ret = select(skmax + 1, 0, &rfds, 0, &tv);
+
 		if(ret <= 0){
-			
 			//printf("connection timeout\n");
 			_stk_log(stk, "connect timeout %d", CONN_TO);
 			break;
 		}
 
-		for( i = 0; i < sknum; i++){
-			if(FD_ISSET(sklist[i], &rfds)){
+		list_for_each_safe(list_ptr, next, &clients){
+			cli_ptr = container_of(list_ptr, _client_info, list);
+			if(FD_ISSET(cli_ptr->sk, &rfds)){
 				char serrmsg[128];
 				int retlen;
-				if(_sock_err(sklist[i], 
+				if(_sock_err(cli_ptr->sk, 
 					serrmsg, sizeof(serrmsg), 
-						&retlen)){
-					//continue;
-					_stk_log(stk, "%s", serrmsg);
-					break;
+					&retlen)){
+
+					close(cli_ptr->sk);
+					list_del(&cli_ptr->list);
+					free(cli_ptr);
+					_stk_log(stk, "connect():%s", serrmsg);
+
+					continue;
 				}
-				sk = sklist[i];
+
+				sk = cli_ptr->sk;
+				list_del(&cli_ptr->list);
+				free(cli_ptr);
 				break;
 			}
 		}
-	}while(0);
 
-	for(i = 0; i < sknum; i++){
-		if(sklist[i] != sk){
-//			printf("closing socket %d != %d(sk)\n", sklist[i], sk);
-			close(sklist[i]);
-		}
+	}while(1);
+
+	list_for_each_safe(list_ptr, next, &clients){
+		cli_ptr = container_of(list_ptr, _client_info, list);
+		close(cli_ptr->sk);
+		list_del(&cli_ptr->list);
+		free(cli_ptr);
 	}
 
 	if(sk >= 0){
