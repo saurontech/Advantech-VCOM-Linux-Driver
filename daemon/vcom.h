@@ -459,7 +459,7 @@ static inline void vc_buf_clear(struct vc_attr * port, unsigned int clrflags)
 		vc_buf_update(port, VC_BUF_RX);
 	}
 	if(clrflags & ADV_CLR_TX){
-		vc_buf_update(port, VC_BUF_RX);
+		vc_buf_update(port, VC_BUF_TX);
 	}
 }
 
