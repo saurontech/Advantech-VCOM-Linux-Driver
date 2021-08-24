@@ -81,21 +81,11 @@ static struct vc_ops * vc_pause_recv(struct vc_attr * attr, char *buf, int len)
 static struct vc_ops * vc_pause_event(struct vc_attr * attr, 
 	struct timeval * tv, fd_set * rfds, fd_set * wfds, fd_set * efds)
 {
-	struct stk_vc * stk;
-	int buflen;
+	//struct stk_vc * stk;
 
-	stk = &attr->stk;
+	//stk = &attr->stk;
 	if(attr->sk < 0){
 		printf("shouldn't go here\n");
-	}
-
-	if(ioctl(attr->sk, SIOCINQ, &buflen)){
-		printf("resume: failed to get SIOCINQ\n");
-		stk_excp(stk);
-		return stk_curnt(stk)->init(attr);
-	}
-	if(buflen){
-		return ADV_THIS;
 	}
 
 	if(attr->xmit_pending == 0){
@@ -117,19 +107,14 @@ static int _resume_queue(struct vc_attr * attr)
 	plen = vc_pack_qfsize(packet, attr->tid, 1024, sizeof(pbuf));
 
 	if(plen <= 0){
-		printf("failed to create WAIT_ON_MASK\n");
+		printf("failed to create QUEUE_FREE_SIZE\n");
 		return -1;
 	}
 
-	if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
-		printf("cannot send WAIT_ON_MASK\n");
+	if(vc_check_send(attr, packet, plen, "QUEUE_FREE_SIZE") != 0){
 		return -1;
 	}
 
-	if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
-		printf("failed to  send WAIT_ON_MASK\n");
-		return -1;
-	}
 	attr->tid++;
 
 	return 0;
@@ -139,18 +124,8 @@ static int _resume_queue(struct vc_attr * attr)
 static struct vc_ops * vc_pause_resume(struct vc_attr * attr)
 {
 	struct stk_vc * stk;
-	int buflen;
 
 	stk = &attr->stk;
-	if(ioctl(attr->sk, SIOCOUTQ, &buflen)){
-		printf("resume: failed to get SIOCOUTQ\n");
-		stk_excp(stk);
-	
-		return stk_curnt(stk)->init(attr);
-	}
-	if(buflen){
-		return ADV_THIS;
-	}
 	
 	if(_resume_queue(attr)){
 		printf("%s(%d)\n", __func__, __LINE__);

@@ -1,8 +1,9 @@
 #ifndef _VCOM_MONITOR_H
 #define _VCOM_MONITOR_H
-#define MSIZE 1024		// 1K size file
+#define MSIZE 2048		// 2K size file
 #define FNAME_LEN 256
 #define CUTTER	"> "
+#define MON_MSGLEN_MAX 128
 
 extern void * stk_mon;
 
@@ -49,15 +50,27 @@ static inline int mon_init(char * fname)
 	return 0;
 }
 
+static inline int time2str(char *buf, int len)
+{
+	int tm_strlen;
+	struct tm tm_buf;
+	struct timeval tv;
+
+	gettimeofday(&tv, 0);
+	localtime_r(&tv.tv_sec, &tm_buf);
+	tm_strlen = strftime(buf, len, "%F|%T:", &tm_buf);
+
+	return tm_strlen;
+}
+
 static inline int mon_update(struct stk_vc * stk, int sig, const char * dbg)
 {
 	char * ptr;
 	char * mem;
 	char * stat;
-	char tmp[64];	
+	char tmp[MON_MSGLEN_MAX];	
 	int len;
 	int statl;
-	int dbgl;
 
 	if(vc_mon.fd < 0){
 		return 0;
@@ -71,7 +84,7 @@ static inline int mon_update(struct stk_vc * stk, int sig, const char * dbg)
 	stat = stk_curnt(stk)->name();
 	mem = (char *)vc_mon.addr;
 	memset(tmp, ' ', sizeof(tmp));
-	statl = snprintf(tmp, sizeof(tmp), "Pid %d | State [%s] ", 
+	statl = snprintf(tmp, sizeof(tmp), "Pid %d|State[%s] ", 
 				vc_mon.pid, stat);
 
 	len = MSIZE - statl;
@@ -87,23 +100,36 @@ static inline int mon_update(struct stk_vc * stk, int sig, const char * dbg)
 	memcpy(mem, tmp, vc_mon.max_statl);
 	memset(tmp, ' ', sizeof(tmp));	
 	/* for record debug message */
-	if(dbg != 0 && sig){
+	if(dbg != 0 ){
+		int msglen;
+		int dbgl;
+		msglen = 0;
+
 		ptr = mem + vc_mon.max_statl;
-		dbgl = snprintf(tmp, sizeof(tmp), "%s%s", CUTTER, dbg);
-		
-		len = MSIZE - dbgl - vc_mon.max_statl;
+
+		msglen = snprintf(tmp, sizeof(tmp), "\n");
+
+		dbgl = time2str(&tmp[msglen], sizeof(tmp) -msglen);
+		msglen += dbgl;
+
+		dbgl = snprintf(&tmp[msglen], sizeof(tmp)- msglen, "%s%s", CUTTER, dbg);
+		msglen += dbgl;
+
+		len = MSIZE - msglen - vc_mon.max_statl;
 		if(len <= 1){
 			printf("%s len <= 1\n", __func__);
 			return -1;
 		}
 
 		if(!vc_mon.dbg_first){	
-			memmove(ptr+dbgl+1, ptr, MSIZE-statl-dbgl); 
+			
+			memmove(ptr+msglen, ptr, MSIZE-statl-msglen); 
 		}else{
 			vc_mon.dbg_first = 0;
 		}
-		memcpy(ptr, tmp, dbgl);
-		memset(ptr+dbgl, ' ', 1);
+
+		memcpy(ptr, tmp, msglen);
+		//memset(ptr+msglen, ' ', 1);
 	}
 	/* Trigger the inotify */
 	if(sig){

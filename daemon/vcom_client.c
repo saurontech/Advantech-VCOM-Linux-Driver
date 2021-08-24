@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,13 +17,19 @@
 #include "advtype.h"
 #include "vcom_proto.h"
 #include "vcom.h"
+#ifdef _VCOM_SUPPORT_TLS
+#include "jsmn.h"
+#include "jstree.h"
+#include "jstree_read.h"
+#include "vcom_load_sslcfg.h"
+#endif
 //#include "vcom_debug.h"
 
 #define RBUF_SIZE	4096
 
 extern void * stk_mon; 
 
-int recv_second_chance(int sock, char * buf, int buflen)
+static int recv_second_chance(int sock, char * buf, int buflen)
 {
 	int ret;
 	struct timeval tv;
@@ -42,9 +49,63 @@ int recv_second_chance(int sock, char * buf, int buflen)
 	return recv(sock, buf, buflen, 0);
 }
 
-struct vc_ops * vc_recv_desp(struct vc_attr *port)
+static int vc_frame_recv_tcp(struct vc_attr *port, char *buf, int rlen)
+{
+	int len; 
+
+	len = recv(port->sk, buf, rlen, 0);
+	if(len <= 0){
+		//stk_excp(stk);
+		return -1;/*stk_curnt(stk)->init(port);*/
+	}
+	if(len == rlen){
+		return len;
+	}
+
+	if(len < rlen){
+		len += recv_second_chance(port->sk, &buf[len], rlen - len);
+		if(len == rlen){
+			return len;
+		}
+	}
+	
+	return -2;/*stk_curnt(stk)->err(port, "Packet lenth too short", len);*/
+
+}
+#ifdef _VCOM_SUPPORT_TLS
+static int vc_frame_recv_ssl(struct vc_attr *port, char *buf, int rlen)
 {
 	int len;
+	int ssl_errno;
+	struct stk_vc * stk;
+	char ssl_errstr[256];
+	
+	stk = &port->stk;
+
+	len = ssl_recv_direct(port->ssl, buf, rlen, &ssl_errno);
+	if(len == SSL_OPS_SELECT){
+		return len;
+	}else if(len <= 0){
+		//share debug code with recv frame body
+		//return SSL_OPS_FAIL;
+	}else if(len == rlen){
+		return len;
+	}else if(len < rlen){
+		len += ssl_recv_simple(port->ssl, &buf[len], rlen - len, 500, &ssl_errno);
+		if(len == rlen){
+			return len;
+		}
+	}
+
+	ssl_errno_str(port->ssl, ssl_errno, ssl_errstr, sizeof(ssl_errstr));
+	
+	_stk_log(stk, "%s %s", __func__, ssl_errstr);
+	return SSL_OPS_FAIL;	
+}
+#endif
+
+struct vc_ops * vc_recv_desp(struct vc_attr *port)
+{
 	int hdr_len;
 	int packet_len;
 	unsigned short cmd;
@@ -55,22 +116,25 @@ struct vc_ops * vc_recv_desp(struct vc_attr *port)
 	stk = &port->stk;
 
 	hdr_len = sizeof(struct vc_proto_hdr) + sizeof(struct vc_attach_param);
-	
-	len = recv(port->sk, buf, hdr_len, 0);
-	if(len <= 0){
+#ifdef _VCOM_SUPPORT_TLS
+	if(port->ssl){
+		int __ret;
+
+		__ret = vc_frame_recv_ssl(port, buf, hdr_len);
+
+		if(__ret == SSL_OPS_SELECT){
+			return stk_curnt(stk);
+		}else if(__ret <= 0){/*SSL_OPS_FAIL*/
+			//printf("vc_frame_recv_ssl %d\n", __ret);
+			stk_excp(stk);
+			return stk_curnt(stk)->init(port);
+		}
+
+	}else 
+#endif
+	if(vc_frame_recv_tcp(port, buf, hdr_len) < 0){
 		stk_excp(stk);
 		return stk_curnt(stk)->init(port);
-	}
-	if(len != hdr_len){
-		do{
-			if(len < hdr_len){
-				len += recv_second_chance(port->sk, &buf[len], hdr_len - len);
-				if(len == hdr_len){
-					break;
-				}
-			}
-			return stk_curnt(stk)->err(port, "Packet lenth too short", len);
-		}while(0);
 	}
 
 	hdr = (struct vc_proto_hdr *)buf;
@@ -85,20 +149,27 @@ struct vc_ops * vc_recv_desp(struct vc_attr *port)
 	if( packet_len < 0){
 		return stk_curnt(stk)->err(port, "Wrong VCOM len", packet_len);
 	}else if(packet_len > 0){
+		int __ret;
 		if(packet_len > (RBUF_SIZE - hdr_len)){
 			return stk_curnt(stk)->err(port, "payload is too long", packet_len);
 		}
-		len = recv(port->sk, &buf[hdr_len], packet_len, 0);
-		if(len != packet_len){
-			do{
-				if(len < packet_len){
-					len += recv_second_chance(port->sk, &buf[hdr_len + len], packet_len - len);
-					if(len == packet_len){
-						break;
-					}
-				}
-				return stk_curnt(stk)->err(port, "VCOM len miss-match", len);
-			}while(0);
+
+#ifdef _VCOM_SUPPORT_TLS	
+		if(port->ssl){
+			__ret = vc_frame_recv_ssl(port,  &buf[hdr_len], packet_len);
+
+			if(__ret <= 0){
+				//printf("%s(%d) cmd %hx\n",__func__,__LINE__, cmd);
+				stk_excp(stk);
+				return stk_curnt(stk)->init(port);
+			}
+
+		}else 
+#endif
+		if((__ret = vc_frame_recv_tcp(port, &buf[hdr_len], packet_len)) < 0){
+			printf("vc_frame_recv_tcp error %d\n", __ret);
+			stk_excp(stk);
+			return stk_curnt(stk)->init(port);
 		}
 	}
 
@@ -131,7 +202,7 @@ void _init_std()
 
 void usage(char * cmd)
 {
-	printf("Usage : %s [-l/-t/-d/-a/-p/-r] [argument]\n", cmd);
+	printf("Usage : %s [-l/-t/-d/-a/-p/-r/-S] [argument]\n", cmd);
 	printf("The most commonly used commands are:\n");
 	printf("	-l	Log file\n");
 	printf("	-t	TTY id\n");
@@ -139,19 +210,26 @@ void usage(char * cmd)
 	printf("	-a	IP addr\n");
 	printf("	-p	Device port\n");
 	printf("	-r	Redundant IP\n");
-	printf("	-s	enable TLS\n");
+#ifdef _VCOM_SUPPORT_TLS
+	printf("	-S	enable TLS with a given json config\n");
+#endif
 	printf("	-h	For help\n");
 }
 
 int startup(int argc, char **argv, struct vc_attr *port)
 {
 	char *addr;
+#ifdef _VCOM_SUPPORT_TLS
+	char *sslcfg;
+#endif
 	int ch;
 
 	port->ttyid = -1;
 	port->devid = 0;
 	port->port = -1;
+#ifdef _VCOM_SUPPORT_TLS
 	port->ssl = 0;
+#endif
 	addr = 0;
 
 	if(argc < 2) {
@@ -160,9 +238,10 @@ int startup(int argc, char **argv, struct vc_attr *port)
 	}
 
 	mon_init(0);
-	while((ch = getopt(argc, argv, "shl:t:d:a:p:r:")) != -1)  {
+	while((ch = getopt(argc, argv, "S:hl:t:d:a:p:r:")) != -1)  {
 		switch(ch){
 			case 'h':
+
 				usage(argv[0]);
 				return -1;
 			case 'l':
@@ -191,10 +270,37 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				port->ip_red = addr;
 				printf("setting RIP addr : %s ...\n", port->ip_red);
 				break;
-			case 's':
-				port->ssl = 1;
-				printf("ssl enabled\n");
+#ifdef _VCOM_SUPPORT_TLS
+			case 'S':
+				sslcfg = optarg;
+				printf("ssl config %s\n", sslcfg);
+				if(loadconfig(sslcfg)){
+					printf("cannot load config file");
+					return -1;
+				}
+				
+				port->ssl = sslinfo_alloc();
+				init_ssl_lib();
+				char wd_orig[1024];
+				char * wd_new;
+				if(getcwd(wd_orig, sizeof(wd_orig))){
+					printf("original cwd is %s\n", wd_orig);
+				}
+
+				wd_new = create_cfg_cwd(sslcfg);
+				if(wd_new){
+					chdir(wd_new);
+					free(wd_new);
+				}
+				printf("keyfile %s\n", _config_keyfile);
+				printf("rootCA %s\n", _config_rootca);
+				port->ssl->ctx = initialize_ctx( _config_rootca, 
+								_config_keyfile, 
+								_config_password);
+				printf("create ctx @%p\n", port->ssl->ctx);
+				chdir(wd_orig);
 				break;
+#endif
 			default:
 				usage(argv[0]);
 				return -1;
@@ -211,7 +317,6 @@ int startup(int argc, char **argv, struct vc_attr *port)
 int main(int argc, char **argv)
 {
 	struct vc_attr port;
-	struct timeval tv;
 	fd_set rfds;
 	fd_set efds;
 	fd_set wfds;
@@ -221,6 +326,7 @@ int main(int argc, char **argv)
 	unsigned int lrecv;
 	char filename[64];
 	struct stk_vc * stk;
+	struct timeval zerotv;
 
 	const unsigned int psec = VC_PULL_PSEC;
 	const unsigned int pusec = VC_PULL_PUSEC;
@@ -256,11 +362,15 @@ int main(int argc, char **argv)
 	stk_push(stk, &vc_netdown_ops);
 	stk_curnt(stk)->init(&port);
 	lrecv = 0;
-
+	
+	timerclear(&zerotv);
 	while(1){
+		struct timeval tv;
+		struct timeval * tv_ptr;
 
 		tv.tv_sec = psec;
 		tv.tv_usec = pusec;
+
 
 		FD_ZERO(&rfds);
 		FD_ZERO(&wfds);
@@ -293,7 +403,7 @@ int main(int argc, char **argv)
 			try_ops(stk_curnt(stk), pause, &port);
 		}
 
-
+		
 		FD_SET(port.fd, &efds);
 		FD_SET(port.sk, &rfds);
 
@@ -311,9 +421,23 @@ int main(int argc, char **argv)
 			maxfd = (port.sk > maxfd)?port.sk:maxfd;
 			
 		}
-	
-		ret = select(maxfd + 1, &rfds, &wfds, &efds, &tv);
-		if(ret == 0 ){
+		
+		tv_ptr = &tv;
+#ifdef _VCOM_SUPPORT_TLS
+		if(port.ssl && port.sk >= 0){
+
+			vc_recv_desp(&port);
+			ssl_set_fds(port.ssl, 0, &rfds, &wfds);
+			//for VCOM protocol always recv when there is data to read
+			port.ssl->recv.read = 1;
+			if(SSL_pending(port.ssl->ssl)){
+				tv_ptr = &zerotv;
+			}
+		}
+#endif
+		
+		ret = select(maxfd + 1, &rfds, &wfds, &efds, tv_ptr);
+		if(ret == 0 && tv_ptr != &zerotv){
 			try_ops(stk_curnt(stk), poll, &port);
 			continue;
 		}
@@ -322,10 +446,36 @@ int main(int argc, char **argv)
 			vc_buf_update(&port, VC_BUF_ATTR);
 		}
 
-		if(FD_ISSET(port.sk, &rfds)){
+		if(port.sk < 0){
+			//socket not connected do nothing;
+		}
+#ifdef _VCOM_SUPPORT_TLS
+		else if(port.ssl){
+			int tasks = 0;
+			tasks = ssl_handle_fds(port.ssl, &rfds, &wfds);
+			if(tasks & invoke_ssl_recv){
+				lrecv = 0;
+				//printf("invoked ssl recv\n");
+				vc_recv_desp(&port);
+			}else{
+				if(tasks){
+					printf("other tasks %x\n", tasks);
+				}
+				if(tv_ptr != &zerotv){
+					unsigned int used = VC_TIME_USED(tv);
+					lrecv += (used > 0)?used:1;	
+				}
+				if(lrecv > VC_PULL_TIME){
+					stk_curnt(stk)->err(&port, "PROTO timeout", 0);
+					lrecv = 0;
+				}
+			}
+		}
+#endif 
+		else if(FD_ISSET(port.sk, &rfds)){
 			lrecv = 0;
 			vc_recv_desp(&port);
-		}else if(port.sk >= 0){
+		}else{
 			unsigned int used = VC_TIME_USED(tv);
 			lrecv += (used > 0)?used:1;
 			if(lrecv > VC_PULL_TIME){

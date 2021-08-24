@@ -102,15 +102,10 @@ static int _pause_queue(struct vc_attr * attr)
 		return -1;
 	}
 
-	if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
-		printf("cannot send WAIT_ON_MASK\n");
+	if(vc_check_send(attr, packet, plen, "WAIT_ON_MASK") != 0){
 		return -1;
 	}
 
-	if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
-		printf("failed to  send WAIT_ON_MASK\n");
-		return -1;
-	}
 	attr->tid++;
 
 	return 0;

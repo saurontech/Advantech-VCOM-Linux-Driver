@@ -1,11 +1,21 @@
 #ifndef __USER_SPACE_IF
 #define __USER_SPACE_IF
 
+#include <time.h>
+#include <stdarg.h>
+
 #include "advvcom.h"
+#include "vcom_proto.h"
+
+#ifdef _VCOM_SUPPORT_TLS
+#include "ssl_select.h"
+#endif
 
 #define VC_PULL_TIME	10000000
 #define VC_PULL_PSEC	(VC_PULL_TIME / 1000000)
 #define VC_PULL_PUSEC	(VC_PULL_TIME % 1000000)
+
+#define CONN_TO	10
 
 #define VC_TIME_USED(a)	(VC_PULL_TIME - (a.tv_sec * 1000000 + a.tv_usec));
 #define STACK_MAX 10
@@ -23,7 +33,9 @@ struct vc_attr{
 	int attr_ptr;
 	int xmit_pending;
 	int ttyid;
-	int ssl;
+#ifdef _VCOM_SUPPORT_TLS
+	ssl_info *ssl;
+#endif
 	unsigned int port;
 	unsigned int tid;
 	unsigned short devid;
@@ -100,11 +112,36 @@ static inline struct vc_ops * stk_curnt(struct stk_vc *stk);
 
 void * stk_mon;
 
+
+static inline int _stk_log(struct stk_vc *stk, char * __form, ...)
+{
+	char tmp[512];
+	int len;
+	va_list args;
+
+	len = 0;
+	
+	if(stk == 0 || stk->top < 0){
+		printf("%s on empty stk\n", __func__);
+		exit(0);
+	}
+
+	len += snprintf(tmp, sizeof(tmp), "(%s)", 
+			stk_curnt(stk)->name());
+
+	va_start(args, __form);
+	len += vsnprintf(&tmp[len], sizeof(tmp) -len , __form, args);
+	va_end(args);
+
+	mon_update_check(stk, 0, tmp);
+	
+	return len;
+}
 /* 
  *	state machine stack
  */
 #define _expmsg(msg, len) \
-do{ if(stk->top > 0)	\
+do{ if(stk->top >= 0)	\
 		snprintf(msg, len, "(%s)%s,%d", stk->stk_stat[stk->top]->name(), __func__, __LINE__);	\
 	else				\
 		snprintf(msg, len, "(NULL)%s,%d", __func__, __LINE__);	\
@@ -140,7 +177,7 @@ _stk_pop(struct stk_vc *stk)
 
 	return 0;
 }
-#include <time.h>
+
 #define stk_excp(a) do{char msg[128]; _expmsg(msg, 128); _stk_excp(a, msg);}while(0)
 static inline int
 _stk_excp(struct stk_vc *stk, char * msg)
@@ -326,6 +363,40 @@ static inline int fdcheck(int fd, int type, struct timeval * ctv)
 	return ret;
 }
 
+static inline int vc_check_send(struct vc_attr *attr, 
+		struct vc_proto_packet *packet, int plen, char * dbg_msg)
+{
+#ifdef _VCOM_SUPPORT_TLS
+	int ssl_errno;
+	struct stk_vc * stk;
+
+	stk = &attr->stk;
+	if(attr->ssl){
+		if(ssl_send_simple(attr->ssl, packet, plen, 1000, &ssl_errno) != plen){
+			char ssl_errstr[256];
+			printf("failed to send %s over SSL\n", dbg_msg);
+			ssl_errno_str(attr->ssl, ssl_errno, 
+				ssl_errstr, 
+				sizeof(ssl_errstr));
+			_stk_log(stk, "%s;%s", dbg_msg, ssl_errstr);
+			return -1;
+		}
+		return 0;
+	}
+#endif
+	if(fdcheck(attr->sk, FD_WR_RDY, 0) == 0){
+		printf("cannot send %s\n", dbg_msg);
+		return -1;
+	}
+
+	if(send(attr->sk, packet, plen, MSG_NOSIGNAL) != plen){
+		printf("failed to  send %s\n", dbg_msg);
+		return -1;
+	}
+
+	return 0;
+}
+
 #define VC_BUF_RX	0
 #define VC_BUF_TX	1
 #define VC_BUF_ATTR	2
@@ -390,7 +461,7 @@ static inline void vc_buf_clear(struct vc_attr * port, unsigned int clrflags)
 		vc_buf_update(port, VC_BUF_RX);
 	}
 	if(clrflags & ADV_CLR_TX){
-		vc_buf_update(port, VC_BUF_RX);
+		vc_buf_update(port, VC_BUF_TX);
 	}
 }
 

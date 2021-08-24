@@ -34,7 +34,7 @@
 #define PP_NARG(...) \
          PP_NARG_(__VA_ARGS__,PP_RSEQ_N())
 
-static inline int _readJSTree(int argc, _tree_node *input, _tree_node **output, ...)
+static inline int _do_jstree_read(int argc, _tree_node *input, _tree_node **output, ...)
 {
 	int loop = argc - 2;
 	int iter;
@@ -139,4 +139,5 @@ static inline int _readJSTree(int argc, _tree_node *input, _tree_node **output, 
 	return i;
 }
 
-#define readJSTree(...) _readJSTree(PP_NARG(__VA_ARGS__), __VA_ARGS__)
+//#define readJSTree(...) _do_jstree_read(PP_NARG(__VA_ARGS__), __VA_ARGS__)
+#define jstree_read(...) _do_jstree_read(PP_NARG(__VA_ARGS__), __VA_ARGS__)

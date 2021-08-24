@@ -22,6 +22,7 @@
 #include <dirent.h>
 #include <syslog.h>
 
+#include "proc_tools.h"
 
 #ifdef	STREAM
 #include <sys/ptms.h>
@@ -44,15 +45,9 @@ int __log_fd = -1;
 int _restart;
 
 static int  parse_env(char * cmdpath, char * workpath);
-//static int  daemon_init(void);
 static int  paser_config(char * conf_name, TTYINFO ttyinfo[]);
 static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[]);
-//static void shutdown_ttyp(int nrport, TTYINFO ttyinfo[]);
-//static void restart_handle();
-//static u_long device_ipaddr(char * ipaddr);
-//static int  hexstr(char * strp);
-//static int  log_open(char * log_name);
-//static void log_close(void);
+
 #ifdef ADVTTY_DEBUG
 static void log_msg(const char * msg);
 #endif
@@ -213,6 +208,39 @@ void __close_stdfd(void)
 	close(2);
 }
 
+void usage(char * cmd)
+{
+	printf("Usage : %s [-d -t]\n", cmd);
+	printf("The most commonly used commands are:\n");
+	printf("	-d	run as deamon\n");
+	printf("	-t	run test, don't exec\n");
+	printf("	-h	For help\n");
+}
+
+
+static int run_as_daemon;
+static int testrun;
+int setup_options(int argc, char *argv[])
+{
+	int ch;
+	while((ch = getopt(argc, argv, "dht")) != -1)  {
+		switch(ch){
+			case 'h':
+				usage(argv[0]);
+				return -1;
+			case 'd':
+				run_as_daemon = 1;
+				break;
+			case 't':
+				testrun = 1;
+				break;
+
+		}
+	}
+
+	return 0;
+}
+
 int main(int argc, char * argv[])
 {
 	int nrport;
@@ -224,8 +252,18 @@ int main(int argc, char * argv[])
 	int cf_len;
 
 	nrport = 0;
+	run_as_daemon = 0;
+	testrun = 0;
 
-	__close_stdfd();
+	if(setup_options(argc, argv)){
+		usage(argv[0]);
+		return -1;
+	}
+
+	if(run_as_daemon){
+		__close_stdfd();
+	}
+	
 
 	if(parse_env(argv[0], work_path) < 0)
 		return -1;
@@ -267,51 +305,7 @@ static int parse_env(char * cmdpath, char * workpath)
 	chdir(currpath);
 	return 0;
 }
-/*
-static int daemon_init(void)   
-{   
-	pid_t   pid;  
 
-	if(getppid() == 1)
-		goto L_EXIT; 
-
-#ifdef SIGTTOU
-	signal(SIGTTOU, SIG_IGN);
-#endif
-#ifdef SIGTTIN
-	signal(SIGTTIN, SIG_IGN);
-#endif
-#ifdef SIGTSTP
-	signal(SIGTSTP, SIG_IGN);
-#endif
-
-	if((pid = fork()) < 0)
-		return(-1);
-	if(pid != 0)                // parent process
-		exit(0);
-
-	if(setpgrp() == -1) {
-		return(-1);
-	}
-	signal(SIGHUP, SIG_IGN);	// immune from pgrp leader death
-	setsid();                   // become session leader
-	if((pid = fork()) < 0)
-		return(-1);
-	if(pid != 0)                // parent process
-		exit(0);
-
-L_EXIT:
-	signal(SIGCLD, SIG_IGN);
-	signal(SIGTERM, SIG_IGN);
-	errno = 0;
-	close(0);
-	close(1);
-	close(2);
-	chdir("/");                 // change working directory
-	umask(0);                   // clear   file   mode   creation
-	return(0);   
-}   
-*/
 
 static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 {
@@ -323,6 +317,7 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 	char dev_portidx_str[CF_MAXSTRLEN];
 	char dev_ipaddr_str[INET6_ADDRSTRLEN];
 	char dev_redundant_ipaddr_str[INET6_ADDRSTRLEN];
+	char sscanf_fmt[1024];
 	char *dev_type;
 	int matchCount=0;
 	char conf_dp[256];
@@ -334,6 +329,14 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 		syslog(LOG_DEBUG, "Open the configuration file [%s] fail", conf_name);
 		return nrport;
 	}
+
+	snprintf(sscanf_fmt, sizeof(sscanf_fmt), 
+			"%%%zus%%%zus%%%zus%%%zus%%%zus", 
+			sizeof(mpt_nameidx_str),
+			sizeof(dev_type_str),
+			sizeof(dev_ipaddr_str), 
+			sizeof(dev_portidx_str), 
+			sizeof(dev_redundant_ipaddr_str));
 	
 	while(nrport < CF_MAXPORTS) {
 		dev_type = dev_type_str;
@@ -344,7 +347,9 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 		 * Read configuration & the data format of every data line is :
 		 * [Minor] [Device-Type] [Device-IP] [Port-Idx] [redundant-ip]
 		 */
-		matchCount = sscanf(conf_dp, "%s%s%s%s%s",
+		
+
+		matchCount = sscanf(conf_dp, sscanf_fmt,
 				mpt_nameidx_str, dev_type_str,
 				dev_ipaddr_str, dev_portidx_str, dev_redundant_ipaddr_str);
 
@@ -408,192 +413,236 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 	return nrport;
 }
 
+static char cmd[PATH_MAX];
+static char log[PATH_MAX];
+static char mon[PATH_MAX];
+static char sslconf[PATH_MAX];
+
+static int _create_syscmd(char * syscmd, int syscmdlen, 
+			TTYINFO ttyinfo[], int idx)
+{
+	int cmdidx;
+
+	cmdidx = 0;
+	if(ttyinfo[idx].has_redundant_ip) {
+
+		if(ttyinfo[idx].dev_ssl){
+			cmdidx = snprintf(syscmd, syscmdlen, 
+					"%s -l%s -t%s -d%s -a%s -p%s -r%s -S%s", 
+					cmd,
+					mon, 
+					ttyinfo[idx].mpt_nameidx_str,
+					ttyinfo[idx].dev_type_str,
+					ttyinfo[idx].dev_ipaddr_str,
+					ttyinfo[idx].dev_portidx_str,
+					ttyinfo[idx].dev_redundant_ipaddr_str,
+					sslconf
+					);
+		}else{
+			ADV_LOGMSG("executing command %s -l %s -t %s -d %s -a %s -p %s -r %s \n", 
+					cmd,
+					log, 
+					ttyinfo[idx].mpt_nameidx_str, 
+					ttyinfo[idx].dev_type_str, 
+					ttyinfo[idx].dev_ipaddr_str, 
+					ttyinfo[idx].dev_portidx_str, 
+					ttyinfo[idx].dev_redundant_ipaddr_str);
+			cmdidx = snprintf(syscmd, syscmdlen, 
+					"%s -l%s -t%s -d%s -a%s -p%s -r%s ", 
+					cmd,
+					mon, 
+					ttyinfo[idx].mpt_nameidx_str,
+					ttyinfo[idx].dev_type_str,
+					ttyinfo[idx].dev_ipaddr_str,
+					ttyinfo[idx].dev_portidx_str,
+					ttyinfo[idx].dev_redundant_ipaddr_str
+					);
+		}
+
+	}else{
+		if(ttyinfo[idx].dev_ssl){
+			cmdidx = snprintf(syscmd, syscmdlen, 
+					"%s -l%s -t%s -d%s -a%s -p%s -S%s", 
+					cmd,
+					mon, 
+					ttyinfo[idx].mpt_nameidx_str,
+					ttyinfo[idx].dev_type_str,
+					ttyinfo[idx].dev_ipaddr_str,
+					ttyinfo[idx].dev_portidx_str,
+					sslconf
+					);
+		}else{
+			cmdidx = snprintf(syscmd, syscmdlen, 
+					"%s -l%s -t%s -d%s -a%s -p%s ", 
+					cmd,
+					mon, 
+					ttyinfo[idx].mpt_nameidx_str,
+					ttyinfo[idx].dev_type_str,
+					ttyinfo[idx].dev_ipaddr_str,
+					ttyinfo[idx].dev_portidx_str
+					);
+		}
+
+	}
+
+	return cmdidx;
+}
+
+static int oldcmd_cmp(char *oldcmd, int oldcmdlen, TTYINFO * ttyinfo)
+{
+	int diff = 0;
+	char * addr;
+	char * _port;
+	char * dtype;
+	char * mfile;
+	
+	mfile = __cmd_get_opts(oldcmd, oldcmdlen, "-l");
+	if(mfile == 0){
+		printf("missing log\n");
+		diff++;
+	}else if(strncmp(mon, mfile, oldcmdlen)){
+		diff++;
+	}else{
+		printf("log is the same\n");
+	}
+
+	dtype = __cmd_get_opts(oldcmd, oldcmdlen, "-d");
+
+	if(dtype == 0){
+		printf("missing devtype\n");
+		diff++;
+	}else if( strncmp(ttyinfo->dev_type_str, 
+				dtype, strlen(dtype))){
+		diff++;
+		printf("devtype is diff\n");
+	}else{
+		printf("devtype is the same\n");
+	}
+
+	addr = __cmd_get_opts(oldcmd, oldcmdlen, "-a");
+
+	if(addr == 0){
+		printf("address is missing\n");
+		diff++;
+	}else if (strncmp(ttyinfo->dev_ipaddr_str, 
+				addr, strlen(addr))){
+		diff++;
+		printf("port is diff\n");
+	}else{
+		printf("address is the same\n");
+	}
+
+	_port = __cmd_get_opts(oldcmd, oldcmdlen, "-p");
+
+	if(_port== 0){
+		printf("missing port\n");
+	}else if( strncmp(ttyinfo->dev_portidx_str, 
+				_port, strlen(_port))){
+		diff++;
+		printf("port is diff\n");
+	}else{
+		printf("port is the same\n");
+	}
+
+	if(ttyinfo->has_redundant_ip){
+		char * _raddr;
+		_raddr = __cmd_get_opts(oldcmd, oldcmdlen, "-r");
+		if(_raddr == 0){
+			printf("missing redundent IP\n");
+			diff++;
+		}else if(strncmp(ttyinfo->dev_redundant_ipaddr_str, 
+				_raddr, strlen(_raddr))){
+			printf("raddr is diff\n");
+			diff++;
+		}else{
+			printf("redundent IP is the same\n");
+		}
+	}
+
+	if(ttyinfo->dev_ssl){
+		char * _sslcfg;
+		_sslcfg = __cmd_get_opts(oldcmd, oldcmdlen, "-S");
+		if(_sslcfg == 0){
+			printf("missing ssl config\n");
+			diff++;
+		}else if(strncmp(sslconf, 
+				_sslcfg, strlen(_sslcfg))){
+			printf("ssl is diff\n");
+			diff++;
+		}else{
+			printf("ssl is the same\n");
+		}
+	}
+
+	return diff;
+}
+
+
 static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[])
 {
 	int idx;
 	int oldpid;
 	int cmdidx;
-	int sslproxy = 0;
-	char cmd[PATH_MAX];
-	char log[PATH_MAX];
-	char mon[PATH_MAX];
-	char sslcmd[PATH_MAX];
-	char sslconf[PATH_MAX];
+	//int sslproxy = 0;
+	int oldcmdlen;
+	
 	char oldcmd[2048];
 	char vcomif[1024];
 	char syscmd[1024];
 	char killcmd[256];
 
 
-	sprintf(cmd, "%s/%s", work_path, CF_PORTPROG);
-	sprintf(log, "%s/%s", work_path, CF_LOGNAME);
-	sprintf(sslcmd, "%s/%s", work_path, CF_SSLPROG);
-	sprintf(sslconf, "%s/%s", work_path, CF_SSLCONF);
+	snprintf(cmd, sizeof(cmd), "%s/%s", work_path, CF_PORTPROG);
+	snprintf(log, sizeof(log), "%s/%s", work_path, CF_LOGNAME);
+	//snprintf(sslcmd, sizeof(sslcmd), "%s/%s", work_path, CF_SSLPROG);
+	snprintf(sslconf, sizeof(sslconf), "%s/%s", work_path, CF_SSLCONF);
 	
 	for(idx = 0; idx < nrport; ++idx) {
+		struct stat sb;
+		//int __ret;
 		sprintf(mon, "%s/advtty%s", MON_PATH, ttyinfo[idx].mpt_nameidx_str);
 		
-		snprintf(vcomif, sizeof(vcomif), "/proc/vcom/advproc%s", ttyinfo[idx].mpt_nameidx_str);
+		snprintf(vcomif, sizeof(vcomif), 
+				"/proc/vcom/advproc%s", 
+				ttyinfo[idx].mpt_nameidx_str);
+		printf("access %s\n", vcomif);
+		if(stat(vcomif, &sb)){
+			printf("cannot access VCOM interface %s\n", vcomif);
+			exit(0);
+		}
+
+		printf("trying to find inode %ld\n", sb.st_ino);
 		
-		oldpid = __cmd_search_file(cmd, vcomif, oldcmd, sizeof(oldcmd));
-		if(ttyinfo[idx].has_redundant_ip) {
 
-			if(ttyinfo[idx].dev_ssl){
-				cmdidx = snprintf(syscmd, sizeof(syscmd), 
-					"%s -l%s -t%s -d%s -a%s -p%s -r%s -s ", 
-						cmd,
-						mon, 
-						ttyinfo[idx].mpt_nameidx_str,
-						ttyinfo[idx].dev_type_str,
-						ttyinfo[idx].dev_ipaddr_str,
-						ttyinfo[idx].dev_portidx_str,
-						ttyinfo[idx].dev_redundant_ipaddr_str
-						);
-			}else{
-				ADV_LOGMSG("executing command %s -l %s -t %s -d %s -a %s -p %s -r %s \n", 
-						cmd,
-						log, 
-						ttyinfo[idx].mpt_nameidx_str, 
-						ttyinfo[idx].dev_type_str, 
-						ttyinfo[idx].dev_ipaddr_str, 
-						ttyinfo[idx].dev_portidx_str, 
-						ttyinfo[idx].dev_redundant_ipaddr_str);
-				cmdidx = snprintf(syscmd, sizeof(syscmd), 
-						"%s -l%s -t%s -d%s -a%s -p%s -r%s ", 
-						cmd,
-						mon, 
-						ttyinfo[idx].mpt_nameidx_str,
-						ttyinfo[idx].dev_type_str,
-						ttyinfo[idx].dev_ipaddr_str,
-						ttyinfo[idx].dev_portidx_str,
-						ttyinfo[idx].dev_redundant_ipaddr_str
-						);
-			}
-
-		}else{
-			if(ttyinfo[idx].dev_ssl){
-				cmdidx = snprintf(syscmd, sizeof(syscmd), 
-						"%s -l%s -t%s -d%s -a%s -p%s -s ", 
-						cmd,
-						mon, 
-						ttyinfo[idx].mpt_nameidx_str,
-						ttyinfo[idx].dev_type_str,
-						ttyinfo[idx].dev_ipaddr_str,
-						ttyinfo[idx].dev_portidx_str
-						);
-			}else{
-				cmdidx = snprintf(syscmd, sizeof(syscmd), 
-						"%s -l%s -t%s -d%s -a%s -p%s ", 
-						cmd,
-						mon, 
-						ttyinfo[idx].mpt_nameidx_str,
-						ttyinfo[idx].dev_type_str,
-						ttyinfo[idx].dev_ipaddr_str,
-						ttyinfo[idx].dev_portidx_str
-						);
-			}
-
+		if( __cmd_inode_search_pid("vcomd", sb.st_ino, 
+					oldcmd, sizeof(oldcmd), 
+					&oldcmdlen, &oldpid) < 0 ){
+			printf("no old pid no need to compare\n");
+		}else if(oldcmd_cmp(oldcmd, oldcmdlen, &ttyinfo[idx]) == 0){
+			printf("old command is the same\n");
+			continue;
 		}
-
-		if(sslproxy == 0 && ttyinfo[idx].dev_ssl){
-			sslproxy = 1;
-		}
-
-		//syslog(LOG_DEBUG, "spawn cmd = %s; old cmd = %s;", syscmd, oldcmd);
+		
+		cmdidx = _create_syscmd(syscmd, sizeof(syscmd), ttyinfo, idx);
 
 		if(oldpid > 0){
-			if(strcmp(syscmd, oldcmd) == 0){
-				continue;
-			}else{
-				snprintf(killcmd, sizeof(killcmd), "kill -9 %d", oldpid);
+			snprintf(killcmd, sizeof(killcmd), "kill -9 %d", oldpid);
+			printf("exec killcmd:%s\n", killcmd);
+			if(!testrun){
 				system(killcmd);
 			}
 		}
 
 		snprintf(&syscmd[cmdidx], sizeof(syscmd) - cmdidx - 1, "&");
-		system(syscmd);
-	}
-
-	if(sslproxy){
-		int syscmd_len = strlen(sslcmd);
-		int conflen = strlen(sslconf);
-		int ret;
-		char ssl_cmd[2048];
-		ret = snprintf(ssl_cmd, sizeof(ssl_cmd), "%s -c %s -l %s &", sslcmd, sslconf, SSL_LOG_DIR);
-		if(ret < syscmd_len + conflen){
-			syslog(LOG_DEBUG, "ssl command trunc!!!\n");
-		}else{
-			system(ssl_cmd);
+		printf("exec cmd: %s\n", syscmd);
+		if(!testrun){
+			system(syscmd);
 		}
 	}
+
 
 	return;
 }
-/*
-static void shutdown_ttyp(int nrport, TTYINFO ttyinfo[])
-{
-	int idx;
-	int wait_port;
-	pid_t pid;
-
-	for(idx = 0; idx < nrport; ++idx) {
-		kill(ttyinfo[idx].advttyp_pid, SIGTERM);
-	}
-
-	for(wait_port = nrport; wait_port;) {
-		for(idx = 0; idx < nrport; ++idx) {
-			if(ttyinfo[idx].advttyp_pid == 0)
-				continue;
-			pid = waitpid(ttyinfo[idx].advttyp_pid, NULL, WNOHANG);
-			if((pid == ttyinfo[idx].advttyp_pid) ||
-					((pid < 0) && (errno == ECHILD))) {
-				ttyinfo[idx].advttyp_pid = 0;
-				--wait_port;
-			}
-		}
-		if(wait_port)
-			usleep(200 * 1000);
-	}
-	return;
-}
-*/
-/*static void restart_handle()
-{
-	_restart = 1;
-	return;
-} */
-/*
-static int hexstr(char * strp)
-{
-	int i, ch, val;
-	for(i = val = 0; (ch = *(strp + i)) != '\0'; ++i) {
-		if(ch >= '0' && ch <= '9') {
-			val = 16 * val + ch - '0';
-		}
-		else if((ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F')) {
-			ch = toupper(ch);
-			val = 16 * val + ch - 'A' + 10;
-		}
-		else
-			return 0;
-	}
-	return val;
-}
-*/
-/*static int log_open(char * log_name)
-{
-	return __log_fd = open(log_name,
-			O_WRONLY | O_CREAT | O_APPEND | O_NDELAY, 0666);
-}*/
-/*
-static void log_close(void)
-{
-	if(__log_fd >= 0) {
-		close(__log_fd);
-		__log_fd = -1;
-	}
-	return;
-}*/
 #ifdef ADVTTYD_DEBUG
 static void log_msg(const char * msg)
 {
