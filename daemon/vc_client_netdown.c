@@ -135,7 +135,8 @@ int vc_connect(struct vc_attr * attr)
 	struct list_head * next;
 	_client_info * cli_ptr;
 	
-	snprintf(service, sizeof(service), "%hu",VC_PROTO_PORT);
+	snprintf(service, sizeof(service), "%hu", 
+			(unsigned short)VC_PROTO_PORT);
 	sk = _create_sklist(&clients, addr, service);
 	if(sk < 0 && attr->ip_red > 0){
 		addr = attr->ip_red;
