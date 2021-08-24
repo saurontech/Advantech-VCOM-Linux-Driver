@@ -6,10 +6,8 @@ Support extended featurs:
 - DKMS integration
 - systemd integration
 - Advanced system monitoring
-  - VCOM connection status monitoring: /tmp/advmon/advtty*
+  - VCOM and TLS status monitoring: /tmp/advmon/advtty*
   - > $ cat /tmp/advmon/advtty0
-  - TLS connection status logging: /tmp/advsslmsg/*
-  - > $ cat /tmp/advsslmsg/0
 - syslog integration
   -  logging **/tmp/advcom/** events to syslog
   - > $ vcinot -p /tmp/advmon -l &  
