@@ -19,6 +19,14 @@ int main(int argc, char *argv[])
 	struct stat sb;	
 		
 	for(i = 0; i < VCOM_PORTS; i++){
+		char * type;
+		char * port;
+		char * ip;
+		char * rip;
+		char * ssl;
+
+		type = port = ip = rip = ssl = 0;
+
 		snprintf(ifname, sizeof(ifname), "/proc/vcom/advproc%d", i);
 
 		if(stat(ifname, &sb)){
@@ -31,8 +39,16 @@ int main(int argc, char *argv[])
 					&pid)){
 			continue;
 		}
+		
+		type = __cmd_get_opts(cmd, cmdlen, "-d");
+		port = __cmd_get_opts(cmd, cmdlen, "-p");
+		ip = __cmd_get_opts(cmd, cmdlen, "-a");
+		ssl = __cmd_get_opts(cmd, cmdlen, "-S");
+		rip = __cmd_get_opts(cmd, cmdlen, "-r");
 
-		printf("ttyADV%d\t\tPID:%ld\n", i, (long)pid);
+		printf("ttyADV%d PID:%ld %s Dev:%s Port%s IP:%s%s%s\n",
+			 i, (long)pid, (ssl)?"TLS":"TCP",type, port, 
+			ip, rip?"|":"", rip?rip:"");
 	}
 
 	return 0;
