@@ -50,8 +50,15 @@ struct vc_ops * vc_idle_poll(struct vc_attr * attr)
 
 	stk = &attr->stk;
 	printf("%s(%d)\n", __func__, __LINE__);
-	stk_excp(stk);
+	//**  speed up close(tty) when connection is lost
+	//* tty_port_close_start()
+	//-->tty_io.c:tty_wait_until_send()
+	// -->serial_core.c:uart_wait_until_sent()
+	//    this function will wait for tx_empty() 
+	//   until timeout.
+	vc_buf_clear(attr, ADV_CLR_RX);
 
+	stk_excp(stk);
 	return stk_curnt(stk)->init(attr);
 }
 

@@ -15,6 +15,8 @@
 #define VC_PULL_PSEC	(VC_PULL_TIME / 1000000)
 #define VC_PULL_PUSEC	(VC_PULL_TIME % 1000000)
 
+#define CONN_TO	10
+
 #define VC_TIME_USED(a)	(VC_PULL_TIME - (a.tv_sec * 1000000 + a.tv_usec));
 #define STACK_MAX 10
 #define stk_full(a) ((a)->top>=STACK_MAX-1)

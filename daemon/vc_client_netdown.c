@@ -89,14 +89,8 @@ int _create_sklist(struct list_head *sklist, char * addr, char * port)
 			printf("create socket failed(%d)\n", sk);
 			continue;
 		}
-		printf("create socket(%d)\n", sk);
+		//printf("create socket(%d)\n", sk);
 		vc_config_sock(sk, VC_SKOPT_NONBLOCK, 0);
-
-/*		if( __set_sockaddr_port(ptr, vc_tcp_port)){
-			printf("cannot set client port\n");
-			close(sk);
-			continue;
-		}*/
 
 		ret = connect(sk, ptr->ai_addr, ptr->ai_addrlen);
 		if(ret < 0 && errno != EINPROGRESS){
@@ -108,7 +102,7 @@ int _create_sklist(struct list_head *sklist, char * addr, char * port)
 			break;
 		}
 		sk_info = malloc(sizeof(_client_info));
-		printf("adding socket(%d) to waitlist ptr %p\n", sk, sk_info);
+		//printf("adding socket(%d) to waitlist ptr %p\n", sk, sk_info);
 		sk_info->sk = sk;
 		list_add_tail(&sk_info->list, sklist);
 		sk = -1;
@@ -121,7 +115,6 @@ int _create_sklist(struct list_head *sklist, char * addr, char * port)
 
 }
 
-#define CONN_TO	10
 int vc_connect(struct vc_attr * attr)
 {
 	struct timeval tv;
@@ -140,7 +133,7 @@ int vc_connect(struct vc_attr * attr)
 	sk = _create_sklist(&clients, addr, service);
 	if(sk < 0 && attr->ip_red > 0){
 		addr = attr->ip_red;
-		sk = _create_sklist(&clients, addr, "5202");
+		sk = _create_sklist(&clients, addr, service);
 	}
 
 	tv.tv_sec = CONN_TO;
@@ -160,7 +153,7 @@ int vc_connect(struct vc_attr * attr)
 		FD_ZERO(&rfds);
 		list_for_each(list_ptr, &clients){
 			cli_ptr = container_of(list_ptr, _client_info, list);
-			printf("checking socket(%d) at waitlist %p \n", cli_ptr->sk, cli_ptr);
+			//printf("checking socket(%d) at waitlist %p \n", cli_ptr->sk, cli_ptr);
 			FD_SET(cli_ptr->sk, &rfds);
 			if(cli_ptr->sk > skmax){
 				skmax = cli_ptr->sk;
@@ -252,6 +245,13 @@ struct vc_ops * vc_netdown_open(struct vc_attr * attr)
 	stk = &attr->stk;
 	ret = vc_connect(attr);
 	if(ret < 0){
+		//**  speed up close(tty) when connection is lost
+		//* tty_port_close_start()
+		//-->tty_io.c:tty_wait_until_send()
+		// -->serial_core.c:uart_wait_until_sent()
+		//    this function will wait for tx_empty() 
+		//   until timeout.
+		vc_buf_clear(attr, ADV_CLR_RX);
 		attr->sk = -1;
 		return ADV_THIS;
 	}
