@@ -1,6 +1,9 @@
 #ifndef __USER_SPACE_IF
 #define __USER_SPACE_IF
 
+#include <time.h>
+#include <stdarg.h>
+
 #include "advvcom.h"
 #include "vcom_proto.h"
 
@@ -172,7 +175,7 @@ _stk_pop(struct stk_vc *stk)
 
 	return 0;
 }
-#include <time.h>
+
 #define stk_excp(a) do{char msg[128]; _expmsg(msg, 128); _stk_excp(a, msg);}while(0)
 static inline int
 _stk_excp(struct stk_vc *stk, char * msg)
