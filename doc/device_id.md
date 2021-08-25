@@ -1,4 +1,5 @@
 #Device ID of Advantech Device servers
+
 ##introduction
 Device ID is a 16 bit Hex Magic number, used in the Advantech VCOM protocol to check for device type.
 However, this number is no longer relavent if you chose to use VCOM protocol stack 2.0.
@@ -10,6 +11,7 @@ For the ones that stick with VCOM protocol stack 1.0, and with to ignore this va
  enable "Ignore device ID" on the Advantech Device Server.
 
 Back to [README.md](../README.md)
+
 ##Device Type
 | Device Name | ID (Hex) |
 |-------------|----------|
