@@ -39,7 +39,7 @@ Utilize the **Search** Button to install the following packages:
 - libopenssl-devel
 - dkms
 
-#### On CentOS/RHEL/Fedora/RockyLinux baed systems
+#### On CentOS/RHEL/Fedora/RockyLinux based systems
 > $ dnf install kernel-devel kernel-headers gcc make
 > 
 > $ dnf install openssl-devel
@@ -69,12 +69,12 @@ Before building the Driver, edit the **Config.mk** file to enable/disable/adjust
 4. SSL Certification length & duration
 
 For more details, checkout the readme.txt
-### Build Driver source code
+### Build source code
 Use command **make** to build the source code
 > $ make
 
-### Install Driver to system
-Use command **make install** to install the driver with|without DKMS according to the **Config.mk** file.
+### Install
+Use command **make install** to install VCOM with or without DKMS, according to the **Config.mk** file.
 > $ make install
 
 ## Starting VCOM
