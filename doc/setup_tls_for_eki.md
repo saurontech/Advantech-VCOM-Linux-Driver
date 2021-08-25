@@ -17,7 +17,7 @@ This command will create 3 files:
 Upload them to the Device Server, setup the password and reboot the device.
 
 | option | discription| value |
-|:------:|:-----:|:-----|
+|:------:|:------|:-----|
 | -h | show help message | N/A | 
 | -n | output file name | string | 
 | -k | use a custom RootCA private key | path/to/rootCA.key | 
