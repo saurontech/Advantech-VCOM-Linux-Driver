@@ -95,8 +95,8 @@ We've included the following tools to asist with the process:
 Use **advadd** to add a VCOM connection.
 | option | discription | info|
 | :-----: |:----------- |:---|
-| -a | IP Address| |
-| -t | DeviceID | |
+| -a | IP Address| a IPv4, IPv6 or URL |
+| -t | DeviceID |checkout [devic_id.md](doc/device_id.md) |
 | -m | MinorID of the driver node| starts from 0 |
 | -p | Port Number on the Device | starts from 1 |
 
