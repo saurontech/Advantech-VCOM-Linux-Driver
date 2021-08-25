@@ -77,54 +77,10 @@ Use command **make** to build the source code
 Use command **make install** to install the driver with|without DKMS according to the **Config.mk** file.
 > $ make install
 
-## Setup and start the VCOM Service
-To starup the VCOM service, one would need to:
-1. configure all the VCOM connections
-2. startup/update the VCOM service
-
-We've included the following tools to asist with the process:
-| command | discription | example |
-| ------- |:----------- |:-----------|
-| advadd | add a VCOM connection | $ sudo advadd -t c524 -a 172.17.8.100 -p 1 -m 0 |
-| advrm | remove a VCOM connection | $ sudo advrm -m 0 |
-| advman | startup/update the VCOM service | $ sudo advman -o start |
-| advls | list the VCOM connections | $ sudo advls |
-| advps | list the connection status of the current system |  $ sudo advps |
-
-### Add connections to the VCOM connection map
-Use **advadd** to add a VCOM connection.
-| option | discription | info|
-| :-----: |:----------- |:---|
-| -a | IP Address| |
-| -t | DeviceID | |
-| -m | MinorID of the driver node| starts from 0 |
-| -p | Port Number on the Device | starts from 1 |
-
-the following examples shows how to add a connection with/without TLS.
-> **Add a VCOM connection connecting "/dev/ttyADV0" with a EKI-1524-CE's 1st serial port**
-> 
-> $ sudo advadd -t c524 -a 172.17.8.100 -p 1 -m 0
->
->**Connect /dev/ttyADV0 with a "VCOM over TLS" connection**
->
-> $ sudo advadd -t ssl:c524 -a 172.17.8.100 -p 1 -m 0
-
-### Remove unwanted connections from the VCOM connectoin map
-Use **advrm** to remove connectons from the map.
-> Remove the connection assigned to **/dev/ttyADV0**
-> 
-> $ sudo advrm -m 0
->
->Remove connections, which are connected to 172.17.8.100
->
-> $ sudo advrm -a 172.17.8.100
-> 
->Remove connections, which are connected to an EKI-1522-CE
->
-> $ sudo advrm -t c522
+## Starting VCOM
+To startup the VCOM service, follow these steps:
+1. Setup and start the VCOM [check here](doc/setup_vcom.md)
+2. If TLS is needed, create & upload TLS fils for each Device server [check here](doc/setup_tls_for_eki.md)
 
 
-### startup/updating the service with the current map
-Use **advman** to starup or update the VCOM service everytime the VCOM map is modified.
-> $ sudo advman -o start
 
