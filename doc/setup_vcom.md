@@ -12,7 +12,7 @@ We've included the following tools to asist with the process:
 | advls | list the VCOM connections | $ sudo advls |
 | advps | list the connection status of the current system |  $ sudo advps |
 
-back to[README.md](../README.md)
+back to [README.md](../README.md)
 
 ## 1. Add/Remove VCOM connections
 
