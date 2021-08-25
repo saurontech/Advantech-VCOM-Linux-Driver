@@ -5,6 +5,8 @@ However, this number is no longer relavent if you chose to use VCOM protocol sta
 
 For the ones using VCOM protocol stack 2.0, one can give any 16 but Hex number, 
 from **FFFF** to **0000**.
+> $ sudo advadd -m 0 -a 172.17.8.224 -t ssl:ffff -p 1  
+> $ sudo advadd -m 1 -a 172.17.8.222 -t c524 -p 1  
 
 For the ones that stick with VCOM protocol stack 1.0, and with to ignore this value.
  enable **"Ignore device ID"** on the Advantech Device Server.
