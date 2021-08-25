@@ -32,7 +32,7 @@ char * __cmd_get_opts(char * cmd, int cmdlen, char * opt);
 int __pid_search_fd_inode(pid_t pid, ino_t  inode);
 int __cmd_inode_search_pid(char * cmd, ino_t inode, char * buf, int buflen, int *retlen, pid_t *pidret);
 
-
+#define pt_buf_maxstrlen(BUF)	(sizeof(BUF) - (size_t)1)
 
 
 #endif

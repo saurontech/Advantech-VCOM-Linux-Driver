@@ -18,9 +18,6 @@ TARGET = advvcom
 ifneq ($(KERNELRELEASE),)
 
 advvcom-objs := adv_main.o adv_mmap.o adv_uart.o 
-#advvcom-objs += ./legacy/mmap/ops_fault.o
-#advvcom-objs += ./legacy/uart/adv_uart_set_termios.o
-#advvcom-objs += ./legacy/main/adv_proc_ioctl.o
 legacy_src += $(shell find ${M}/legacy -name '*.c' -printf 'legacy/%P ')
 advvcom-objs += $(patsubst %.c, %.o, $(legacy_src))
 

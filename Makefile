@@ -77,6 +77,7 @@ install_daemon:
 	ln -sf $(INSTALL_PATH)advman /sbin/advman
 	ln -sf $(INSTALL_PATH)vcinot /sbin/vcinot
 	ln -sf $(INSTALL_PATH)advps /sbin/advps
+	ln -sf $(INSTALL_PATH)vcomd /sbin/vcomd
 	
 install_driver:
 	cp ./driver/advvcom.ko $(INSTALL_PATH)
@@ -91,6 +92,7 @@ uninstall: $(y_uninstall)
 	rm -f /sbin/advadd
 	rm -f /sbin/vcinot
 	rm -f /sbin/advps
+	rm -f /sbin/vcomd
 	rm -f /sbin/adv-eki-tls-create
 	
 # use dkms

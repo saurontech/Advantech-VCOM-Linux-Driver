@@ -52,155 +52,6 @@ static void spawn_ttyp(char * work_path, int nrport, TTYINFO ttyinfo[]);
 static void log_msg(const char * msg);
 #endif
 
-int __pid_search_fd(int pid, char * file)
-{
-	static DIR *dir = 0;
-	struct dirent *entry;
-	char *name;
-	int n;
-	int fd;
-	char status[1204];
-	char buf[1024];
-	char fdpath[1024];
-	struct stat sb;
-	snprintf(fdpath, 1024, "/proc/%d/fd", pid);
-	if (!dir) {
-		dir = opendir(fdpath);
-		if(!dir){
-			syslog(LOG_DEBUG, "Can't open /proc/fd: %s", fdpath);
-			return -1;
-		}
-	}
-	for(;;) {
-		if((entry = readdir(dir)) == NULL) {
-			closedir(dir);
-			dir = 0;
-			return -1;
-		}
-		name = entry->d_name;
-		if (!(*name >= '0' && *name <= '9'))
-			continue;
-
-
-		fd = atoi(name);
-
-		sprintf(status, "/proc/%d/fd/%d", pid, fd);
-		if(stat(status, &sb)){
-			syslog(LOG_DEBUG, "stat failed");
-			continue;
-		}
-		if(lstat(status, &sb) < 0){
-			syslog(LOG_DEBUG, "lstat failed");
-			continue;
-		}
-
-		n = readlink(status, buf, sizeof(buf));
-
-		if(n <= 0){
-			syslog(LOG_DEBUG, "readlink failed");
-			closedir(dir);
-			return -1;
-		}
-
-		if(n !=  strlen(file) ){
-			//can't be the same file since the langth is different
-			continue;
-		}
-
-		if(memcmp(buf, file, strlen(file)) == 0){
-			closedir(dir);
-			dir = 0;
-			return pid;
-		}
-	}
-
-}
-
-int __cmd_search_file(char * cmd, char * file, char *retcmd, int len)
-{
-	static DIR *dir = 0;
-	struct dirent *entry;
-	char *name;
-	int n;
-	char status[32];
-	char buf[1024];
-	int retlen;
-	FILE *fp;
-	int pid;
-	struct stat sb;
-
-	if (!dir) {
-		dir = opendir("/proc");
-		if(!dir){
-			syslog(LOG_DEBUG, "Can't open /proc");
-			return -1;
-		}
-	}
-	for(;;) {
-		if((entry = readdir(dir)) == NULL) {
-		//	syslog(LOG_DEBUG, "%s(%d)readdir failed", __func__, __LINE__);
-			syslog(LOG_DEBUG, "no %s were found operating %s", cmd, file);
-			closedir(dir);
-			dir = 0;
-			return -1;
-		}
-
-		name = entry->d_name;
-		if (!(*name >= '0' && *name <= '9'))
-			continue;
-
-
-		pid = atoi(name);
-
-		sprintf(status, "/proc/%d", pid);
-		if(stat(status, &sb))
-			continue;
-		sprintf(status, "/proc/%d/cmdline", pid);
-		if((fp = fopen(status, "r")) == NULL){
-			syslog(LOG_DEBUG, "%s(%d)fopen failed", __func__, __LINE__);
-			continue;
-		}
-
-		if((n=fread(buf, 1, sizeof(buf)-1, fp)) > 0) {
-
-			if(buf[n-1]=='\n'){
-				buf[--n] = 0;
-			}
-			name = buf;
-			while(n) {
-				if(((unsigned char)*name) < ' ')
-					*name = ' ';
-				name++;
-				n--;
-			}
-			*name = 0;
-			/* if NULL it work true also */
-		}
-		fclose(fp);
-
-		if(memcmp(buf, cmd, strlen(cmd)) == 0){
-			if(__pid_search_fd(pid, file) > 0){
-
-				if(strlen(buf) > len){
-					retlen = len -1;
-				}else{
-					retlen = strlen(buf);
-				}
-
-				memcpy(retcmd, buf, retlen);
-				retcmd[retlen] = '\0';
-
-				closedir(dir);
-				dir = 0;
-				//printf("command %s pid %d\n", cmd, pid);
-				return pid;
-			}else{
-				//printf("pid %dcmd %s\n", pid, cmd);
-			}
-		}
-	}
-}
-
 void __close_stdfd(void)
 {
 	close(0);
@@ -332,11 +183,11 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 
 	snprintf(sscanf_fmt, sizeof(sscanf_fmt), 
 			"%%%zus%%%zus%%%zus%%%zus%%%zus", 
-			sizeof(mpt_nameidx_str),
-			sizeof(dev_type_str),
-			sizeof(dev_ipaddr_str), 
-			sizeof(dev_portidx_str), 
-			sizeof(dev_redundant_ipaddr_str));
+			pt_buf_maxstrlen(mpt_nameidx_str),
+			pt_buf_maxstrlen(dev_type_str),
+			pt_buf_maxstrlen(dev_ipaddr_str), 
+			pt_buf_maxstrlen(dev_portidx_str), 
+			pt_buf_maxstrlen(dev_redundant_ipaddr_str));
 	
 	while(nrport < CF_MAXPORTS) {
 		dev_type = dev_type_str;

@@ -22,13 +22,13 @@ int __search_lport_stat_inode(int ipfamily, unsigned short port,  unsigned short
 	//printf("path = %s\n", path);
 	snprintf(scan_format, sizeof(scan_format),
 			"%%d: %%%zus %%%zus %%x %%%zus %%%zus %%%zus %%%zus %%%zus %%ju",
-			sizeof(laddr) - 1, 
-			sizeof(raddr)  - 1, 
-			sizeof(tmp) - 1,
-			sizeof(tmp) - 1, 
-			sizeof(tmp) - 1, 
-			sizeof(tmp) - 1, 
-			sizeof(tmp) - 1);
+			pt_buf_maxstrlen(laddr), 
+			pt_buf_maxstrlen(raddr), 
+			pt_buf_maxstrlen(tmp),
+			pt_buf_maxstrlen(tmp), 
+			pt_buf_maxstrlen(tmp), 
+			pt_buf_maxstrlen(tmp), 
+			pt_buf_maxstrlen(tmp));
 
 	found = 0;
 

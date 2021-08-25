@@ -321,7 +321,6 @@ int main(int argc, char **argv)
 	fd_set efds;
 	fd_set wfds;
 	int maxfd;
-	int ret;
 	unsigned int intflags;
 	unsigned int lrecv;
 	char filename[64];
@@ -365,6 +364,7 @@ int main(int argc, char **argv)
 	
 	timerclear(&zerotv);
 	while(1){
+		int ret;
 		struct timeval tv;
 		struct timeval * tv_ptr;
 
