@@ -69,6 +69,8 @@ void usage(char * cmd)
 }
 
 
+#define _safe_strcpy(DEST, SRC) snprintf(DEST, sizeof(DEST), "%s", SRC)
+
 static int run_as_daemon;
 static int testrun;
 int setup_options(int argc, char *argv[])
@@ -143,7 +145,7 @@ static int parse_env(char * cmdpath, char * workpath)
 	char currpath[PATH_MAX], tmpbuf[PATH_MAX];
 
 	getcwd(currpath, sizeof(currpath));
-	strcpy(tmpbuf, cmdpath);
+	_safe_strcpy(tmpbuf, cmdpath);
 	for(i = strlen(tmpbuf) - 1; i > 0; --i) {
 		if(tmpbuf[i] == '/')
 			break;
@@ -225,10 +227,10 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 			syslog(LOG_INFO ,"advvcom/unsupported port index(%d) on port %d", int_tmp, nrport);
 			continue;
 		}
-		strcpy(ttyinfo[nrport].mpt_nameidx_str, mpt_nameidx_str);
-		strcpy(ttyinfo[nrport].dev_type_str, dev_type);
-		strcpy(ttyinfo[nrport].dev_ipaddr_str, dev_ipaddr_str);
-		strcpy(ttyinfo[nrport].dev_portidx_str, dev_portidx_str);
+		_safe_strcpy(ttyinfo[nrport].mpt_nameidx_str, mpt_nameidx_str);
+		_safe_strcpy(ttyinfo[nrport].dev_type_str, dev_type);
+		_safe_strcpy(ttyinfo[nrport].dev_ipaddr_str, dev_ipaddr_str);
+		_safe_strcpy(ttyinfo[nrport].dev_portidx_str, dev_portidx_str);
 		if (matchCount > 4)
 		{
 			//ulong_tmp = device_ipaddr(dev_redundant_ipaddr_str);
@@ -236,7 +238,7 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 			//if ((ulong_tmp != (u_long)0xFFFFFFFF) && (ulong_tmp != 0))
 			if(1)			
 			{
-				strcpy(ttyinfo[nrport].dev_redundant_ipaddr_str, dev_redundant_ipaddr_str);
+				_safe_strcpy(ttyinfo[nrport].dev_redundant_ipaddr_str, dev_redundant_ipaddr_str);
 				ADV_LOGMSG("redundant ip copied= %s\n", ttyinfo[nrport].dev_redundant_ipaddr_str);
 				ttyinfo[nrport].has_redundant_ip = 1;
 			}
@@ -336,6 +338,8 @@ static int oldcmd_cmp(char *oldcmd, int oldcmdlen, TTYINFO * ttyinfo)
 	char * _port;
 	char * dtype;
 	char * mfile;
+	char * _raddr;
+	char * _sslcfg;
 	
 	mfile = __cmd_get_opts(oldcmd, oldcmdlen, "-l");
 	if(mfile == 0){
@@ -386,7 +390,6 @@ static int oldcmd_cmp(char *oldcmd, int oldcmdlen, TTYINFO * ttyinfo)
 	}
 
 	if(ttyinfo->has_redundant_ip){
-		char * _raddr;
 		_raddr = __cmd_get_opts(oldcmd, oldcmdlen, "-r");
 		if(_raddr == 0){
 			printf("missing redundent IP\n");
@@ -398,10 +401,14 @@ static int oldcmd_cmp(char *oldcmd, int oldcmdlen, TTYINFO * ttyinfo)
 		}else{
 			printf("redundent IP is the same\n");
 		}
+	}else{
+		_raddr = __cmd_get_opts(oldcmd, oldcmdlen, "-r");
+		if(_raddr){
+			diff++;
+		}
 	}
 
 	if(ttyinfo->dev_ssl){
-		char * _sslcfg;
 		_sslcfg = __cmd_get_opts(oldcmd, oldcmdlen, "-S");
 		if(_sslcfg == 0){
 			printf("missing ssl config\n");
@@ -412,6 +419,12 @@ static int oldcmd_cmp(char *oldcmd, int oldcmdlen, TTYINFO * ttyinfo)
 			diff++;
 		}else{
 			printf("ssl is the same\n");
+		}
+	}else{
+		_sslcfg = __cmd_get_opts(oldcmd, oldcmdlen, "-S");
+		if(_sslcfg){
+			printf("additional ssl config\n");
+			diff++;
 		}
 	}
 
