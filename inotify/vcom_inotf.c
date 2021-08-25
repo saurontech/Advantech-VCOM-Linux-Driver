@@ -10,9 +10,11 @@
 
 #define EVENT_SIZE	(sizeof(struct inotify_event))
 #define EVENT_BUF_LEN	 (1024 * (EVENT_SIZE + 16))
+#define DEFAULT_MSGLEN	64
 
 #define FPATH_LEN		256
 
+static int _msglen = DEFAULT_MSGLEN;
 
 int parse_ievent(char *buf, int *i, const char *path)
 {
@@ -28,11 +30,11 @@ int parse_ievent(char *buf, int *i, const char *path)
 		if(event->len > 0){		/* inotify a folder */
 			snprintf(fpath, FPATH_LEN, "%s/%s", path, event->name);
 			printf("%s\n", fpath);
-			snprintf(cmd, CMDBUF_LEN, "logger -t %s -f %s", event->name, fpath);
+			snprintf(cmd, CMDBUF_LEN, "logger -S %d -t %s -f %s", _msglen, event->name, fpath);
 
 		}else{	/* inotify a file */
 			printf("%s\n", path);
-			snprintf(cmd, CMDBUF_LEN, "logger -f %s", path);
+			snprintf(cmd, CMDBUF_LEN, "logger -S %d -f %s", _msglen, path);
 
 		}
 		system(cmd);
@@ -53,6 +55,7 @@ void usage(char * cmd)
 	printf("The most commonly used commands are:\n");
 	printf("	-p	Monitoring file path\n");
 	printf("	-l	Execute forever\n");
+	printf("	-s	max message length\n");
 	printf("	-h	For help\n");
 }
 
@@ -73,7 +76,7 @@ int main(int argc, char **argv)
 	path[0] = '\0';
 
 	loop = 0;
-	while((ch = getopt(argc, argv, "lhp:")) != -1){
+	while((ch = getopt(argc, argv, "lhp:s:")) != -1){
 		switch(ch){
 			case 'l':
 				loop = 1;	
@@ -83,6 +86,9 @@ int main(int argc, char **argv)
 				return 0;
 			case 'p':
 				snprintf(path, FPATH_LEN, "%s", optarg);
+				break;
+			case 's':
+				_msglen = atoi(optarg);
 				break;
 			default:
 				printf("Illegal argument, please type -h for help\n"); 
