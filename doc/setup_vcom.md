@@ -53,13 +53,13 @@ Use **advls** to list the connection map, please notice this is the offline map.
 To make this map **"active and current"** one would have to startup the VCOM service via **advman**.
 > $ sudo advls
 
-## 2. startup/update the VCOM service
+## 2. Startup/update the VCOM service
 
-### startup/updating the service with the current map
+### Startup/updating the service with the current map
 Use **advman** to startup or update the VCOM service everytime the VCOM map is modified.
 > $ sudo advman -o start
 
-### checking the VCOM connection status
+### Checking the VCOM connection status
 Use **advps** to check the current **active and current** VCOM connection status.
 > $ sudo advps
 >  
