@@ -4,7 +4,14 @@ Device ID is a 16 bit Hex Magic number, used in the Advantech VCOM protocol to c
 However, this number is no longer relavent if you chose to use VCOM protocol stack 2.0.
 
 For the ones using VCOM protocol stack 2.0, one can give any 16 but Hex number, 
+<<<<<<< HEAD
+from **FFFF** to **0000*.
+> $ sudo advadd -m 0 -a 172.17.8.224 -t ssl:ffff -p 1
+> $ sudo advadd -m 1 -a 172.17.8.222 -t c524 -p 1
+
+=======
 from **FFFF** to **0000**.
+>>>>>>> 9061b240e5cf391608f779ac1da728d6502f2161
 
 For the ones that stick with VCOM protocol stack 1.0, and with to ignore this value.
  enable **"Ignore device ID"** on the Advantech Device Server.
