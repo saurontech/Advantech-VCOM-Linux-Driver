@@ -49,7 +49,7 @@ Use **advrm** to remove connectons from the map.
 > $ sudo advrm -t c522
 
 ### List the connection map
-Use **advls** to list the connection map, please notice this is the offline map.
+Use **advls** to list the connection map, please notice this is the offline map.  
 To make this map **"active and current"** one would have to startup the VCOM service via **advman**.
 > $ sudo advls
 
