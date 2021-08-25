@@ -78,9 +78,9 @@ Use command **make install** to install the driver with|without DKMS according t
 > $ make install
 
 ## Starting VCOM
-to startup the VCOM service, you need to follow three steps:
+To startup the VCOM service, you need to follow three steps:
 1. Setup and start the VCOM [check here](doc/setup_vcom.md)
-2. If TLS is needed, create & upload TLS fils for each Device server[check here](doc/setup_tls_for_eki.md)
+2. If TLS is needed, create & upload TLS fils for each Device server [check here](doc/setup_tls_for_eki.md)
 
 
 
