@@ -4,7 +4,7 @@ Device ID is a 16 bit Hex Magic number, used in the Advantech VCOM protocol to c
 However, this number is no longer relavent if you chose to use VCOM protocol stack 2.0.
 
 For the ones using VCOM protocol stack 2.0, one can give any 16 but Hex number, 
-from **FFFF** to **0000*.
+from **FFFF** to **0000**.
 
 For the ones that stick with VCOM protocol stack 1.0, and with to ignore this value.
  enable **"Ignore device ID"** on the Advantech Device Server.
