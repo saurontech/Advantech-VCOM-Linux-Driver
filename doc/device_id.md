@@ -11,7 +11,7 @@ from **FFFF** to **0000**.
 For the ones that stick with VCOM protocol stack 1.0, and with to ignore this value.
  enable **"Ignore device ID"** on the Advantech Device Server.
 
-Back to[Setup VCOM](setup_vcom.md)  
+Back to [Setup VCOM](setup_vcom.md)  
 Back to [README.md](../README.md)
 ## Device ID 
 | Device Name | ID (Hex) |
