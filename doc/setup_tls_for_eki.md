@@ -1,6 +1,6 @@
 # Setup TLS for Device Server
 
-If one wishes to use VCOM over TLS, one would need to setup a 3 files for each given Device, which is composed of:
+If one wishes to use VCOM over TLS, one would need to setup 3 files for each given Device, which is composed of:
 1. a key-pair
 2. a diffi-hellman file
 3. a rootCA
