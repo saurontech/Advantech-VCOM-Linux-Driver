@@ -5,7 +5,6 @@ INSTALLPATH=/usr/local/advtty
 DEAMON=advttyd
 SERVICE=vcomd
 DRIVER=advvcom
-SSLPROXY=advsslvcom
 CONFIGFILE=$INSTALLPATH/advttyd.conf
 DEAMONFILE=$INSTALLPATH/$DEAMON
 DKMSFILE=/lib/modules/`uname -r`/updates/dkms/$DRIVER.ko
@@ -86,31 +85,18 @@ startDeamon()
 	fi
 	echo "invoking local deamon..."
 	install -m 777 -d /tmp/advmon
-	install -m 777 -d /tmp/advsslmsg
-	#`$DEAMONFILE`
-	$DEAMONFILE -d
+	$DEAMONFILE -d -w ${INSTALLPATH}
 
 }
 
 stopDeamon()
 {
-#	COUNT=`ps -A|grep $DEAMON -c`
-#	while [ $COUNT -gt 0 ]
-#	do
-#		PID=`ps -A|grep $DEAMON |sed -r s/^[[:space:]]*//g|sed  -r s/"[[:space:]]+.+[[:space:]]+[[:digit:]]+:[[:digit:]]+:[[:digit:]]+[[:space:]]+$DEAMON"/""/g | sed '/^[ \t]*$/d'|head -n 1`
-#
-#		echo "killing $DEAMON $PID"
-#
-#		kill -9 $PID
-#		COUNT=`ps -A|grep $DEAMON -c`
-#	done
-	killall -s 9 $DEAMON
+#	killall -s 9 $DEAMON
 	if [ $KERNEL = "2.4" ] 
 	then
         	rm -rf /dev/vttyAP*
 	fi
 
-	killall -s 9 $SSLPROXY
 }
 
 
