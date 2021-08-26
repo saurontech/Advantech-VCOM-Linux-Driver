@@ -4,7 +4,6 @@
 #include "advconf.h"
 
 #define CF_MAXSTRLEN	32
-#define CF_LOGNAME  	("advttyd.log")
 #define CF_CONFNAME 	("advttyd.conf")
 #define CF_PORTPROG 	("vcomd")
 #define CF_SSLCONF	("ssl.json")

@@ -225,7 +225,7 @@ int startup(int argc, char **argv, struct vc_attr *port)
 	int ch;
 
 	port->ttyid = -1;
-	port->devid = 0;
+	port->devid = -1;
 	port->port = -1;
 #ifdef _VCOM_SUPPORT_TLS
 	port->ssl = 0;
@@ -306,7 +306,7 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				return -1;
 		}
 	}
-	if(addr == NULL || port->port < 0 || port->devid == 0 || port->ttyid < 0){
+	if(addr == NULL || port->port < 0 || port->devid < 0 || port->ttyid < 0){
 		usage(argv[0]);
 		return -1;
 	}

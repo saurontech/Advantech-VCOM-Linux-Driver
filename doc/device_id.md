@@ -1,14 +1,20 @@
 # Device ID of the Advantech VCOM Portocol
-## introduction
+## Introduction
 Device ID is a 16 bit Hex Magic number, used in the Advantech VCOM protocol to check for device type.
-However, this number is no longer relavent if you chose to use VCOM protocol stack 2.0.
+However, this number is no longer relavent if you chose to use "VCOM protocol stack 2.0" on you **Device Server**.
 
-For the ones using VCOM protocol stack 2.0, one can give any 16 but Hex number, 
+**Not to be confused with the VCOM driver versoin!**  
+The **"VCOM protocol stack version"** is an option on the **EKI Device server**.  
+It indicates the EKI device to run a new VCOM protocol stack.  
+Which is fully compatiable with the old VCOM protocol**  
+
+For the ones using "VCOM protocol stack 2.0" on the **Device server**, one can give any 16 but Hex number, 
 from **FFFF** to **0000**.
-> $ sudo advadd -m 0 -a 172.17.8.224 -t ssl:ffff -p 1  
-> $ sudo advadd -m 1 -a 172.17.8.222 -t c524 -p 1  
-
-For the ones that stick with VCOM protocol stack 1.0, and with to ignore this value.
+```console
+foo@bar:~$ sudo advadd -m 0 -a 172.17.8.224 -t ssl:ffff -p 1  
+foo@bar:~$ sudo advadd -m 1 -a 172.17.8.222 -t c524 -p 1   
+```
+For the ones that stick with "VCOM protocol stack 1.0", and with to ignore this value.
  enable **"Ignore device ID"** on the Advantech Device Server.
 
 Back to [Setup VCOM](setup_vcom.md)  

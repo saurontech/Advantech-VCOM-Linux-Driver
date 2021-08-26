@@ -68,7 +68,7 @@ Before building the Driver, edit the **Config.mk** file to enable/disable/adjust
 4. SSL Certification length & duration
 
 For more details, checkout the readme.txt
-### Build Driver source code
+### Build source code
 Use command **make** to build the source code
 ```console
 foo@bar~: $ make
@@ -78,6 +78,7 @@ Use command **make install** to install the driver with|without DKMS according t
 ```console
 foo@bar~: $ make install
 ```
+
 ## Starting VCOM
 To startup the VCOM service, follow these steps:
 1. Setup and start the VCOM [check here](doc/setup_vcom.md)

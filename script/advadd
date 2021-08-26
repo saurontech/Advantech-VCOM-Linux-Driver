@@ -48,15 +48,15 @@ _PAT_TYPE='(ssl:[[:alnum:]]+|[[:alnum:]]+)'
 addDevice()
 {
 PATERN="$MINOR[[:space:]]+$_PAT_TYPE[[:space:]]+$_PAT_ADDRESS[[:space:]]+$_PAT_PORT.*"
-COUNT=`egrep "$PATERN" $CONFIGFILE -c`
+COUNT=$(egrep "$PATERN" $CONFIGFILE -c)
 
 if [ $COUNT -gt 0 ]
 then
 	echo "Local serial port advtty$MINOR changed to Device $TYPE at $ADDRESS"
 	echo "$MINOR   $TYPE    $ADDRESS    $PORT     $RADDRESS"
-	`sed -i -r s/"$PATERN"/"$MINOR   $TYPE    $ADDRESS    $PORT     $RADDRESS"/g $CONFIGFILE`
+	$(sed -i -r s/"$PATERN"/"$MINOR   $TYPE    $ADDRESS    $PORT     $RADDRESS"/g $CONFIGFILE)
 else
-	`echo "$MINOR   $TYPE    $ADDRESS    $PORT     $RADDRESS" >> $CONFIGFILE`
+	$(echo "$MINOR   $TYPE    $ADDRESS    $PORT     $RADDRESS" >> $CONFIGFILE)
 	echo "Device $TYPE at $ADDRESS added to local serial port advtty$MINOR"
 fi
 cleanUp
@@ -97,11 +97,9 @@ then
      usage
      exit 1
 else
-	# Guider:: check for valid IPv4 & IPv6
-	#if [ `echo $ADDRESS|egrep "[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+" -c` -lt 1 ]
 	ADDRESS_SPACE="$ADDRESS "
 	_PAT_ADDRESS_SPACE="$_PAT_ADDRESS[[:space:]]"
-	if [ `echo "$ADDRESS_SPACE"|egrep "$_PAT_ADDRESS_SPACE" -c` -lt 1 ]
+	if [ $(echo "$ADDRESS_SPACE"|egrep "$_PAT_ADDRESS_SPACE" -c) -lt 1 ]
 	then
 		echo "Bad IP address:$ADDRESS"
 		exit 1
