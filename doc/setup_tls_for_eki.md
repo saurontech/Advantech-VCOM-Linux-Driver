@@ -1,6 +1,6 @@
 # Setup TLS for Device Server
 
-If one wishes to use VCOM over TLS, one would need to setup 3 files for each given Device, which is composed of:
+If one wishes to use VCOM over TLS, 3 files are needed for each Device Server, which is composed of:
 1. a key-pair
 2. a diffi-hellman file
 3. a rootCA
@@ -8,11 +8,13 @@ If one wishes to use VCOM over TLS, one would need to setup 3 files for each giv
 ## Creating the TLS files
 Use **adv-eki-tls-create** to generate files needed to setup the TLS connection.  
 > sudo adv-eki-tls-create -n my_first_EKI -e MyPassword1234  
-
-This command will create 3 files: 
- * key-pair(pub/priv): my_first_EKI.pem  
- * diffi-hellman: my_first_EKI_dh1024.pem  
- * rootCA: /usr/local/advtty/rootCA.pem 
+```console
+foo@bar~:$ sudo adv-eki-tls-create -n my_EKI_abcd -e my_password_123
+```
+This command will prepare 2 files, and present the used rootCA: 
+* key-pair(pub/priv): **my_EKI_abcd.pem**
+* diffi-hellman: **my_EKI_abcd_dh1024.pem**
+* rootCA: **/usr/local/advtty/rootCA.pem**
 
 Upload them to the Device Server, setup the password and reboot the device.
 
