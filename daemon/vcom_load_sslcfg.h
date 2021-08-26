@@ -1,7 +1,10 @@
-static char *_config_password;
 static char * nopass = "";
-static char * _config_rootca;
-static char *_config_keyfile;
+
+typedef struct {
+	char *password;
+	char *rootca;
+	char *keyfile;
+}vc_ssl_cfg;
 
 static char * create_cfg_cwd(char * config_file)
 {
@@ -26,7 +29,7 @@ static char * create_cfg_cwd(char * config_file)
 	return wd;
 }
 
-static int loadconfig(char * filepath)
+static int loadconfig(char * filepath, vc_ssl_cfg * cfg)
 {
 	int fd;
 	int filelen;
@@ -96,7 +99,7 @@ static int loadconfig(char * filepath)
 	}
 	printf("found keyfile = %s\n", rnode->data.data);
 
-	_config_keyfile = rnode->data.data;
+	cfg->keyfile = rnode->data.data;
 
 	if(jstree_read(result.node->r, &rnode, "ssl", "rootca")!= 2){
 		printf("didn't find rootCA\n");
@@ -104,17 +107,16 @@ static int loadconfig(char * filepath)
 	}
 	printf("found rootca = %s\n", rnode->data.data);
 
-	_config_rootca = rnode->data.data;
+	cfg->rootca = rnode->data.data;
 
 	if(jstree_read(result.node->r, &rnode, "ssl", "password")!= 2){
 		printf("didn't find password\n");
-		_config_password = nopass;
+		cfg->password = nopass;
 	}else{
-		_config_password = rnode->data.data;
+		cfg->password = rnode->data.data;
 	}
 
-	printf("found password = %s\n", _config_password);
-
+	printf("found password = %s\n", cfg->password);
 
 	close(fd);
 

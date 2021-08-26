@@ -27,10 +27,9 @@
 #include <syslog.h>
 #include <netinet/tcp.h>
 #include <sys/mman.h>
+#include <linux/limits.h>
 
 #include "ssl_select.h"
-
-static char * pass;
 
 static void sigpipe_handle(int x){
 }
@@ -38,28 +37,38 @@ static void sigpipe_handle(int x){
 static int password_cb(char *buf,int num,
 		int rwflag,void *userdata)
 {
-	if(num<strlen(pass)+1)
-		return(0);
+	ssl_pwd_data * _password;
+	
+	if(userdata == 0)
+		return 0;
 
-	strcpy(buf,pass);
-	return(strlen(pass));
+	_password = (ssl_pwd_data *)userdata;
+
+	if(_password->len > num){
+		printf("sys buf len %d < passlen %d\n", num, _password->len);
+		return 0;
+	}
+
+	snprintf(buf, num, "%s", _password->data);
+
+	return _password->len;
 }
 
 static int verify_callback (int ok, X509_STORE_CTX *store)
 {
-	char data[256];
 
 	X509 *cert = X509_STORE_CTX_get_current_cert(store);
 
 	if (!ok)
 	{
+		char data[256];
 		int  depth = X509_STORE_CTX_get_error_depth(store);
 		int  err = X509_STORE_CTX_get_error(store);
 
 		printf("-Error with certificate at depth: %i\n", depth);
-		X509_NAME_oneline(X509_get_issuer_name(cert), data, 256);
+		X509_NAME_oneline(X509_get_issuer_name(cert), data, sizeof(data));
 		printf("  issuer   = %s\n", data);
-		X509_NAME_oneline(X509_get_subject_name(cert), data, 256);
+		X509_NAME_oneline(X509_get_subject_name(cert), data, sizeof(data));
 		printf("  subject  = %s\n", data);
 		printf("  err %i:%s\n", err, X509_verify_cert_error_string(err) );
 	}/*else{
@@ -80,7 +89,20 @@ void init_ssl_lib(void)
 	SSL_load_error_strings();
 }
 
-SSL_CTX *initialize_ctx(char *rootCA, char * keyfile, char * password)
+static int _strvalid(char * buf, int bufmax)
+{
+	int len;
+
+	len = strnlen(buf, bufmax);
+
+	if(len == bufmax)
+		len = 0;
+
+	return len;
+}
+
+SSL_CTX *initialize_ctx(char *rootCA, char * keyfile, char * password, 
+			ssl_pwd_data * _pwd)
 {
 	const SSL_METHOD *meth;
 	SSL_CTX *ctx;
@@ -95,19 +117,24 @@ SSL_CTX *initialize_ctx(char *rootCA, char * keyfile, char * password)
 	ctx=SSL_CTX_new(meth);
 
 	/* Load our keys and certificates*/
-	if(strlen(keyfile) != 0){
+	if(_strvalid(keyfile, PATH_MAX) != 0){
 		printf("setup keyfile\n");
 		if(!(SSL_CTX_use_certificate_chain_file(ctx,
 						keyfile))){
 			printf("failed to use cert chain\n");
 			return 0;
 		}
+		
+		if(password != 0 && 
+			_strvalid(password, SSL_SEL_PASSWORD_MAX) &&
+			_pwd != 0){
+			snprintf(_pwd->data, sizeof(_pwd->data), "%s", password);
+			_pwd->len = _strvalid(password, SSL_SEL_PASSWORD_MAX);
 
-		if(password != 0 && strlen(password) != 0){
-			//printf("found password\n");
-			pass=password;
-			SSL_CTX_set_default_passwd_cb(ctx,
-					password_cb);
+			SSL_CTX_set_default_passwd_cb_userdata(ctx, _pwd);
+
+			SSL_CTX_set_default_passwd_cb(ctx, password_cb);
+			
 
 		}
 		if(!(SSL_CTX_use_PrivateKey_file(ctx,
@@ -307,6 +334,64 @@ int ssl_errno_str(ssl_info * info, int ssl_errno, char * buf, int buflen)
 #define _ssl_update_wait_event(INFO, WEVENT, ERRNO)	\
 	_do_ssl_update_wait_event(INFO, &(INFO->WEVENT), ERRNO, __func__)
 
+int ssl_accept_direct(ssl_info * info, int * r_errno)
+{
+	int ret;
+	int ssl_errno;
+	info->accept.read = 0;
+	info->accept.write = 0;
+
+	//printf("%s(%d)\n", __func__, __LINE__);
+
+	ret = SSL_accept(info->ssl);
+	if(ret > 0)
+		return ret;
+
+	ssl_errno = SSL_get_error(info->ssl, ret);
+
+	if(r_errno){
+		*r_errno = ssl_errno;
+	}
+	
+	return _ssl_update_wait_event(info, accept, ssl_errno);
+}
+
+int ssl_accept_simple_tv(ssl_info * info, struct timeval * tv, int *ssl_errno)
+{
+	int ret;
+	fd_set rfds, wfds;
+
+	do{
+		ret = ssl_accept_direct(info, ssl_errno);
+		if(ret > 0){
+			return 0;
+
+		}else if(ret == SSL_OPS_FAIL){
+			break;
+		}
+
+		FD_ZERO(&rfds);
+		FD_ZERO(&wfds);
+
+		ssl_set_fds(info, 0, &rfds, &wfds);
+		ret = select( info->sk + 1, &rfds, &wfds, 0, tv);
+	
+	}while(ret > 0);
+
+	return -1;
+}
+
+int ssl_accept_simple(ssl_info * info, int to_ms, int *ssl_errno)
+{
+	
+	struct timeval tv;
+
+	tv.tv_sec = to_ms / 1000;
+	tv.tv_usec = (to_ms % 1000) * 1000;	
+
+	return ssl_accept_simple_tv(info, &tv, ssl_errno);
+}
+
 int ssl_connect_direct(ssl_info * info, int * r_errno)
 {
 	int ret;
@@ -329,32 +414,41 @@ int ssl_connect_direct(ssl_info * info, int * r_errno)
 	return _ssl_update_wait_event(info, connect, ssl_errno);
 }
 
-int ssl_connect_simple(ssl_info * info, int to_ms, int *ssl_errno)
+int ssl_connect_simple_tv(ssl_info * info, struct timeval * tv, int *ssl_errno)
 {
 	int ret;
-	int conn;
-	struct timeval tv;
 	fd_set rfds, wfds;
 
-	FD_ZERO(&rfds);
-	FD_ZERO(&wfds);
-
-	tv.tv_sec = to_ms / 1000;
-	tv.tv_usec = (to_ms % 1000) * 1000;
 	do{
-		conn = ssl_connect_direct(info, ssl_errno);
-		if(conn > 0){
+		ret = ssl_connect_direct(info, ssl_errno);
+		if(ret > 0){
 			return 0;
 
-		}else if(conn == SSL_OPS_FAIL){
+		}else if(ret == SSL_OPS_FAIL){
 			break;
 		}
+
+		FD_ZERO(&rfds);
+		FD_ZERO(&wfds);
+
 		ssl_set_fds(info, 0, &rfds, &wfds);
-		ret = select( info->sk + 1, &rfds, &wfds, 0, &tv);
+		ret = select( info->sk + 1, &rfds, &wfds, 0, tv);
 	
 	}while(ret > 0);
 
 	return -1;
+}
+
+
+int ssl_connect_simple(ssl_info * info, int to_ms, int *ssl_errno)
+{
+	
+	struct timeval tv;
+
+	tv.tv_sec = to_ms / 1000;
+	tv.tv_usec = (to_ms % 1000) * 1000;	
+
+	return ssl_connect_simple_tv(info, &tv, ssl_errno);
 }
 
 
@@ -401,20 +495,15 @@ int ssl_recv_direct(ssl_info * info, char * buf, int len, int *r_errno)
 	return _ssl_update_wait_event(info, recv, ssl_errno);
 }
 
-int ssl_send_simple(ssl_info * info, void * buf, int len, int to_ms, int *ssl_errno)
+int ssl_send_simple_tv(ssl_info * info, void * buf, int len, struct timeval *tv, int *ssl_errno)
 {
-	int slen;
 	int ret;
-	struct timeval tv;
+
 	fd_set rfds, wfds;
 
-	FD_ZERO(&rfds);
-	FD_ZERO(&wfds);
-
-	tv.tv_sec = to_ms / 1000;
-	tv.tv_usec = (to_ms % 1000) * 1000;
-
 	do{
+		int slen;
+
 		slen = ssl_send_direct(info, buf, len, ssl_errno);
 		if(slen > 0){
 			return slen;
@@ -422,41 +511,67 @@ int ssl_send_simple(ssl_info * info, void * buf, int len, int to_ms, int *ssl_er
 		}else if(slen == SSL_OPS_FAIL){
 			break;
 		}
+
+		FD_ZERO(&rfds);
+		FD_ZERO(&wfds);
+
 		ssl_set_fds(info, 0, &rfds, &wfds);
-		ret = select( info->sk + 1, &rfds, &wfds, 0, &tv);
+		ret = select( info->sk + 1, &rfds, &wfds, 0, tv);
 	
 	}while(ret > 0);
 
 	return 0;
 }
 
-int ssl_recv_simple(ssl_info * info, void * buf, int len, int to_ms, int *ssl_errno)
+
+int ssl_send_simple(ssl_info * info, void * buf, int len, int to_ms, int *ssl_errno)
 {
-	int slen;
-	int ret;
+	
 	struct timeval tv;
-	fd_set rfds, wfds;
-
-	FD_ZERO(&rfds);
-	FD_ZERO(&wfds);
-
+	
 	tv.tv_sec = to_ms / 1000;
 	tv.tv_usec = (to_ms % 1000) * 1000;
 
-	do{
-		slen = ssl_recv_direct(info, buf, len, ssl_errno);
-		if(slen > 0){
-			return slen;
+	return ssl_send_simple_tv(info, buf, len, &tv, ssl_errno);
+}
 
-		}else if(slen == SSL_OPS_FAIL){
+int ssl_recv_simple_tv(ssl_info * info, void * buf, int len, struct timeval *tv, int *ssl_errno)
+{
+	int ret;
+
+	fd_set rfds, wfds;
+
+	do{
+		int rlen;
+
+		rlen = ssl_recv_direct(info, buf, len, ssl_errno);
+		if(rlen > 0){
+			return rlen;
+
+		}else if(rlen == SSL_OPS_FAIL){
 			break;
 		}
+
+		FD_ZERO(&rfds);
+		FD_ZERO(&wfds);
+
 		ssl_set_fds(info, 0, &rfds, &wfds);
-		ret = select( info->sk + 1, &rfds, &wfds, 0, &tv);
+		ret = select( info->sk + 1, &rfds, &wfds, 0, tv);
 	
 	}while(ret > 0);
 
 	return 0;
+}
+
+
+int ssl_recv_simple(ssl_info * info, void * buf, int len, int to_ms, int *ssl_errno)
+{
+	struct timeval tv;
+
+	tv.tv_sec = to_ms / 1000;
+	tv.tv_usec = (to_ms % 1000) * 1000;
+
+	return ssl_recv_simple_tv(info, buf, len, &tv, ssl_errno);
 }
 
 
@@ -476,12 +591,14 @@ int ssl_handle_fds(ssl_info * info,
 		__handle_flag(info, connect, read, ret);
 		__handle_flag(info, send, read, ret);
 		__handle_flag(info, recv, read, ret);
+		__handle_flag(info, accept, read, ret);
 	}
 
 	if(FD_ISSET(info->sk, wfds)){
 		__handle_flag(info, connect, write, ret);
 		__handle_flag(info, send, write, ret);
 		__handle_flag(info, recv, write, ret);
+		__handle_flag(info, accept, write, ret);
 	}
 
 	if(SSL_pending(info->ssl)){

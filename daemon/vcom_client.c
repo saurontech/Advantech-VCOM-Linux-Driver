@@ -22,6 +22,9 @@
 #include "jstree.h"
 #include "jstree_read.h"
 #include "vcom_load_sslcfg.h"
+
+static ssl_pwd_data m_ssl_pwd_data;
+static vc_ssl_cfg m_sslcfg;
 #endif
 //#include "vcom_debug.h"
 
@@ -274,7 +277,7 @@ int startup(int argc, char **argv, struct vc_attr *port)
 			case 'S':
 				sslcfg = optarg;
 				printf("ssl config %s\n", sslcfg);
-				if(loadconfig(sslcfg)){
+				if(loadconfig(sslcfg, &m_sslcfg)){
 					printf("cannot load config file");
 					return -1;
 				}
@@ -292,11 +295,15 @@ int startup(int argc, char **argv, struct vc_attr *port)
 					chdir(wd_new);
 					free(wd_new);
 				}
-				printf("keyfile %s\n", _config_keyfile);
-				printf("rootCA %s\n", _config_rootca);
-				port->ssl->ctx = initialize_ctx( _config_rootca, 
-								_config_keyfile, 
-								_config_password);
+
+				port->ssl->ctx = initialize_ctx( m_sslcfg.rootca, 
+								m_sslcfg.keyfile, 
+								m_sslcfg.password,
+								&m_ssl_pwd_data);
+				if(port->ssl->ctx == 0){
+					//printf("failed to lad key file\n");
+					exit(0);
+				}
 				printf("create ctx @%p\n", port->ssl->ctx);
 				chdir(wd_orig);
 				break;

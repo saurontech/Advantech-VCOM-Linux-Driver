@@ -94,11 +94,12 @@ int _create_sklist(struct list_head *sklist, char * addr, char * port)
 
 		ret = connect(sk, ptr->ai_addr, ptr->ai_addrlen);
 		if(ret < 0 && errno != EINPROGRESS){
-			printf("cannot connect\n");
+			printf("cannot connect %s\n", strerror(errno));
 			close(sk);
+			sk = -1;
 			continue;
 		}else if(ret == 0){
-			printf("connected successfully on %d\n", sk);
+			//printf("connected successfully on %d\n", sk);
 			break;
 		}
 		sk_info = malloc(sizeof(_client_info));
@@ -127,6 +128,9 @@ int vc_connect(struct vc_attr * attr)
 	struct list_head * list_ptr;
 	struct list_head * next;
 	_client_info * cli_ptr;
+	struct stk_vc * stk;
+	
+	stk = &attr->stk;
 	
 	snprintf(service, sizeof(service), "%hu", 
 			(unsigned short)VC_PROTO_PORT);
@@ -136,13 +140,18 @@ int vc_connect(struct vc_attr * attr)
 		sk = _create_sklist(&clients, addr, service);
 	}
 
+
+	if(list_empty(&clients)){
+		printf("all connections rejected directly\n");
+		_stk_log(stk, "connection rejected %s", strerror(errno));
+		return sk;
+	}
+
 	tv.tv_sec = CONN_TO;
 	tv.tv_usec = 0;
 
 	do{
-		struct stk_vc * stk;
 		int skmax;
-		stk = &attr->stk;
 
 		if(sk >= 0){
 //			printf("already connected\n");
@@ -155,15 +164,16 @@ int vc_connect(struct vc_attr * attr)
 			cli_ptr = container_of(list_ptr, _client_info, list);
 			//printf("checking socket(%d) at waitlist %p \n", cli_ptr->sk, cli_ptr);
 			FD_SET(cli_ptr->sk, &rfds);
+
 			if(cli_ptr->sk > skmax){
 				skmax = cli_ptr->sk;
 			}
 		}
-
+		
 		ret = select(skmax + 1, 0, &rfds, 0, &tv);
 
 		if(ret <= 0){
-			//printf("connection timeout\n");
+			printf("connection timeout\n");
 			_stk_log(stk, "connect timeout %d", CONN_TO);
 			break;
 		}
@@ -173,6 +183,7 @@ int vc_connect(struct vc_attr * attr)
 			if(FD_ISSET(cli_ptr->sk, &rfds)){
 				char serrmsg[128];
 				int retlen;
+
 				if(_sock_err(cli_ptr->sk, 
 					serrmsg, sizeof(serrmsg), 
 					&retlen)){
