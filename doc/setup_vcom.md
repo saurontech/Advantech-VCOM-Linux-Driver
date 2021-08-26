@@ -12,6 +12,9 @@ We've included the following tools to asist with the process:
 | advls | list the VCOM connections | $ sudo advls |
 | advps | list the connection status of the current system |  $ sudo advps |
 
+The command **advadd**,**advrm**, **advls** handles the **"offline"** VCOM connection map.  
+To make the VCOM connection **"active and current"**, one would need to use **advman** to start or update the service.
+
 back to [README.md](../README.md)
 
 ## 1. Add/Remove VCOM connections
@@ -58,6 +61,14 @@ To make this map **"active and current"** one would have to startup the VCOM ser
 ### Startup/updating the service with the current map
 Use **advman** to startup or update the VCOM service everytime the VCOM map is modified.
 > $ sudo advman -o start
+**advman** has only one option **"-o"**, however, it can have the following input values:
+| value | Discription |
+|:-----:|:------------|
+| start | start or update the system according to the offline connection map |
+| stop | stop the system |
+| insert | just insert the driver, don't start the service |
+| remove | remove the driver |
+| restart | 
 
 ### Checking the VCOM connection status
 Use **advps** to check the current **active and current** VCOM connection status.
