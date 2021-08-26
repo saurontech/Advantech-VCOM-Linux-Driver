@@ -3,8 +3,8 @@
 Device ID is a 16 bit Hex Magic number, used in the Advantech VCOM protocol to check for device type.
 However, this number is no longer relavent if you chose to use "VCOM protocol stack 2.0" on you **Device Server**.
 
-**Not to be confused with the VCOM driver versoin!!  
-The "VCOM protocol stack version" is an option on the EKI Device server.  
+**Not to be confused with the VCOM driver versoin!**  
+The **"VCOM protocol stack version"** is an option on the **EKI Device server**.  
 It indicates the EKI device to run a new VCOM protocol stack.  
 Which is fully compatiable with the old VCOM protocol**  
 
