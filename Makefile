@@ -1,4 +1,9 @@
 include Config.mk
+
+INSTALL_PATH = /usr/local/advtty/
+MODNAME = advvcom
+VERSION = 1
+
 _build =
 _install =
 y_build=

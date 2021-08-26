@@ -1,7 +1,3 @@
-INSTALL_PATH = /usr/local/advtty/
-MODNAME = advvcom
-VERSION = 1
-
 #build VCOM with TLS support (y/n)
 TLS = y
 #install VCOM with DKMS (y/n)
