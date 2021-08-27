@@ -32,10 +32,9 @@ foo@bar~:$ sudo apt-get install dkms
 foo@bar~:$ sudo apt-get install openssl libssl-dev
 ```
 #### On OpenSUSE
-Open YaST / Software / Software Management.
-Select the View Button on the top left and pick Patterns. 
-Now, you will see several Patterns listed and you want to select:  
-**Basic Development**
+Open YaST / Software / Software Management.  
+Select the **View** button on the top left and pick **Patterns**. 
+Install the following packages under **Basic Development**:  
 - Linux Kernel Development
 -  C/C++ Development	 
 
@@ -45,21 +44,27 @@ Utilize the **Search** Button to install the following packages:
 
 #### On CentOS/RHEL/Fedora/RockyLinux baed systems
 ```console
-foo@bar~:$ dnf install kernel-devel kernel-headers gcc make
-foo@bar~:$ dnf install openssl-devel
-foo@bar~:$ dnf install openssl
-foo@bar~:$ dnf install dkms
+foo@bar~:$ dnf install -y kernel-devel kernel-headers gcc make
+foo@bar~:$ dnf install -y openssl-devel
+foo@bar~:$ dnf install -y openssl
+foo@bar~:$ dnf install -y dkms
 ```
-Early RedHat systems (before CentOS 7/RHEL 7/Fedora 21) might require you to use "yum" instead of "dnf".
 
-On CentOS 7, DKMS is included in the "EPEL"(Extended Packages for Enterpirse Linux), one would need to enable EPEL with the following command:
+Some systems include the **dkms** package in the **"Extra Packages for Enterprise Linux"(EPEL)**;  
+therefore, if dkms failed to install, consider installing **EPEL** before installing dkms.  
+``` console
+foo@bar~:$ dnf install -y epel-release
+foo@bar~:$ dnf install -y dkms
+```
+Early RedHat systems (before CentOS 7/RHEL 7/Fedora 21) might require you to use **"yum"** instead of **"dnf"**.
 ```console
 foo@bar~:$ yum install -y epel-release
-foo@bar~:$ yum install kernel-devel kernel-headers gcc make
-foo@bar~:$ yum install openssl-devel
-foo@bar~:$ yum install openssl
-foo@bar~:$ yum install dkms
+foo@bar~:$ yum install -y kernel-devel kernel-headers gcc make
+foo@bar~:$ yum install -y openssl-devel
+foo@bar~:$ yum install -y openssl
+foo@bar~:$ yum install -y dkms
 ```
+
 ### Configure the installation
 Before building the Driver, edit the **Config.mk** file to enable/disable/adjust:
 1. OpenSSL support
