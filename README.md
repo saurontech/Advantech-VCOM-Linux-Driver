@@ -47,11 +47,10 @@ Utilize the **Search** Button to install the following packages:
 foo@bar~:$ dnf install kernel-devel kernel-headers gcc make
 foo@bar~:$ dnf install openssl-devel
 foo@bar~:$ dnf install openssl
+foo@bar~:$ dnf install -y epel-release
 foo@bar~:$ dnf install dkms
 ```
 Early RedHat systems (before CentOS 7/RHEL 7/Fedora 21) might require you to use "yum" instead of "dnf".
-
-On CentOS 7, DKMS is included in the "EPEL"(Extended Packages for Enterpirse Linux), one would need to enable EPEL with the following command:
 ```console
 foo@bar~:$ yum install -y epel-release
 foo@bar~:$ yum install kernel-devel kernel-headers gcc make
