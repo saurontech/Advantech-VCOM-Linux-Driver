@@ -26,17 +26,9 @@ _tree_node * _alloc_tree_node_data(int type, const char * data)
 	node = malloc(sizeof(_tree_node));
 	node->data.type = type;
 	if(data != 0){
-		if(strlen(data) > 0){
-			node->data.data = malloc(strlen(data) + 1);
-			memcpy(node->data.data, data, strlen(data));
-			node->data.data[strlen(data)] = '\0';
-		/*}elseif(datalen >= 0){
-			node->data.data = malloc(datalen + 1);
-			memcpy(node->data.data, data, datalen);
-			node->data.data[datalen] = '\0';*/
-		}else{
-			node->data.data = 0;
-		}
+		node->data.data = malloc(strlen(data) + 1);
+		memcpy(node->data.data, data, strlen(data));
+		node->data.data[strlen(data)] = '\0';
 	}else{
 		node->data.data = 0;
 	}
@@ -53,11 +45,7 @@ _tree_node * _alloc_tree_node_len(int type, const char * data, int datalen)
 	node = malloc(sizeof(_tree_node));
 	node->data.type = type;
 	if(data != 0){
-		/*if(datalen == 0 && strlen(data) > 0){
-			node->data.data = malloc(strlen(data) + 1);
-			memcpy(node->data.data, data, strlen(data));
-			node->data.data[strlen(data)] = '\0';
-		}else*/if(datalen >= 0){
+		if(datalen >= 0){
 			node->data.data = malloc(datalen + 1);
 			memcpy(node->data.data, data, datalen);
 			node->data.data[datalen] = '\0';
