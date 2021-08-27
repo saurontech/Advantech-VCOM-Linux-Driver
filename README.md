@@ -33,9 +33,9 @@ foo@bar~:$ sudo apt-get install openssl libssl-dev
 ```
 #### On OpenSUSE
 Open YaST / Software / Software Management.
-Select the View Button on the top left and pick Patterns. 
-Now, you will see several Patterns listed and you want to select:  
-**Basic Development**
+Select the **View** button on the top left and pick **Patterns**. 
+Now, you will see several Patterns listed.
+Select the following packages under **Basic Development**:  
 - Linux Kernel Development
 -  C/C++ Development	 
 
