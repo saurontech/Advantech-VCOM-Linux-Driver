@@ -283,7 +283,7 @@ struct vc_ops * vc_netdown_open(struct vc_attr * attr)
 		//printf("SSL_set_fd success\n");
 
 		__set_nonblock(_ssl->sk);
-		if(ssl_connect_simple(attr->ssl, 1000, &ssl_errno) < 0){			
+		if(ssl_connect_simple(attr->ssl, 1000, &ssl_errno) != 1){			
 			char ssl_errstr[256];
 
 			printf("ssl_connect_simple_fail\n");

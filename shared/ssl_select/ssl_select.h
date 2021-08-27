@@ -3,7 +3,8 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-enum{ 	SSL_OPS_FAIL	= -1,
+enum{ 	
+	SSL_OPS_FAIL	= -1,
 	SSL_OPS_SELECT = -2
 };
 
@@ -43,8 +44,8 @@ int __set_block(int sock);
 int __set_nonblock(int sock);
 
 int ssl_connect_direct(ssl_info * info, int *ssl_errno);
-int ssl_send_direct(ssl_info * info, char *buf, int len, int *ssl_errno);
-int ssl_recv_direct(ssl_info * info, char * buf, int len, int *ssl_errno);
+int ssl_send_direct(ssl_info * info, void *buf, int len, int *ssl_errno);
+int ssl_recv_direct(ssl_info * info, void * buf, int len, int *ssl_errno);
 int ssl_accept_direct(ssl_info * info, int *ssl_errno);
 
 int ssl_connect_simple(ssl_info * info, int to_ms, int *ssl_errno);
