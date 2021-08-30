@@ -48,13 +48,13 @@ It can create "Public/Prive key pair", and "Diffie-Hellman file".
  1. **RootCA public key**  
      VCOM drivers and Device servers that are connected over TLS must share the same RootCA public key.
  2. **Public/Private key pair**  
-     VCOM drivers and Device servers must have their own key pair; however, they must be signed by the same RootCA private key.
+     VCOM drivers and Device servers must have their own "key pair"; however, they must be signed by the same "RootCA private key".
  3. **Diffie-Hellman file**   
      Needed by all the Device servers(TLS server) operating under TLS; however, it is not needed by the VCOM driver(TLS client).
 
 ## TLS related CA & key files
 A few files are created during installation, refer to the **"keys/Makefile"** for details on how they are created.  
-1. **RootCA.key**: This is the default RootCA private key, which is used to sign **key pairs**, keep this file private and secure.
+1. **RootCA.key**: This is the default RootCA private key, which is used to sign **"key pairs"**. Keep this file private and secure.
 2. **RootCA.pem**: This is the default RootCA public key. This file will be publicly shared by all the Device servers
 3. **vcom.pem**: This is the default public/private key pair. Keep it private, should be accessed by this installation only.
 
