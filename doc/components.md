@@ -24,7 +24,7 @@ This "advttyd" init daemon, reads from the VCOM mapping config file and invokes 
 the source code is located in the "init/" directory
 
 ## Managment tools
-This is a set of tools desinged to simplify the managment process of the **VCOM mapping config file**, **Linux Driver**, **VCOM service daemon**, and **Init daemon**.
+This is a set of tools desinged to simplify the managment process of the "**VCOM mapping config file**", "**Linux Driver**", "**VCOM service daemon**", and "**Init daemon**".
 
 ### advadd, advrm, and advls  
 These tools are used to add, remove and list VCOM connection mappings of the **VCOM mapping config file**, they are bash shell scripts.  
