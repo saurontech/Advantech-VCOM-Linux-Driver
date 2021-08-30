@@ -6,7 +6,7 @@ However, this number is no longer relavent if you chose to use "VCOM protocol st
 **Not to be confused with the VCOM driver versoin!**  
 The **"VCOM protocol stack version"** is an option on the **EKI Device server**.  
 It indicates the EKI device to run a new VCOM protocol stack.  
-Which is fully compatiable with the old VCOM protocol**  
+Which is fully compatiable with the old VCOM protocol.
 
 For the ones using "VCOM protocol stack 2.0" on the **Device server**, one can give any 16 but Hex number, 
 from **FFFF** to **0000**.  
