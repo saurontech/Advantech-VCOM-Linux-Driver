@@ -45,7 +45,7 @@ static inline int mon_init(char * fname)
 		vc_mon.fd = 0;
 		return -1;
 	}
-	memset(vc_mon.addr, ' ', MSIZE);
+	memset(vc_mon.addr, '\r', MSIZE);
 	stk_mon = &vc_mon;
 	return 0;
 }
@@ -84,7 +84,7 @@ static inline int mon_update(struct stk_vc * stk, int sig, const char * dbg)
 	stat = stk_curnt(stk)->name();
 	mem = (char *)vc_mon.addr;
 	memset(tmp, ' ', sizeof(tmp));
-	statl = snprintf(tmp, sizeof(tmp), "Pid %d|State[%s] ", 
+	statl = snprintf(tmp, sizeof(tmp), "Pid %d|State[%s]\n", 
 				vc_mon.pid, stat);
 
 	len = MSIZE - statl;
@@ -107,12 +107,12 @@ static inline int mon_update(struct stk_vc * stk, int sig, const char * dbg)
 
 		ptr = mem + vc_mon.max_statl;
 
-		msglen = snprintf(tmp, sizeof(tmp), "\n");
+//		msglen = snprintf(tmp, sizeof(tmp), "\n");
 
 		dbgl = time2str(&tmp[msglen], sizeof(tmp) -msglen);
 		msglen += dbgl;
 
-		dbgl = snprintf(&tmp[msglen], sizeof(tmp)- msglen, "%s%s", CUTTER, dbg);
+		dbgl = snprintf(&tmp[msglen], sizeof(tmp)- msglen, "%s%s\n", CUTTER, dbg);
 		msglen += dbgl;
 
 		len = MSIZE - msglen - vc_mon.max_statl;
