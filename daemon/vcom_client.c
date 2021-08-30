@@ -226,10 +226,13 @@ int startup(int argc, char **argv, struct vc_attr *port)
 	char *sslcfg;
 #endif
 	int ch;
+	int _set_tty, _set_devid, _set_port;
 
-	port->ttyid = -1;
-	port->devid = -1;
-	port->port = -1;
+	_set_tty = _set_devid = _set_port = 0;
+
+	port->ttyid = 0;
+	port->devid = 0;
+	port->port = 0;
 #ifdef _VCOM_SUPPORT_TLS
 	port->ssl = 0;
 #endif
@@ -252,10 +255,12 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				mon_init(optarg); 
 				break;
 			case 't':            
+				_set_tty = 1;
 				sscanf(optarg, "%d", &(port->ttyid));
 				printf("setting tty ID : %d ...\n", port->ttyid);
 				break;
 			case 'd':
+				_set_devid = 1;
 				sscanf(optarg, "%hx", &(port->devid));
 				printf("setting device model : %x ...\n", port->devid);
 				break;
@@ -265,6 +270,7 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				printf("setting IP addr : %s ...\n", port->ip_ptr);
 				break;
 			case 'p':
+				_set_port = 1;
 				sscanf(optarg, "%u", &(port->port));
 				printf("setting device port : %u ...\n", port->port);
 				break;  
@@ -313,7 +319,8 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				return -1;
 		}
 	}
-	if(addr == NULL || port->port == 0 || port->devid < 0 || port->ttyid < 0){
+	if(addr == NULL || port->port == 0 || 
+	_set_tty == 0 || _set_port == 0 || _set_devid == 0){
 		usage(argv[0]);
 		return -1;
 	}
