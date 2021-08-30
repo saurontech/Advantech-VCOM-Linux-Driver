@@ -226,11 +226,11 @@ int startup(int argc, char **argv, struct vc_attr *port)
 	char *sslcfg;
 #endif
 	int ch;
-	int _set_tty, _set_devid, _set_port;
+	int _set_devid;
 
-	_set_tty = _set_devid = _set_port = 0;
+	_set_devid = 0;
 
-	port->ttyid = 0;
+	port->ttyid = -1;
 	port->devid = 0;
 	port->port = 0;
 #ifdef _VCOM_SUPPORT_TLS
@@ -255,7 +255,6 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				mon_init(optarg); 
 				break;
 			case 't':            
-				_set_tty = 1;
 				sscanf(optarg, "%d", &(port->ttyid));
 				printf("setting tty ID : %d ...\n", port->ttyid);
 				break;
@@ -270,7 +269,6 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				printf("setting IP addr : %s ...\n", port->ip_ptr);
 				break;
 			case 'p':
-				_set_port = 1;
 				sscanf(optarg, "%u", &(port->port));
 				printf("setting device port : %u ...\n", port->port);
 				break;  
@@ -319,8 +317,7 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				return -1;
 		}
 	}
-	if(addr == NULL || port->port == 0 || 
-	_set_tty == 0 || _set_port == 0 || _set_devid == 0){
+	if(addr == NULL || port->port == 0 || port->ttyid < 0 || _set_devid == 0){
 		usage(argv[0]);
 		return -1;
 	}
@@ -334,7 +331,6 @@ int main(int argc, char **argv)
 	fd_set rfds;
 	fd_set efds;
 	fd_set wfds;
-	int maxfd;
 	unsigned int intflags;
 	unsigned int lrecv;
 	char filename[64];
@@ -363,7 +359,7 @@ int main(int argc, char **argv)
 	port.mbase = (char *)mmap(0, 4096*3, 
 			PROT_READ|PROT_WRITE, MAP_FILE |MAP_SHARED, port.fd, 0);
 
-	if(port.mbase <= 0){
+	if(port.mbase == 0){
 		printf("failed to mmap\n");
 		return 0;
 	}
@@ -378,6 +374,7 @@ int main(int argc, char **argv)
 	
 	timerclear(&zerotv);
 	while(1){
+		int maxfd;
 		int ret;
 		struct timeval tv;
 		struct timeval * tv_ptr;
