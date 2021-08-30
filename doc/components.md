@@ -26,19 +26,19 @@ the source code is located in the "init/" directory
 This is a set of tools desinged to simplify the managment process of the **VCOM mapping config file**, **Linux Driver**, **VCOM service daemon**, and **Init daemon**.
 
 ### advadd, advrm, and advls  
-these tools are used to add, remove and list VCOM connection mappings of the **VCOM mapping config file**, they are bash shell scripts.
-these scripts are located in the "script/" directory.
+These tools are used to add, remove and list VCOM connection mappings of the **VCOM mapping config file**, they are bash shell scripts.
+These scripts are located in the "script/" directory.
 
 ### advman  
-this is another bash script designed to insert/remove the **Linux driver**, invoke/kill the **VCOM service daemons**.  
-the script is also located in the "script/" directory.
+A bash script designed to insert/remove the **Linux driver**, invoke/kill the **VCOM service daemons**.  
+the script is located in the "script/" directory.
 
 ### advps  
-this tool is designed to show the status of all the active **VCOM service daemons**.
+This tool is designed to show the status of all the active **VCOM service daemons**.
 the source code is located in the "advps/" directory.  
 
 ### adv-eki-tls-create  
-The orignal script is also located int "scripts/".
+Located in "scripts/".
 This is a bash script designed to create files that are essential for TLS connection.  
 they can be used by both the **EKI device server** and the **VCOM service daemon**.  
 It can create "Public/Prive key pair", and "Diffie-Hellman file".  
