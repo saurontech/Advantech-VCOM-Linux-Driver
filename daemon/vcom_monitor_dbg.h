@@ -24,7 +24,7 @@ static inline int mon_init(char * fname)
 	vc_mon.max_statl = 0;
 	vc_mon.dbg_first = 1;
 
-	if(fname <= 0)
+	if(fname == 0)
 		return 0;
 
 	vc_mon.pid  = getpid();

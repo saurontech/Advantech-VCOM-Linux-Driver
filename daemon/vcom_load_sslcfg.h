@@ -64,8 +64,6 @@ static int loadconfig(char * filepath, vc_ssl_cfg * cfg)
 	tokcount = 2;
 	tok = malloc(sizeof(*tok) * tokcount);
 
-	ret = 0;
-
 	do{
 		ret = jsmn_parse(&p, filedata, filelen, tok, tokcount);
 		if(ret == JSMN_ERROR_NOMEM){

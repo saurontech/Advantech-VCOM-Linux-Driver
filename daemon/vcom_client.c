@@ -208,10 +208,10 @@ void usage(char * cmd)
 	printf("Usage : %s [-l/-t/-d/-a/-p/-r/-S] [argument]\n", cmd);
 	printf("The most commonly used commands are:\n");
 	printf("	-l	Log file\n");
-	printf("	-t	TTY id\n");
+	printf("	-t	TTY id(starts from 0)\n");
 	printf("	-d	Device modle\n");
 	printf("	-a	IP addr\n");
-	printf("	-p	Device port\n");
+	printf("	-p	Device port(starts from 1)\n");
 	printf("	-r	Redundant IP\n");
 #ifdef _VCOM_SUPPORT_TLS
 	printf("	-S	enable TLS with a given json config\n");
@@ -313,7 +313,7 @@ int startup(int argc, char **argv, struct vc_attr *port)
 				return -1;
 		}
 	}
-	if(addr == NULL || port->port < 0 || port->devid < 0 || port->ttyid < 0){
+	if(addr == NULL || port->port == 0 || port->devid < 0 || port->ttyid < 0){
 		usage(argv[0]);
 		return -1;
 	}
