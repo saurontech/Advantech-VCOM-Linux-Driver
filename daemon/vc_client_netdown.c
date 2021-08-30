@@ -122,7 +122,6 @@ int vc_connect(struct vc_attr * attr)
 	fd_set rfds;
 	char * addr = attr->ip_ptr;
 	char service[16];
-	int ret;
 	int sk;
 	LIST_HEAD(clients);
 	struct list_head * list_ptr;
@@ -151,6 +150,7 @@ int vc_connect(struct vc_attr * attr)
 	tv.tv_usec = 0;
 
 	do{
+		int ret;
 		int skmax;
 
 		if(sk >= 0){

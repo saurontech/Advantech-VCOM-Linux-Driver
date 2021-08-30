@@ -65,7 +65,6 @@ static inline int time2str(char *buf, int len)
 
 static inline int mon_update(struct stk_vc * stk, int sig, const char * dbg)
 {
-	char * ptr;
 	char * mem;
 	char * stat;
 	char tmp[MON_MSGLEN_MAX];	
@@ -101,6 +100,7 @@ static inline int mon_update(struct stk_vc * stk, int sig, const char * dbg)
 	memset(tmp, ' ', sizeof(tmp));	
 	/* for record debug message */
 	if(dbg != 0 ){
+		char * ptr;
 		int msglen;
 		int dbgl;
 		msglen = 0;
