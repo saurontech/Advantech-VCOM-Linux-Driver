@@ -54,9 +54,9 @@ It can create "Public/Prive key pair", and "Diffie-Hellman file".
 ## TLS related CA & key files
 A few files are created during installation, refer to the **"keys/Makefile"** for details on how they are created.
 1. **RootCA.key**: This is the default RootCA private key, which is used to sign **key pairs**, keep this file private and secure.
-2. **RootCA.pem**: This is the default RootCA public key.
-3. **vcom.pem**: This is the default public/private key pair.
+2. **RootCA.pem**: This is the default RootCA public key. This file will be publicly shared by all the Device servers
+3. **vcom.pem**: This is the default public/private key pair. Keep it private, should be accessed by this installation only.
 
 If the VCOM driver connects to a device server, which is already operating with key files signed by another RootCA private key, 
-one must replace these files with the files created by **adv-eki-tls-create**, referencing the same "RootCA private key".
+one must replace these files with files created by **adv-eki-tls-create**, referencing the same "RootCA private key".
 
