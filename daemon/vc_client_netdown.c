@@ -179,28 +179,31 @@ int vc_connect(struct vc_attr * attr)
 		}
 
 		list_for_each_safe(list_ptr, next, &clients){
+			char serrmsg[128];
+			int retlen;
+
 			cli_ptr = container_of(list_ptr, _client_info, list);
-			if(FD_ISSET(cli_ptr->sk, &rfds)){
-				char serrmsg[128];
-				int retlen;
 
-				if(_sock_err(cli_ptr->sk, 
-					serrmsg, sizeof(serrmsg), 
-					&retlen)){
+			if(!FD_ISSET(cli_ptr->sk, &rfds)){
+				continue;
+			}
+				
+			if(_sock_err(cli_ptr->sk, 
+				serrmsg, sizeof(serrmsg), 
+				&retlen)){
 
-					close(cli_ptr->sk);
-					list_del(&cli_ptr->list);
-					free(cli_ptr);
-					_stk_log(stk, "connect():%s", serrmsg);
-
-					continue;
-				}
-
-				sk = cli_ptr->sk;
+				close(cli_ptr->sk);
 				list_del(&cli_ptr->list);
 				free(cli_ptr);
-				break;
+				_stk_log(stk, "connect():%s", serrmsg);
+
+				continue;
 			}
+
+			sk = cli_ptr->sk;
+			list_del(&cli_ptr->list);
+			free(cli_ptr);
+			break;
 		}
 
 	}while(1);
