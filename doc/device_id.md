@@ -9,7 +9,8 @@ It indicates the EKI device to run a new VCOM protocol stack.
 Which is fully compatiable with the old VCOM protocol**  
 
 For the ones using "VCOM protocol stack 2.0" on the **Device server**, one can give any 16 but Hex number, 
-from **FFFF** to **0000**.
+from **FFFF** to **0000**.  
+If **"ssl:"** is added before the hex, TLS is used for this connection.  
 ```console
 foo@bar:~$ sudo advadd -m 0 -a 172.17.8.224 -t ssl:ffff -p 1  
 foo@bar:~$ sudo advadd -m 1 -a 172.17.8.222 -t c524 -p 1   
