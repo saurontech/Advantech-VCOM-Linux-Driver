@@ -20,14 +20,14 @@ Eash tty is supported by a "vcomd" daemon.
 The source code is located in the "daemon/"
 
 ## Init service daemon
-This "advttyd" init daemon, reads from the VCOM mapping config file and invokes VCOM service daemons accordingly.
+This "advttyd" init daemon, reads from the VCOM mapping config file and invokes VCOM service daemons accordingly.  
 the source code is located in the "init/" directory
 
 ## Managment tools
 This is a set of tools desinged to simplify the managment process of the **VCOM mapping config file**, **Linux Driver**, **VCOM service daemon**, and **Init daemon**.
 
 ### advadd, advrm, and advls  
-These tools are used to add, remove and list VCOM connection mappings of the **VCOM mapping config file**, they are bash shell scripts.
+These tools are used to add, remove and list VCOM connection mappings of the **VCOM mapping config file**, they are bash shell scripts.  
 These scripts are located in the "script/" directory.
 
 ### advman  
@@ -35,7 +35,7 @@ A bash script designed to insert/remove the **Linux driver**, invoke/kill the **
 the script is located in the "script/" directory.
 
 ### advps  
-This tool is designed to show the status of all the active **VCOM service daemons**.
+This tool is designed to show the status of all the active **VCOM service daemons**.  
 the source code is located in the "advps/" directory.  
 
 ### adv-eki-tls-create  
@@ -53,7 +53,7 @@ It can create "Public/Prive key pair", and "Diffie-Hellman file".
      Needed by all the Device servers(TLS server) operating under TLS; however, it is not needed by the VCOM driver(TLS client).
 
 ## TLS related CA & key files
-A few files are created during installation, refer to the **"keys/Makefile"** for details on how they are created.
+A few files are created during installation, refer to the **"keys/Makefile"** for details on how they are created.  
 1. **RootCA.key**: This is the default RootCA private key, which is used to sign **key pairs**, keep this file private and secure.
 2. **RootCA.pem**: This is the default RootCA public key. This file will be publicly shared by all the Device servers
 3. **vcom.pem**: This is the default public/private key pair. Keep it private, should be accessed by this installation only.
