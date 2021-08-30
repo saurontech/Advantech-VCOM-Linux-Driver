@@ -66,6 +66,6 @@ done
 
 PATERN="$MINOR[[:space:]]+$TYPE[[:space:]]+$ADDRESS[[:space:]]+$PORT.*"
 cleanUp
-cat $CONFIGFILE|egrep "$PATERN"
+cat $CONFIGFILE|grep -E "$PATERN"
  
 
