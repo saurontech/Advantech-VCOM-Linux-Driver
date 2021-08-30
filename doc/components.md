@@ -7,8 +7,9 @@ The Advantech VCOM Linux Driver is composed of the following components
 5. TLS related CA & key files
 6. VCOM mapping config file
 
-After installation, all of the files are copied to "/usr/local/advtty".
+After installation, all of the files are copied to "/usr/local/advtty".  
 
+Go Back to [README.md](../README.md)
 ## Linux Driver
 This is the driver that provides the "/dev/ttyADV*" tty interfaces.  
 Its source code is located in the "driver/" directory
