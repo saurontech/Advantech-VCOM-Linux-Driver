@@ -25,23 +25,24 @@ the source code is located in the "init/" directory
 ## Managment tools
 This is a set of tools desinged to simplify the managment process of the **VCOM mapping config file**, **Linux Driver**, **VCOM service daemon**, and **Init daemon**.
 
-* advadd, advrm, and advls  
+### advadd, advrm, and advls  
 these tools are used to add, remove and list VCOM connection mappings of the **VCOM mapping config file**, they are bash shell scripts.
 these scripts are located in the "script/" directory.
 
-* advman  
+### advman  
 this is another bash script designed to insert/remove the **Linux driver**, invoke/kill the **VCOM service daemons**.  
 the script is also located in the "script/" directory.
 
-* advps  
+### advps  
 this tool is designed to show the status of all the active **VCOM service daemons**.
 the source code is located in the "advps/" directory.  
 
-* adv-eki-tls-create  
+### adv-eki-tls-create  
 The orignal script is also located int "scripts/".
 This is a bash script designed to create files that are essential for TLS connection.  
 they can be used by both the **EKI device server** and the **VCOM service daemon**.  
 It can create "Public/Prive key pair", and "Diffie-Hellman file".  
+
 **Three files are essential for creating a TLS connectoin:**  
  1. **RootCA public key**  
      VCOM drivers and Device servers that are connected over TLS must share the same RootCA public key.
@@ -56,6 +57,6 @@ A few files are created during installation, refer to the **"keys/Makefile"** fo
 2. **RootCA.pem**: This is the default RootCA public key.
 3. **vcom.pem**: This is the default public/private key pair.
 
-If the VCOM driver connects to a device server, which is already operating under key files signed by another RootCA private key, 
+If the VCOM driver connects to a device server, which is already operating with key files signed by another RootCA private key, 
 one must replace these files with the files created by **adv-eki-tls-create**, referencing the same "RootCA private key".
 
