@@ -4,7 +4,7 @@ The Advantech VCOM Linux Driver is composed of the following components
 2. VCOM service daemon
 3. Init daemon
 4. Managment tools 
-5. TLS CA & key files
+5. TLS related CA & key files
 6. VCOM mapping config file
 
 After installation, all of the files are copied to "/usr/local/advtty".
@@ -51,7 +51,7 @@ It can create "Public/Prive key pair", and "Diffie-Hellman file".
  3. **Diffie-Hellman file**   
      Needed by all the Device servers(TLS server) operating under TLS; however, it is not needed by the VCOM driver(TLS client).
 
-## TLS CA & key files
+## TLS related CA & key files
 A few files are created during installation, refer to the **"keys/Makefile"** for details on how they are created.
 1. **RootCA.key**: This is the default RootCA private key, which is used to sign **key pairs**, keep this file private and secure.
 2. **RootCA.pem**: This is the default RootCA public key.
