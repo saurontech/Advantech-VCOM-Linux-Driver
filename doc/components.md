@@ -1,7 +1,7 @@
 # Main components of the Advantech VCOM Linux Driver
 The Advantech VCOM Linux Driver is composed of the following components
 
-| No. | Component Name |File Name(s) |Sourcecode Location|  
+| No. | Component Name |File Name(s) |Source code Location|  
 |:---:|:---------------|:---------|:-------------------|  
 |1. | Linux Driver| advvcom(DKMS) or advvcom.ko(without DKMS) | driver/ |
 |2. | VCOM service daemon | vcomd | daemon/ |
@@ -19,12 +19,12 @@ This is the driver that provides the "/dev/ttyADV*" tty interfaces.
 Its source code is located in the "driver/" directory
 
 ## VCOM service daemon
-This "vcomd" daemon connects each /dev/ttyADV* with a corresponding Device server serial port.
+This "service daemon" connects each /dev/ttyADV* with a corresponding Device Server serial port.
 Eash tty is supported by a "vcomd" daemon.
 The source code is located in the "daemon/"
 
 ## Init service daemon
-This "advttyd" init daemon, reads from the VCOM mapping config file and invokes VCOM service daemons accordingly.  
+This "init daemon" reads from the "VCOM mapping config file" and invokes VCOM service daemons accordingly.  
 the source code is located in the "init/" directory
 
 ## Managment tools
@@ -40,7 +40,7 @@ A bash script designed to insert/remove the **Linux driver**, invoke/kill the **
 A tool designed to show the status of all the active **VCOM service daemons**.  
 
 ### adv-eki-tls-create  
-This is a bash script designed to create files that are essential for TLS connection.  
+This bash script is designed to create files that are essential for TLS connection.  
 they can be used by both the **EKI device server** and the **VCOM service daemon**.  
 It can create "Public/Prive key pair", and "Diffie-Hellman file".  
 
