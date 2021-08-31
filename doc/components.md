@@ -1,13 +1,17 @@
 # Main components of the Advantech VCOM Linux Driver
 The Advantech VCOM Linux Driver is composed of the following components
-1. Linux Driver
-2. VCOM service daemon
-3. Init daemon
-4. Managment tools 
-5. TLS related CA & key files
-6. VCOM mapping config file
 
-After installation, all of the files are copied to "/usr/local/advtty".  
+| No. | Component Name |File Name(s) |Sourcecode Location|  
+|:---:|:---------------|:---------|:-------------------|  
+|1. | Linux Driver| advvcom(DKMS) or advvcom.ko(without DKMS) | driver/ |
+|2. | VCOM service daemon | vcomd | daemon/ |
+|3. | Init daemon | advttyd | init/ |
+|4. | Managment tools | advrm, advadd, advls, advman, advps, adv-eki-tls-create | scripts/ and advps/ |
+|5. | TLS related CA & key files | rootCA.key, rootCA.pem, vcom.pem | keys/Makefile |
+|6. | VCOM mapping config file | advttyd.conf | config/ |
+|7. | TLS config file | ssl.json | config/ |
+
+After installation, all of the files are copied to **"/usr/local/advtty"**.  
 
 Go Back to [README.md](../README.md)
 ## Linux Driver
@@ -27,19 +31,15 @@ the source code is located in the "init/" directory
 This is a set of tools desinged to simplify the managment process of the "**VCOM mapping config file**", "**Linux Driver**", "**VCOM service daemon**", and "**Init daemon**".
 
 ### advadd, advrm, and advls  
-These tools are used to add, remove and list VCOM connection mappings of the **VCOM mapping config file**, they are bash shell scripts.  
-These scripts are located in the "script/" directory.
+These are bash scripts used to add, remove and list VCOM connection mappings of the **VCOM mapping config file**.  
 
 ### advman  
 A bash script designed to insert/remove the **Linux driver**, invoke/kill the **VCOM service daemons**.  
-the script is located in the "script/" directory.
 
 ### advps  
-This tool is designed to show the status of all the active **VCOM service daemons**.  
-the source code is located in the "advps/" directory.  
+A tool designed to show the status of all the active **VCOM service daemons**.  
 
 ### adv-eki-tls-create  
-Located in "scripts/".
 This is a bash script designed to create files that are essential for TLS connection.  
 they can be used by both the **EKI device server** and the **VCOM service daemon**.  
 It can create "Public/Prive key pair", and "Diffie-Hellman file".  
@@ -61,3 +61,8 @@ A few files are created during installation, refer to the **"keys/Makefile"** fo
 If the VCOM driver connects to a device server, which is already operating with key files signed by another RootCA private key, 
 one must replace these files with files created by **adv-eki-tls-create**, referencing the same "RootCA private key".
 
+## VCOM mapping config file
+This file is read by the "init daemon"; the "init daemon" will create "VCOM service daemons" according to this configure file.
+
+## TLS config file
+This file is read by the "VCOM service daemon"; it defines the location of the "RootCA public key", and "keypair file", it also defines the "password" if it ever encounters a **encripted "keypair file"**.
