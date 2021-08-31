@@ -91,5 +91,6 @@ To startup the VCOM service, follow these steps:
 1. Setup and start the VCOM [check here](doc/setup_vcom.md)
 2. If TLS is needed, create & upload TLS fils for each Device server [check here](doc/setup_tls_for_eki.md)
 
-
+## Appendex
+1. Manually create "TLS files" or "key-pairs" needed for VCOM driver; click [here](doc/create_tls_files_driver.md)
 
