@@ -1,13 +1,13 @@
 # Create TLS files for the VCOM Driver
 Occasionally, one might want to create new TLS files for a VCOM driver,  
-Creating a "key-pair" to setup a new host , or creating a whole set of TLS CA & key files to replace a expired CA.  
+Creating a "key-pair" to setup a new host, or building a whole set of TLS CA & key files to replace an expired CA.  
 This document is the instruction to do both.  
 
 Go back to [README.md](../README.md)
 
 ## Create a new "public/private key pair" for a VCOM driver
 To create a new "key pair" for a VCOM driver, one can use the command "adv-eki-tls-create".  
-On the original host holding the desired "RootCA private key"
+On the original host holding the desired "RootCA private key":
 ```console
 foo@bar:# sudo adv-eki-tls-create -n new_vcom_driver
 ...
