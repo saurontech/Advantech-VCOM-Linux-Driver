@@ -16,6 +16,8 @@ Support extended featurs:
   foo@bar~:$ vcinot -p /tmp/advmon -l &  
   ```
 
+For details on the infrastructure and main components of this VCOM driver, check [here](doc/components.md) .
+
 ### Quality
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/66cde2a55b884e1e8a98adac7556e503)](https://www.codacy.com/gh/saurontech/Advantech-VCOM-Linux-Driver/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=saurontech/Advantech-VCOM-Linux-Driver&amp;utm_campaign=Badge_Grade)
 [![CodeFactor](https://www.codefactor.io/repository/github/saurontech/advantech-vcom-linux-driver/badge/main)](https://www.codefactor.io/repository/github/saurontech/advantech-vcom-linux-driver/overview/main)
@@ -72,7 +74,6 @@ Before building the Driver, edit the **Config.mk** file to enable/disable/adjust
 3. Systemd integration
 4. SSL Certification length & duration
 
-For more details, checkout the readme.txt
 ### Build source code
 Use command **make** to build the source code
 ```console
@@ -89,5 +90,6 @@ To startup the VCOM service, follow these steps:
 1. Setup and start the VCOM [check here](doc/setup_vcom.md)
 2. If TLS is needed, create & upload TLS fils for each Device server [check here](doc/setup_tls_for_eki.md)
 
-
+## Appendex
+1. Create new "TLS files" or "key-pairs" needed for VCOM driver; click [here](doc/create_tls_files_driver.md)
 
