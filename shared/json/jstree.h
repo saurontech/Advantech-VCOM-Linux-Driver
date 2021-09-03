@@ -44,6 +44,7 @@ _tree_node * _alloc_tree_node_type(int type);
 
 _tree_node * find_node( _tree_node * tree, char * key);
 _tree_node * next_node( _tree_node *node, int step);
+_tree_node ** end_node(_tree_node ** node);
 int get_node_string( _tree_node *node, char *buf, int bufsize);
 int dumptree(_tree_node * tree, int indent);
 int tree2json(_tree_node * tree, char * buf, int bufsize);

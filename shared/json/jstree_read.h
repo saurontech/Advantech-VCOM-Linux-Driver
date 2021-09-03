@@ -1,3 +1,8 @@
+#ifndef _JSTREE_READ_H
+#define _JSTREE_READ_H
+
+#include <stdarg.h>
+
 #define PP_RSEQ_N() \
          127,126,125,124,123,122,121,120, \
          119,118,117,116,115,114,113,112,111,110, \
@@ -38,7 +43,6 @@ static inline int _do_jstree_read(int argc, _tree_node *input, _tree_node **outp
 {
 	int loop = argc - 2;
 	int iter;
-	int ret;
 	int i;
 	va_list ap;
 	char *argv;
@@ -55,13 +59,12 @@ static inline int _do_jstree_read(int argc, _tree_node *input, _tree_node **outp
 	while( i < loop){
 		argv = va_arg(ap, char *);
 		//printf("argv = %s\n", argv);
-		ret = sscanf(argv, "[%d]", &iter);
 		if(rnode <= 0){
 			printf("cannot step forward\n");
 			break;
 		}
 
-		if(ret > 0){
+		if(sscanf(argv, "[%d]", &iter)){
 	//		printf("jumping to the %dth node\n", iter);
 			rnode = next_node(rnode, iter);
 			if(rnode <= 0){
@@ -141,3 +144,5 @@ static inline int _do_jstree_read(int argc, _tree_node *input, _tree_node **outp
 
 //#define readJSTree(...) _do_jstree_read(PP_NARG(__VA_ARGS__), __VA_ARGS__)
 #define jstree_read(...) _do_jstree_read(PP_NARG(__VA_ARGS__), __VA_ARGS__)
+
+#endif

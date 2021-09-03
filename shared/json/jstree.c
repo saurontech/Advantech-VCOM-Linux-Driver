@@ -65,6 +65,10 @@ int dumptree(_tree_node * tree, int indent)
 {
 	int j, k;
 
+	if(tree == 0){
+		return 0;
+	}
+
 	_treenode_data * t = &(tree->data);
 	_tree_node * tree_ptr;
 	
@@ -92,15 +96,18 @@ int dumptree(_tree_node * tree, int indent)
 		return j + 1;
 	} else if (t->type == JSMN_ARRAY) {
 		j = 0;
-		printf("\n");
+		printf("[\n");
 		tree_ptr = tree->r;
+
 		while(tree_ptr > 0){
 			for (k = 0; k < indent; k++) printf("  ");
-			printf("- ");
+			//printf("- ");
 			j += dumptree(tree_ptr, indent+1);
 			printf("\n");
 			tree_ptr = tree_ptr->l;
 		};
+		printf("]");
+
 		return j+1;
 	}
 
@@ -264,12 +271,28 @@ int get_node_string(_tree_node *node, char *buf, int bufsize)
 	return retlen;
 }
 
+_tree_node **  end_node(_tree_node ** node)
+{
+	_tree_node ** tmp = node;
+	
+	while((*tmp) != 0 ){
+		tmp = &((*tmp)->l);
+	}
+
+	return tmp;
+}
+
 
 int tree2js(_tree_node * tree, char * out, int outlen, int indent);
 
 static int _tree2js_insert_tree(_tree_node * _jstree, char *out, int outlen, int indent)
 {
 	int slen; 
+
+	if(_jstree == 0){
+		return 0;
+	}
+	
 	slen = tree2js(_jstree, out, outlen, indent);
 	if(slen <= 0){ 
 		return 0;
@@ -282,7 +305,11 @@ static int _tree2js_insert_string(char * out, int outlen, char * _str)
 {
 	int slen;
 
+	if(out ==  0 ){
+		outlen = 0;
+	}
 	slen = snprintf(out, outlen, "%s", _str);
+
 	if(slen <= 0){ 
 		return 0; 
 	}
@@ -296,7 +323,7 @@ static int _tree2js_walk_object(_tree_node * _js_obj, char * out, int outlen, in
 	int i;
 	_tree_node * node_tmp = _js_obj;
 
-	retlen += _tree2js_insert_string(&out[retlen], outlen - retlen, "{\n");
+	retlen += _tree2js_insert_string( out?(&out[retlen]):0, outlen - retlen, "{\n");
 
 	do{
 		if(_js_obj == 0){
@@ -304,22 +331,22 @@ static int _tree2js_walk_object(_tree_node * _js_obj, char * out, int outlen, in
 		}
 
 		for(i = 0; i < indent; i++){
-			retlen += _tree2js_insert_string(&out[retlen],
+			retlen += _tree2js_insert_string(out?(&out[retlen]):0,
 				outlen - retlen, "\t");
 		}
 
 		retlen += _tree2js_insert_tree(node_tmp, 
-					&out[retlen], outlen -retlen, indent);
+					out?(&out[retlen]):0, outlen -retlen, indent);
 		
-		retlen += _tree2js_insert_string(&out[retlen], outlen -retlen, ":");
+		retlen += _tree2js_insert_string(out?(&out[retlen]):0, outlen -retlen, ":");
 		
 		retlen += _tree2js_insert_tree(node_tmp->r, 
-					&out[retlen], outlen - retlen, indent);
-		if(_js_obj->l != 0){			
-			retlen += _tree2js_insert_string(&out[retlen], outlen -retlen, ",");
+					out?(&out[retlen]):0, outlen - retlen, indent);
+		if(node_tmp->l != 0){
+			retlen += _tree2js_insert_string(out?(&out[retlen]):0, outlen -retlen, ",");
 		}
 
-		retlen += _tree2js_insert_string(&out[retlen], outlen -retlen, "\n");
+		retlen += _tree2js_insert_string(out?(&out[retlen]):0, outlen -retlen, "\n");
 
 		if(node_tmp->l != 0){
 			node_tmp = node_tmp->l;
@@ -329,10 +356,10 @@ static int _tree2js_walk_object(_tree_node * _js_obj, char * out, int outlen, in
 	}while(1);
 
 	for(i = 0; i < indent - 1; i++){
-		retlen += _tree2js_insert_string(&out[retlen], outlen - retlen, "\t");
+		retlen += _tree2js_insert_string(out?(&out[retlen]):0, outlen - retlen, "\t");
 	}
 
-	retlen += _tree2js_insert_string(&out[retlen], outlen - retlen, "}");
+	retlen += _tree2js_insert_string(out?(&out[retlen]):0, outlen - retlen, "}");
 	return retlen;
 }
 
@@ -343,7 +370,7 @@ static int _tree2js_walk_array(_tree_node * js_array, char * out, int outlen, in
 	int i;
 	_tree_node * node_tmp = js_array;
 
-	retlen += _tree2js_insert_string(&out[retlen], outlen -retlen, "[\n");
+	retlen += _tree2js_insert_string(out?(&out[retlen]):0, outlen -retlen, "[\n");
 
 	do{
 		if(js_array == 0){
@@ -351,20 +378,21 @@ static int _tree2js_walk_array(_tree_node * js_array, char * out, int outlen, in
 		}
 
 		for(i = 0; i < indent; i++){
-			retlen += _tree2js_insert_string(&out[retlen], outlen - retlen, "\t");
+
+			retlen += _tree2js_insert_string(out?(&out[retlen]):0, 
+					outlen - retlen, "\t");
 		}
 
 
 		retlen += _tree2js_insert_tree(node_tmp, 
-					&out[retlen], outlen -retlen, 
+					out?(&out[retlen]):0, outlen -retlen, 
 					indent);
 
 		if(node_tmp->l != 0 ){
-			retlen += _tree2js_insert_string(&out[retlen], outlen - retlen, ",");
+			retlen += _tree2js_insert_string(out?(&out[retlen]):0, outlen - retlen, ",");
 		}
 
-
-		retlen += _tree2js_insert_string(&out[retlen], outlen - retlen, "\n");
+		retlen += _tree2js_insert_string(out?(&out[retlen]):0, outlen - retlen, "\n");
 
 		if(node_tmp->l != 0){
 			node_tmp = node_tmp->l;
@@ -375,10 +403,10 @@ static int _tree2js_walk_array(_tree_node * js_array, char * out, int outlen, in
 	}while(1);
 
 	for(i = 0; i < indent - 1; i++){
-		retlen += _tree2js_insert_string(&out[retlen], outlen - retlen, "\t");
+		retlen += _tree2js_insert_string(out?(&out[retlen]):0, outlen - retlen, "\t");
 	}
 
-	retlen += _tree2js_insert_string(&out[retlen], outlen - retlen, "]");
+	retlen += _tree2js_insert_string(out?(&out[retlen]):0, outlen - retlen, "]");
 
 	return retlen;
 }
@@ -389,6 +417,10 @@ int tree2js(_tree_node * tree, char * out, int outlen, int indent)
 	int slen;
 
 	_treenode_data * node = &tree->data;
+	
+	if(out == 0){
+		outlen = 0;
+	}
 
 	if(node->type == JSMN_STRING){
 		slen = snprintf(out, outlen, "\"%s\"", node->data);
@@ -399,13 +431,13 @@ int tree2js(_tree_node * tree, char * out, int outlen, int indent)
 		return slen;
 	}else if(node->type == JSMN_OBJECT){
 
-		retlen = _tree2js_walk_object(tree->r, &out[retlen], outlen, indent + 1);
+		retlen = _tree2js_walk_object(tree->r, out?(&out[retlen]):0, outlen, indent + 1);
 	
 		return retlen;
 
 	}else if(node->type == JSMN_ARRAY){
 				
-		retlen = _tree2js_walk_array(tree->r, &out[retlen], outlen, indent + 1);
+		retlen = _tree2js_walk_array(tree->r, out?(&out[retlen]):0, outlen, indent + 1);
 		
 		return retlen;
 	}
@@ -416,7 +448,15 @@ int tree2js(_tree_node * tree, char * out, int outlen, int indent)
 
 int tree2json(_tree_node * tree, char * buf, int bufsize)
 {
-	return tree2js(tree, buf, bufsize, 0);
+	int ret;
+
+	ret = tree2js(tree, buf, bufsize, 0);
+
+	if(buf == 0){
+		ret += 1;
+	}
+
+	return ret ;
 }
 
 
