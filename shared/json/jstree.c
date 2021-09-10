@@ -83,14 +83,14 @@ int dumptree(_tree_node * tree, int indent)
 		tree_ptr = tree->r;
 		printf("{\n");
 		while(tree_ptr > 0){
-			for (k = 0; k < indent; k++) printf("  ");
+			for (k = 0; k < indent; k++) printf(" ");
 			j += dumptree(tree_ptr, indent+1);
 			printf(":");
 			j += dumptree(tree_ptr->r, indent+1);
 			printf("\n");
 			tree_ptr = tree_ptr->l;
 		};
-		for (k = 0; k < indent; k++) printf("  ");
+		for (k = 0; k < indent; k++) printf(" ");
 		printf("}");
 
 		return j + 1;
@@ -100,7 +100,7 @@ int dumptree(_tree_node * tree, int indent)
 		tree_ptr = tree->r;
 
 		while(tree_ptr > 0){
-			for (k = 0; k < indent; k++) printf("  ");
+			for (k = 0; k < indent; k++) printf(" ");
 			//printf("- ");
 			j += dumptree(tree_ptr, indent+1);
 			printf("\n");
@@ -130,7 +130,7 @@ int dump(const char *js, jsmntok_t *t, size_t count, int indent) {
 	} else if (t->type == JSMN_OBJECT) {
 		j = 0;
 		for (i = 0; i < t->size; i++) {
-			for (k = 0; k < indent; k++) printf("  ");
+			for (k = 0; k < indent; k++) printf(" ");
 			j += dump(js, t+1+j, count-j, indent+1);
 			printf(": ");
 			j += dump(js, t+1+j, count-j, indent+1);
@@ -141,7 +141,7 @@ int dump(const char *js, jsmntok_t *t, size_t count, int indent) {
 		j = 0;
 		printf("\n");
 		for (i = 0; i < t->size; i++){
-			for (k = 0; k < indent-1; k++) printf("  ");
+			for (k = 0; k < indent-1; k++) printf(" ");
 			printf("   - ");
 			j += dump(js, t+1+j, count-j, indent+1);
 			printf("\n");
@@ -383,7 +383,6 @@ static int _tree2js_walk_array(_tree_node * js_array, char * out, int outlen, in
 					outlen - retlen, "\t");
 		}
 
-
 		retlen += _tree2js_insert_tree(node_tmp, 
 					out?(&out[retlen]):0, outlen -retlen, 
 					indent);
@@ -426,7 +425,6 @@ int tree2js(_tree_node * tree, char * out, int outlen, int indent)
 		slen = snprintf(out, outlen, "\"%s\"", node->data);
 		return slen;
 	}else if(node->type == JSMN_PRIMITIVE){
-
 		slen = snprintf(out, outlen, "%s", node->data);
 		return slen;
 	}else if(node->type == JSMN_OBJECT){

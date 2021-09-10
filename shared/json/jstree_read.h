@@ -45,7 +45,6 @@ static inline int _do_jstree_read(int argc, _tree_node *input, _tree_node **outp
 	int iter;
 	int i;
 	va_list ap;
-	char *argv;
 	_tree_node * rnode = input;
 
 	argc-= 2;
@@ -57,9 +56,10 @@ static inline int _do_jstree_read(int argc, _tree_node *input, _tree_node **outp
 	i = 0;
 	va_start(ap, output);
 	while( i < loop){
+		char *argv;
 		argv = va_arg(ap, char *);
 		//printf("argv = %s\n", argv);
-		if(rnode <= 0){
+		if(rnode == 0){
 			printf("cannot step forward\n");
 			break;
 		}
