@@ -67,7 +67,7 @@ static inline int _do_jstree_read(int argc, _tree_node *input, _tree_node **outp
 		if(sscanf(argv, "[%d]", &iter)){
 	//		printf("jumping to the %dth node\n", iter);
 			rnode = next_node(rnode, iter);
-			if(rnode <= 0){
+			if(rnode == 0){
 				//printf("->[%d]:N/A", iter);
 				break;
 			}else if(rnode->data.type == JSMN_STRING){
