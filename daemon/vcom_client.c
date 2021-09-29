@@ -209,7 +209,7 @@ void usage(char * cmd)
 	printf("The most commonly used commands are:\n");
 	printf("	-l	Log file\n");
 	printf("	-t	TTY id(starts from 0)\n");
-	printf("	-d	Device modle\n");
+	printf("	-d	Device magic number\n");
 	printf("	-a	IP addr\n");
 	printf("	-p	Device port(starts from 1)\n");
 	printf("	-r	Redundant IP\n");
