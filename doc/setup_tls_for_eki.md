@@ -8,7 +8,6 @@ If one wishes to use VCOM over TLS, 3 files are needed for each Device Server, w
 Back to [README.md](../README.md)
 ## Creating the TLS files
 Use **adv-eki-tls-create** to generate files needed to setup the TLS connection.  
-> sudo adv-eki-tls-create -n my_first_EKI -e MyPassword1234  
 ```console
 foo@bar~:$ sudo adv-eki-tls-create -n my_EKI_abcd -e my_password_123
 ```
