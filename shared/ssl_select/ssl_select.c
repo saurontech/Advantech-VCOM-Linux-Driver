@@ -289,7 +289,7 @@ static int _do_ssl_update_wait_event(ssl_info * info, wait_event * wevent,
 			printf( "%s failed(%d):%s\n",
 				func_str, 
 				ssl_errno, 
-				ERR_reason_error_string(ERR_get_error())
+				ERR_reason_error_string(ERR_peek_last_error())
 				);
 			show_x509_err(info);
 			break;
@@ -320,8 +320,9 @@ int ssl_errno_str(ssl_info * info, int ssl_errno, char * buf, int buflen)
 		default :
 			len = snprintf(buf, buflen, "SSL error(%d):%s;", 
 				ssl_errno, 
-				ERR_reason_error_string(ERR_get_error())
+				ERR_reason_error_string(ERR_peek_last_error())
 				);
+			ERR_clear_error();
 			if(len < 0)
 				break;
 			len += show_x509_err_str(info, &buf[len], buflen - len);
