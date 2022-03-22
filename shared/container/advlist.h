@@ -60,16 +60,20 @@ static inline void list_del(struct list_head * entry)
 }
 
 #if __linux__   //  or #if __GNUC__
-    #if __x86_64__ || __ppc64__
+    #if __LP64__
         #define ENVIRONMENT64
+	#pragma message("Linux 64bit")
     #else
         #define ENVIRONMENT32
+	#pragma message("Linux 32bit")
     #endif
 #else
     #if _WIN32
         #define ENVIRONMENT32
+	#pragma message("Windows 32bit")
     #else
         #define ENVIRONMENT64
+	#pragma message("Windows 64bit")
     #endif
 #endif // __linux__
 
