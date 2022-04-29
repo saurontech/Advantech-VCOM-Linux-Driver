@@ -32,6 +32,44 @@ static vc_ssl_cfg m_sslcfg;
 
 extern void * stk_mon; 
 
+static int custom_verify_callback (int ok, X509_STORE_CTX *store)
+{
+
+	
+
+	if (!ok)
+	{
+		int err = X509_STORE_CTX_get_error(store);
+		X509 *cert = X509_STORE_CTX_get_current_cert(store);
+		char data[256];
+		int  depth = X509_STORE_CTX_get_error_depth(store);
+
+		printf("-Error with certificate at depth: %i\n", depth);
+		X509_NAME_oneline(X509_get_issuer_name(cert), data, sizeof(data));
+		printf("  issuer   = %s\n", data);
+		X509_NAME_oneline(X509_get_subject_name(cert), data, sizeof(data));
+		printf("  subject  = %s\n", data);
+		printf("  err %i:%s\n", err, X509_verify_cert_error_string(err) );
+
+		switch(err){
+			case X509_V_ERR_CERT_NOT_YET_VALID:
+			case X509_V_ERR_CERT_HAS_EXPIRED:
+				ok = 1;
+				break;
+			default:
+				break;
+		}
+	}/*else{
+	   printf("ssl verification OK\n");
+	   X509_NAME_oneline(X509_get_issuer_name(cert), data, 256);
+	   printf("  issuer   = %s\n", data);
+	   X509_NAME_oneline(X509_get_subject_name(cert), data, 256);
+	   printf("  subject  = %s\n", data);
+	   }*/	
+
+	return ok;
+}
+
 static int recv_second_chance(int sock, char * buf, int buflen)
 {
 	int ret;
@@ -304,6 +342,14 @@ int startup(int argc, char **argv, struct vc_attr *port)
 								m_sslcfg.keyfile, 
 								m_sslcfg.password,
 								&m_ssl_pwd_data);
+
+				if(m_sslcfg.accept_expired_key){
+					unsigned int ssl_verify;
+					ssl_verify = SSL_VERIFY_PEER;
+					SSL_CTX_set_verify(port->ssl->ctx, 
+						ssl_verify, custom_verify_callback);
+				}
+				
 				if(port->ssl->ctx == 0){
 					//printf("failed to lad key file\n");
 					exit(0);

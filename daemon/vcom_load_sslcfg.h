@@ -4,6 +4,7 @@ typedef struct {
 	char *password;
 	char *rootca;
 	char *keyfile;
+	int accept_expired_key;
 }vc_ssl_cfg;
 
 static char * create_cfg_cwd(char * config_file)
@@ -115,6 +116,15 @@ static int loadconfig(char * filepath, vc_ssl_cfg * cfg)
 	}
 
 	printf("found password = %s\n", cfg->password);
+
+	if(jstree_read(result.node->r, &rnode, "ssl", "accept_expired_key")== 2 &&
+	strcmp(rnode->data.data, "enable") == 0){
+		printf("accept expired CA\n");
+		cfg->accept_expired_key = 1;
+	}else {
+		printf("reject expired CA\n");
+		cfg->accept_expired_key = 0;
+	}
 
 	close(fd);
 
