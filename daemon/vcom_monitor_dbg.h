@@ -16,7 +16,7 @@ struct vc_monitor{
 	char fname[FNAME_LEN];
 };
 
-struct vc_monitor vc_mon;
+extern struct vc_monitor vc_mon;
 
 static inline int mon_init(char * fname)
 {
