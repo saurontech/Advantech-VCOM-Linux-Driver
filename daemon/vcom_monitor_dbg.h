@@ -15,6 +15,7 @@ struct vc_monitor{
 	int dbg_first;
 	char fname[FNAME_LEN];
 };
+
 struct vc_monitor vc_mon;
 
 static inline int mon_init(char * fname)

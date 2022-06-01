@@ -30,7 +30,10 @@ static vc_ssl_cfg m_sslcfg;
 
 #define RBUF_SIZE	4096
 
-extern void * stk_mon; 
+void * stk_mon; 
+#ifdef _VCOM_MONITOR_H
+struct vc_monitor vc_mon;
+#endif
 
 static int custom_verify_callback (int ok, X509_STORE_CTX *store)
 {

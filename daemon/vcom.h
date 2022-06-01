@@ -110,7 +110,7 @@ static inline struct vc_ops * stk_curnt(struct stk_vc *stk);
 #define INO_RPLS_SWITCH 0
 #define INO_RESTART_SWITCH 0
 
-void * stk_mon;
+extern void * stk_mon;
 
 
 static inline int _stk_log(struct stk_vc *stk, char * __form, ...)
