@@ -43,7 +43,11 @@ clean:
 	make clean -C ./advps
 	make clean -C ./keys
 
-./keys/rootCA.srl:
+./keys/.srl:
+	echo "using OpenSSL 3? it seems to work without .srl"
+	touch ./keys/.srl
+
+./keys/rootCA.srl: ./keys/.srl
 	mv ./keys/.srl ./keys/rootCA.srl
 
 rename_srl: ./keys/rootCA.srl
@@ -108,7 +112,7 @@ install_dkms:
 	dkms install -m $(MODNAME) -v $(VERSION)
 
 uninstall_dkms:
-	dkms uninstall -m $(MODNAME) -v $(VERSION)
+	- dkms uninstall -m $(MODNAME) -v $(VERSION)
 	dkms remove -m $(MODNAME) -v $(VERSION) --all
 	rm -rf /usr/src/$(MODNAME)-$(VERSION)
 
