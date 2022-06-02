@@ -43,16 +43,16 @@ clean:
 	make clean -C ./advps
 	make clean -C ./keys
 
-./keys/.srl:
-	echo "using OpenSSL 3? it seems to work without .srl"
-	touch ./keys/.srl
+cleanup_srl:
+	if [ -s ./keys/rootCA.srl ]; then \
+		if [ -s ./keys/.srl ]; then \
+			echo "using old OpenSSL"; mv ./keys/.srl ./keys/rootCA.srl; \
+		else \
+			echo "using OpenSSL 3"; touch ./keys/rootCA.srl; \
+		fi \
+	fi
 
-./keys/rootCA.srl: ./keys/.srl
-	mv ./keys/.srl ./keys/rootCA.srl
-
-rename_srl: ./keys/rootCA.srl
-
-install_ssl: rename_srl
+install_ssl: cleanup_srl
 	cp ./config/ssl.json $(INSTALL_PATH)
 	cp ./keys/rootCA.key $(INSTALL_PATH)
 	cp ./keys/rootCA.pem $(INSTALL_PATH)
