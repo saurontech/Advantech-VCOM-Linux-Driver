@@ -45,6 +45,8 @@ clean:
 
 cleanup_srl:
 	if [ -s ./keys/rootCA.srl ]; then \
+		echo "nothing to cleanup for"; \
+	else \
 		if [ -s ./keys/.srl ]; then \
 			echo "using old OpenSSL"; mv ./keys/.srl ./keys/rootCA.srl; \
 		else \
