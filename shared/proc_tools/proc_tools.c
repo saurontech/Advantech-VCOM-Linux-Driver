@@ -122,7 +122,7 @@ int __pid_search_fd_inode(pid_t pid, ino_t  inode)
 	char status[PATH_MAX];
 	char fdpath[PATH_MAX];
 	struct stat sb;
-	snprintf(fdpath, 1024, "/proc/%d/fd", pid);
+	snprintf(fdpath, sizeof(fdpath), "/proc/%d/fd", pid);
 	dir = opendir(fdpath);
 	if(!dir){
 		printf("Can't open /proc/fd: %s", fdpath);
