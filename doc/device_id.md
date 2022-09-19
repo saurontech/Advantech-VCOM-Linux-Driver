@@ -39,6 +39,8 @@ Back to [README.md](../README.md)
 | EKI-1528-CE	| D528	|
 | EKI-1528DR	| C528	|
 | EKI-1526-CE	| D526	|
+| EKI-1511-A | 1501 |
+| EKI-1511X-B | 1551 |
 | EKI-1321	| 1321	|
 | EKI-1322	| 1322	|
 | EKI-1361	| 1361	|
