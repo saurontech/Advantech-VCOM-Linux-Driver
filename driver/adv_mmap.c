@@ -35,10 +35,13 @@ vm_fault_t adv_vma_nopage(struct vm_fault *vmf)
 //	printk("totalsize = %d\n", (data->rx.size + data->tx.size));
 
 
-	if(offset > (data->rx.size + data->tx.size) ){
+//	remove this code not because of bug,
+//	but because it is redundent to the following code,
+//	and it is also confusiong
+/*	if(offset > (data->rx.size + data->tx.size) ){
 		printk("%s(%d)\n", __func__, __LINE__);
 		goto out;
-	}
+	}*/
 	
 //	page = virt_to_page(data->data);
 	if(offset < (data->tx.size + data->tx.begin)){

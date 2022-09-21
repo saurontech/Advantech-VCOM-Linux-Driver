@@ -28,10 +28,10 @@ int adv_vma_nopage(struct vm_fault *vmf)
 //	printk("totalsize = %d\n", (data->rx.size + data->tx.size));
 
 
-	if(offset > (data->rx.size + data->tx.size) ){
+/*	if(offset > (data->rx.size + data->tx.size) ){
 		printk("%s(%d)\n", __func__, __LINE__);
 		goto out;
-	}
+	}*/
 	
 //	page = virt_to_page(data->data);
 	if(offset < (data->tx.size + data->tx.begin)){
@@ -67,10 +67,10 @@ int adv_vma_nopage(struct vm_area_struct *vma, struct vm_fault *vmf)
 	offset = (unsigned long)(vmf->virtual_address - vma->vm_start) + (vma->vm_pgoff << PAGE_SHIFT);
 
 
-	if(offset > (data->rx.size + data->tx.size) ){
+/*	if(offset > (data->rx.size + data->tx.size) ){
 		printk("%s(%d)\n", __func__, __LINE__);
 		goto out;
-	}
+	}*/
 	
 	if(offset < (data->tx.size + data->tx.begin)){
 		page = virt_to_page(data->tx.data);
