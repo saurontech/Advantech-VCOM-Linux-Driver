@@ -85,7 +85,7 @@ then
 `openssl ecparam -in s_prime256v1.pem -genkey -noout -out $PRIV_KEY`
 else
 #echo "passphrase = $PASSPHRASE."
-`openssl ecparam -in s_prime256v1.pem -genkey |openssl ec -passout pass:$PASSPHRASE -out $PRIV_KEY -aes256`
+`openssl ecparam -in s_prime256v1.pem -genkey |openssl ec -passout pass:"$PASSPHRASE" -out $PRIV_KEY -aes256`
 fi
 
 #create CSR
@@ -93,7 +93,7 @@ fi
 `openssl req -new -key serverdsa.pem -out $CSR`
 
 #create unsigned pub key
-`openssl ec -in $PRIV_KEY -passin pass:$PASSPHRASE -pubout -out $UNSIGNED_PUB`
+`openssl ec -in $PRIV_KEY -passin pass:"$PASSPHRASE" -pubout -out $UNSIGNED_PUB`
 
 #sign public key
 `openssl x509 -req -days $CERT_DAYS -in $CSR -CAkey $ROOTCA_PRIV -CA $ROOTCA_PUB -force_pubkey $UNSIGNED_PUB -out $PUB_KEY -CAserial $ROOTCA_SERIAL`
