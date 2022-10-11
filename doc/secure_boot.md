@@ -2,7 +2,7 @@
 Modern PCs often use Secure boot to authenticate the boot proccess.
 Linux kernels with CONFIG_MODULE_SIG enabled, will fail to load drivers that aren't correctly signed
 
-The following parties are involved in the proccess of loading our VCOM driver:
+The following parties are involved in the proccess of loading the VCOM driver:
 1.  UEFI: the UEFI hosts a list of public keys, each kernel/module loaded will be checked against these keys.
 2.  Machine Owner Key(MOK): this is a Public/Private key pair stored in DER formate.
 3.  DKMS: by default, DKMS is used to auto-build our driver.
