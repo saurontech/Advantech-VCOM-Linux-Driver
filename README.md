@@ -90,6 +90,11 @@ To startup the VCOM service, follow these steps:
 1. Setup and start the VCOM [check here](doc/setup_vcom.md)
 2. If TLS is needed, create & upload TLS fils for each Device server [check here](doc/setup_tls_for_eki.md)
 
+## DKMS auto-sign with MOK on Secure Boot UEFI systems
+On Secure Boot UEFI enabled systems, it is very important to setup the DKMS to auto-sign the kenel modules.  
+Otherwise, one may fail to load any custom moduels, including our vcom driver.  
+[check here](doc/secure_boot.md) for a guide on how to setup your DKMS.
+
 ## Appendex
 1. Create new "TLS files" or "key-pairs" needed for VCOM driver; click [here](doc/create_tls_files_driver.md)
 
