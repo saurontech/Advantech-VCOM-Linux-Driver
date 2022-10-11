@@ -35,7 +35,7 @@ input password:
 input password again:
 ```
 Memorize the password, and reboot the system.  
-During the reboot the UEFI will guide you through the proccess of enrolling the MOK.  
+During reboot, the UEFI will guide you through the proccess of enrolling the MOK.  
 The password will be required to finish the process.  
 4. Check the VCOM driver signature and see if it matches your MOK
 ```console
