@@ -81,5 +81,5 @@ foo@bar~:$ sudo make install_dkms
 If for some reason, one needs to build its own MOK
 the following command will build a MOK private/public key pair:
 ```console
-openssl req -new -x509 -newkey rsa:2048 -keyout ./MOK.priv -outform DER -out ./MOK.der -nodes -days 36500 -subj "/CN=ADVVCOM Driver Signing MOK"
+foo@bar~:$ openssl req -new -x509 -newkey rsa:2048 -keyout ./MOK.priv -outform DER -out ./MOK.der -nodes -days 36500 -subj "/CN=ADVVCOM Driver Signing MOK"
 ```
