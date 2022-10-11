@@ -1,5 +1,5 @@
 # VCOM driver with Secure Boot UEFI, MOK and DKMS
-Modern PCs likely use Secure boot to authenticate the boot proccess.
+Modern PCs often use Secure boot to authenticate the boot proccess.
 Linux kernels with CONFIG_MODULE_SIG enabled(which is often the case on most Distos), will fail to load drivers that aren't correctly signed
 
 The following parties are involved in the proccess of loading our VCOM driver:
