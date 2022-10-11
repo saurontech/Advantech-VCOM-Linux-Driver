@@ -7,7 +7,7 @@ The following parties are involved in the proccess of loading our VCOM driver:
 2.  Machine Owner Key(MOK): this is a Public/Private key pair stored in DER formate.
 3.  DKMS: by default, DKMS is used to auto-build our driver.
 
-If one fails to load the driver with **advman -o insert**, this might indicate that your **DKMS** is not properly configured work with **Secure Boot**.
+If one fails to load the driver with **advman -o insert**, this might indicate that your **DKMS** is not properly configured to work with **Secure Boot**.
 One might chose to disable the secure boot, or configure your DKMS to work with Secure Boot.
 
 
