@@ -1,6 +1,6 @@
 # VCOM driver with Secure Boot UEFI, MOK and DKMS
-modern PCs likely use Secure boot to authenticate the boot proccess.
-Linux kernels with CONFIG_MODULE_SIG enabled(which is often the case on popular Distos), will fail to load drivers that are correctly signed
+Modern PCs likely use Secure boot to authenticate the boot proccess.
+Linux kernels with CONFIG_MODULE_SIG enabled(which is often the case on most Distos), will fail to load drivers that aren't correctly signed
 
 The following parties are involved in the proccess of loading our VCOM driver:
 1.  UEFI: the UEFI hosts a list of public keys, each kernel/module loaded will be checked against these keys.
@@ -16,7 +16,6 @@ The DKMS can be configured to auto-sign drivers.
 However, this proccess might differ according to the version of your DKMS.  
 On **Newer** DKMS systems like the one used on RHEL9(DKMS-3.0.4), the drivers are signed with the "/var/lib/dkms/mok.key", and "/var/lib/dkms/mok.pub".
 
-Before doing anything, collect information of your current system.
 1. Check if secure boot is enabled
 ```console
 foo@bar~:$ sudo mokutil --sb-state
@@ -42,8 +41,8 @@ The password will be required to finish the process.
 ```console
 foo@bar~:$ sudo modinfo advvcom
 ```
-If the driver is not signed, or not signed by your MOK, edit "/etc/dkms/framework.conf" and modify "mok_signing_key" and "mok_certificate" according to the path of your MOK. 
-After works, one must rebuild the driver with the DKMS.  
+If the driver is not signed, or not signed by your MOK, edit "/etc/dkms/framework.conf" and modify options "mok_signing_key" and "mok_certificate" according to the path of your MOK. 
+Afterward, one must rebuild the driver with the DKMS.  
 The easiest way is the operate the following instructions in our source code folder.
 ```console
 foo@bar~:$ sudo advman -o remove
@@ -56,9 +55,31 @@ The proccess is roughly the same, However, there are two major differences:
 1. Ubuntu 22.04 places the MOK in a different path:
     1. private key: /var/lib/shim-signed/mok/MOK.priv
     2. public key: /var/lib/shim-isgned/mok/MOK.der
-3. The DKMS framework(/etc/dkms/framework.conf) options is different:
+
+Enroll the MOK with:
+```console
+foo@bar~:$ sudo mokutil --import /var/lib/shim-signed/mok/MOK.der
+```
+2. The DKMS framework(/etc/dkms/framework.conf) options is different:
 Uncomment the: 
 ```console
 sing_tool="/etc/dkms/sign_helper.sh" 
 ```
-The default path of MOK in the "sign_helper.sh" script is located in "/root/", so one can edit "/etc/dkms/sign_helper.sh" to change it.
+The default MOK used in "sign_helper.sh" is located in "/root/", so one can edit "/etc/dkms/sign_helper.sh" to change it.  
+```console
+#!/bin/sh
+/lib/modules/"$1"/build/scripts/sign-file sha512 /var/lib/shim-signed/mok/MOK.priv /var/lib/shim-isgned/mok/MOK.der "$2"
+```
+Rebuild the vcom driver with DKMS; in our source code folder:
+```console
+foo@bar~:$ sudo advman -o remove
+foo@bar~:$ sudo make unisntall_dkms
+foo@bar~:$ sudo make install_dkms
+```
+
+## Building ones own MOK
+If for some reason, one needs to build its own MOK
+the following command will build a MOK private/public key pair:
+```console
+openssl req -new -x509 -newkey rsa:2048 -keyout ./MOK.priv -outform DER -out ./MOK.der -nodes -days 36500 -subj "/CN=ADVVCOM Driver Signing MOK"
+```
