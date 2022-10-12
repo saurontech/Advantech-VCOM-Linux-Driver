@@ -275,7 +275,7 @@ struct vc_ops * vc_sync_recv(struct vc_attr * attr, char *buf, int len)
 		case VCOM_IOCTL_GET_MODEMSTATUS:
 		{
 			unsigned int modem;
-			modem = pbuf->attach.uint32.uint;
+			modem = le32toh(pbuf->attach.uint32.uint);
 			if(ioctl(attr->fd, ADVVCOM_IOCSMCTRL, &modem)){
 				printf("ioctl(mctrl) failed\n");
 				stk_excp(stk);
