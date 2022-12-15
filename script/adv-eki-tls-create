@@ -76,30 +76,30 @@ else
 fi
 
 #create DH
-`openssl dhparam -out $DH_FILENAME $DH_LEN`
+$(openssl dhparam -out $DH_FILENAME $DH_LEN)
 
 #create private key
-`openssl ecparam -name prime256v1 -out s_prime256v1.pem`
+$(openssl ecparam -name prime256v1 -out s_prime256v1.pem)
 if [[ -z "$PASSPHRASE" ]]
 then
-`openssl ecparam -in s_prime256v1.pem -genkey -noout -out $PRIV_KEY`
+$(openssl ecparam -in s_prime256v1.pem -genkey -noout -out $PRIV_KEY)
 else
 #echo "passphrase = $PASSPHRASE."
-`openssl ecparam -in s_prime256v1.pem -genkey |openssl ec -passout pass:"$PASSPHRASE" -out $PRIV_KEY -aes256`
+$(openssl ecparam -in s_prime256v1.pem -genkey |openssl ec -passout pass:"$PASSPHRASE" -out $PRIV_KEY -aes256)
 fi
 
 #create CSR
-`openssl dsaparam -genkey -out serverdsa.pem $CERT_DSA_LEN`
-`openssl req -new -key serverdsa.pem -out $CSR`
+$(openssl dsaparam -genkey -out serverdsa.pem $CERT_DSA_LEN)
+$(openssl req -new -key serverdsa.pem -out $CSR)
 
 #create unsigned pub key
-`openssl ec -in $PRIV_KEY -passin pass:"$PASSPHRASE" -pubout -out $UNSIGNED_PUB`
+$(openssl ec -in $PRIV_KEY -passin pass:"$PASSPHRASE" -pubout -out $UNSIGNED_PUB)
 
 #sign public key
-`openssl x509 -req -days $CERT_DAYS -in $CSR -CAkey $ROOTCA_PRIV -CA $ROOTCA_PUB -force_pubkey $UNSIGNED_PUB -out $PUB_KEY -CAserial $ROOTCA_SERIAL`
+$(openssl x509 -req -days $CERT_DAYS -in $CSR -CAkey $ROOTCA_PRIV -CA $ROOTCA_PUB -force_pubkey $UNSIGNED_PUB -out $PUB_KEY -CAserial $ROOTCA_SERIAL)
 
 #create key pair
-`cat $PUB_KEY  $PRIV_KEY> $KEYPAIR`
+$(cat $PUB_KEY  $PRIV_KEY> $KEYPAIR)
 }
 
 while getopts “hn:k:p:s:e:l:L:d:” OPTION
