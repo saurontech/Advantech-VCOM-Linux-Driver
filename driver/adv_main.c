@@ -171,11 +171,12 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 #include "./legacy/main/adv_proc_ioctl.h"
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0)
 int adv_proc_open(struct inode *inode, struct file *filp)
 {
 	struct adv_vcom * data;
 	
-	data = PDE_DATA(inode);
+	data = pde_data(inode);
 	filp->private_data = data;
 
 	return 0;
@@ -185,10 +186,13 @@ int adv_proc_release(struct inode *inode, struct file *filp)
 {
 	struct adv_vcom * data;
 
-	data = PDE_DATA(inode);
+	data = pde_data(inode);
 
 	return 0;
 }
+#else
+#include "./legacy/main/adv_proc_open.h"
+#endif
 
 unsigned int adv_proc_poll(struct file *filp, poll_table *wait)
 {
