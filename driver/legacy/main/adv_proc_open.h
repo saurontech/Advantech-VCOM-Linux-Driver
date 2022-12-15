@@ -12,6 +12,8 @@ int adv_proc_open(struct inode *inode, struct file *filp)
 #	else
 	data = PDE_DATA(inode);
 #	endif
+#else
+	data = PDE_DATA(inode);
 #endif
 
 	filp->private_data = data;
@@ -28,6 +30,8 @@ int adv_proc_release(struct inode *inode, struct file *filp)
 #	else
 	data = PDE_DATA(inode);
 #	endif
+#else
+	data = PDE_DATA(inode);
 #endif
 
 	return 0;
