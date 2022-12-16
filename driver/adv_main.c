@@ -181,18 +181,14 @@ int adv_proc_open(struct inode *inode, struct file *filp)
 
 	return 0;
 }
-
-int adv_proc_release(struct inode *inode, struct file *filp)
-{
-	struct adv_vcom * data;
-
-	data = pde_data(inode);
-
-	return 0;
-}
 #else
 #include "./legacy/main/adv_proc_open.h"
 #endif
+
+int adv_proc_release(struct inode *inode, struct file *filp)
+{
+	return 0;
+}
 
 unsigned int adv_proc_poll(struct file *filp, poll_table *wait)
 {
