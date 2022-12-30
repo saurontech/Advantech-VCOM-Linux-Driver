@@ -35,6 +35,7 @@ void * stk_mon;
 struct vc_monitor vc_mon;
 #endif
 
+#ifdef _VCOM_SUPPORT_TLS
 static int custom_verify_callback (int ok, X509_STORE_CTX *store)
 {
 
@@ -72,6 +73,7 @@ static int custom_verify_callback (int ok, X509_STORE_CTX *store)
 
 	return ok;
 }
+#endif
 
 static int recv_second_chance(int sock, char * buf, int buflen)
 {
