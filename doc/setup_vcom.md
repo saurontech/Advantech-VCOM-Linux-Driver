@@ -78,7 +78,7 @@ foo@bar~:$ sudo advman -o start
 | restart | Stop and then restart the service |
 
 ### Checking the VCOM connection status
-Use **advps** to check the current **active and current** VCOM connection status.
+Use **advps** to check the **active and current** VCOM connection status.
 ```console
 foo@bar~:$ sudo advps 
 ttyADV0 PID:622218 TCP Dev:c524 Port1 IP:172.17.8.222  
