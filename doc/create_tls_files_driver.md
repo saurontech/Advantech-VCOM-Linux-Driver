@@ -1,7 +1,7 @@
 # Create TLS files for the VCOM Driver
-Occasionally, one might want to create new TLS files for a VCOM driver,  
-Creating a "key-pair" to setup a new host, or building a whole set of TLS CA & key files to replace an expired CA.  
-This document is the instruction to do both.  
+Occasionally, one might want to create new TLS files for a VCOM driver.  
+For example, creating a "key-pair" to setup a new host, or building a whole set of TLS CA & key files to replace an expired CA.  
+This document is the instruction guide on how to do both.  
 
 Go back to [README.md](../README.md)
 
