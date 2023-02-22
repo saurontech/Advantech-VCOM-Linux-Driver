@@ -140,22 +140,25 @@ static inline int _stk_log(struct stk_vc *stk, char * __form, ...)
 /* 
  *	state machine stack
  */
+/*
 #define _expmsg(msg, len) \
 do{ if(stk->top >= 0)	\
 		snprintf(msg, len, "(%s)%s,%d", stk->stk_stat[stk->top]->name(), __func__, __LINE__);	\
 	else				\
 		snprintf(msg, len, "(NULL)%s,%d", __func__, __LINE__);	\
 }while(0)
-
+*/
 #define _expmsg_extra(msg, len, ...) \
 do{ int r; if(stk->top >= 0) {\
+_Pragma("GCC diagnostic ignored \"-Wformat-zero-length\"")\
 		r= snprintf(msg, len, "(%s)%s,%d:", stk->stk_stat[stk->top]->name(), \
 		__func__, __LINE__);	\
-        snprintf(&msg[r],len -r, __VA_ARGS__);\
+        snprintf(&msg[r],len -r, "" __VA_ARGS__);\
 	}else{				\
 		r= snprintf(msg, len, "(NULL)%s,%d:", __func__, __LINE__ );	\
-        snprintf(&msg[r],len -r, __VA_ARGS__);\
+        snprintf(&msg[r],len -r, "" __VA_ARGS__);\
         }\
+_Pragma("GCC diagnostic warning \"-Wformat-zero-length\"")\
 }while(0)
 
 #define stk_push(a, b)	_stk_push(a, b)
@@ -189,8 +192,8 @@ _stk_pop(struct stk_vc *stk)
 	return 0;
 }
 
-#define stk_excp(a) do{char msg[128]; _expmsg(msg, 128); _stk_excp(a, msg);}while(0)
-#define stk_excp_msg(a, ...) do{char msg[256]; _expmsg_extra(msg, sizeof(msg),\
+//#define stk_excp(a) do{char msg[128]; _expmsg(msg, 128); _stk_excp(a, msg);}while(0)
+#define stk_excp(a, ...) do{char msg[256]; _expmsg_extra(msg, sizeof(msg),\
 								__VA_ARGS__);\
 								_stk_excp(a, msg);}while(0)
 static inline int
