@@ -18,7 +18,6 @@ _SRC =
 y_SRC =
 n_SRC =
 
-
 ${TLS}_HDR += $(shell find $(SPATH) -name '*.h' -print)
 ${TLS}_SRC += $(shell find $(SPATH) -name '*.c' -print)
 ${TLS}_HDR += $(shell find $(JPATH) -name '*.h' -print)
@@ -48,11 +47,12 @@ n_INCLUDE =
 
 y_INCLUDE += -I ${DPATH} -I ${CONTAINER_PATH} -I ${JPATH}
 ${TLS}_INCLUDE += -I ${SPATH}
+y_INCLUDE += -I ./protocol -I ./monitor -I ./state_mach -I ./
 
 all: vcomd
 
 vcomd: ${ALLSRC} ${ALLHDR}
-	${CC} -Wall -Werror $(y_INCLUDE) -o $@ ${ALLSRC} ${y_LIBS} ${y_DEF} 
+	${CC} -Wall -Werror $(y_INCLUDE) -o $@ ${ALLSRC} ${y_LIBS} ${y_DEF}
 
 clean:
 	find ./ -name 'vcomd' -exec rm {} \;

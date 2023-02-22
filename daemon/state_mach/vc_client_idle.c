@@ -72,16 +72,6 @@ struct vc_ops * vc_idle_recv(struct vc_attr * attr, char * buf, int len)
 	return stk_curnt(stk)->recv(attr, buf, len);
 }
 
-/*struct vc_ops * vc_idle_error(struct vc_attr * attr, char * str, int num)
-{
-	struct stk_vc * stk;
-
-	stk = &attr->stk;
-	printf("%s: %s(%d)\n", __func__, str, num);
-	stk_excp(stk);
-
-	return stk_curnt(stk)->init(attr);
-}*/
 
 struct vc_ops * vc_idle_init(struct vc_attr * attr)
 {
@@ -119,7 +109,6 @@ char * vc_idle_name(void)
 struct vc_ops vc_idle_ops = {
 	.open = vc_idle_open,
 	.close = vc_idle_close,
-//	.err = vc_idle_error,
 	.init = vc_idle_init,
 	.poll = vc_idle_poll,
 	.recv = vc_idle_recv,

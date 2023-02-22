@@ -532,7 +532,6 @@ int main(int argc, char **argv)
 					lrecv += (used > 0)?used:1;	
 				}
 				if(lrecv > VC_PULL_TIME){
-					//stk_curnt(stk)->err(&port, "PROTO timeout", 0);
 					stk_excp(stk, "SSL PROTO timeout");
 					stk_curnt(stk)->init(&port);
 					lrecv = 0;
@@ -547,7 +546,6 @@ int main(int argc, char **argv)
 			unsigned int used = VC_TIME_USED(tv);
 			lrecv += (used > 0)?used:1;
 			if(lrecv > VC_PULL_TIME){
-				//stk_curnt(stk)->err(&port, "PROTO timeout", 0);
 				stk_excp(stk, "TCP PROTO timeout");
 				stk_curnt(stk)->init(&port);
 				lrecv = 0;
