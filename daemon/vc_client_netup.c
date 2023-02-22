@@ -58,7 +58,7 @@ struct vc_ops * vc_netup_open(struct vc_attr * attr)
 	return vc_common_open(attr);
 }
 
-struct vc_ops * vc_netup_error(struct vc_attr * attr, char * str, int num)
+/*struct vc_ops * vc_netup_error(struct vc_attr * attr, char * str, int num)
 {
 	struct stk_vc * stk;
 
@@ -67,7 +67,7 @@ struct vc_ops * vc_netup_error(struct vc_attr * attr, char * str, int num)
 	stk_excp(stk);
 
 	return stk_curnt(stk)->init(attr);
-}
+}*/
 
 struct vc_ops * vc_netup_init(struct vc_attr * attr)
 {
@@ -146,7 +146,7 @@ struct vc_ops vc_netup_ops = {
 	.open = vc_netup_open,
 	.close = vc_netup_close,
 	.xmit = vc_netup_xmit,
-	.err = vc_netup_error,
+//	.err = vc_netup_error,
 	.init = vc_netup_init,
 	.recv= vc_netup_recv,
 	.ioctl = vc_netup_ioctl,

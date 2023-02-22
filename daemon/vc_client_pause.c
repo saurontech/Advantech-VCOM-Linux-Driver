@@ -47,7 +47,7 @@ static struct vc_ops * vc_pause_open(struct vc_attr * attr)
 	return vc_common_open(attr);
 }
 
-static struct vc_ops * vc_pause_error(struct vc_attr * attr, char * str, int num)
+/*static struct vc_ops * vc_pause_error(struct vc_attr * attr, char * str, int num)
 {
 	struct stk_vc * stk;
 
@@ -56,7 +56,7 @@ static struct vc_ops * vc_pause_error(struct vc_attr * attr, char * str, int num
 	stk_excp(stk);
 
 	return stk_curnt(stk)->init(attr);
-}
+}*/
 
 
 
@@ -157,7 +157,7 @@ struct vc_ops vc_pause_ops = {
 	.open = vc_pause_open,
 	.close = vc_pause_close,
 	.xmit = vc_pause_xmit,
-	.err = vc_pause_error,
+//	.err = vc_pause_error,
 	.init = vc_pause_init,
 	.recv= vc_pause_recv,
 	.ioctl = vc_pause_ioctl,
