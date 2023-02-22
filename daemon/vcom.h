@@ -64,7 +64,6 @@ struct vc_ops{
 	struct vc_ops * (*xmit)(struct vc_attr *);
 	struct vc_ops * (*recv)(struct vc_attr *, char * buf, int len);
 	struct vc_ops * (*poll)(struct vc_attr *);
-//	struct vc_ops * (*err)(struct vc_attr *, char * str, int num);
 	struct vc_ops * (*init)(struct vc_attr *);
 	struct vc_ops * (*pause)(struct vc_attr *);
 	struct vc_ops * (*resume)(struct vc_attr *);

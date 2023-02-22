@@ -305,12 +305,7 @@ struct vc_ops * vc_netdown_open(struct vc_attr * attr)
 
 	return stk_curnt(stk)->open(attr);
 }
-/*
-struct vc_ops * vc_netdown_error(struct vc_attr * attr, char * str, int num)
-{
-	printf("%s: %s(%d)\n", __func__, str, num);
-	return ADV_THIS;
-}*/
+
 
 struct vc_ops * vc_netdown_init(struct vc_attr *attr)
 {
@@ -342,7 +337,6 @@ char * vc_netdown_name(void)
 struct vc_ops vc_netdown_ops = {
 	.open = vc_netdown_open,
 	.close = vc_netdown_close,
-//	.err = vc_netdown_error,
 	.init = vc_netdown_init,
 	.name = vc_netdown_name,
 };
