@@ -45,7 +45,7 @@ struct vc_ops * vc_sync_close(struct vc_attr * attr)
 	return stk_curnt(stk)->init(attr);
 }
 
-struct vc_ops * vc_sync_error(struct vc_attr * attr, char * str, int num)
+/*struct vc_ops * vc_sync_error(struct vc_attr * attr, char * str, int num)
 {
 	struct stk_vc * stk;
 	
@@ -54,7 +54,7 @@ struct vc_ops * vc_sync_error(struct vc_attr * attr, char * str, int num)
 	stk_excp(stk);
 
 	return stk_curnt(stk)->init(attr);
-}
+}*/
 
 static int _sync_ms(struct vc_attr *attr, unsigned int uart_ms)
 {
@@ -300,7 +300,7 @@ char * vc_sync_name(void)
 
 struct vc_ops vc_sync_ops = {
 	.init = vc_sync_init,
-	.err = vc_sync_error,
+//	.err = vc_sync_error,
 	.recv = vc_sync_recv,
 	.open = vc_sync_open,
 	.close = vc_sync_close,
