@@ -47,7 +47,7 @@ n_INCLUDE =
 
 y_INCLUDE += -I ${DPATH} -I ${CONTAINER_PATH} -I ${JPATH}
 ${TLS}_INCLUDE += -I ${SPATH}
-y_INCLUDE += $(shell find . \( ! -regex '.*/\..*' \) -type d -printf ' -I ./%P ' )
+y_INCLUDE += $(shell find ./ -type d -printf ' -I ./%P ' )
 
 all: vcomd
 
