@@ -84,7 +84,7 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		spin_unlock(&(data->tx.lock));
 		break;
 
-        case ADVVCOM_IOCGTXTAIL:
+	case ADVVCOM_IOCGTXTAIL:
 		spin_lock(&(data->tx.lock));
 		tmp = get_rb_tail(data->tx);
 		ret = __put_user(tmp, (int __user *)arg);
@@ -99,7 +99,7 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		ret = __put_user(data->tx.begin, (int __user *)arg);
 		break;
 
-        case ADVVCOM_IOCGRXHEAD:
+	case ADVVCOM_IOCGRXHEAD:
 //		adv_uart_update_xmit(data->adv_uart);
 		spin_lock(&(data->rx.lock));
 		tmp = get_rb_head(data->rx);
@@ -114,7 +114,7 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		spin_unlock(&(data->rx.lock));
 		break;
 
-        case ADVVCOM_IOCGRXSIZE:
+	case ADVVCOM_IOCGRXSIZE:
 		ret = __put_user(data->rx.size, (int __user *)arg);
 		break;
 
@@ -122,7 +122,7 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		ret = __put_user(data->rx.begin, (int __user *)arg);
 		break;
 
-        case ADVVCOM_IOCSTXTAIL:
+	case ADVVCOM_IOCSTXTAIL:
 		spin_lock(&(data->tx.lock));
 		ret = __get_user(tmp, (int __user *)arg);
 		move_rb_tail(&data->tx, tmp);
@@ -130,8 +130,7 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 		adv_uart_recv_chars(data->adv_uart);
 		break;
-
-        case ADVVCOM_IOCSRXHEAD:
+	case ADVVCOM_IOCSRXHEAD:
 		spin_lock(&(data->rx.lock));
 		ret = __get_user(tmp, (int __user *)arg);
 		move_rb_head(&data->rx, tmp);
