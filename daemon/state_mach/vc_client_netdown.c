@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/tcp.h>
+#include <ifaddrs.h>
 #include "advioctl.h"
 #include "advtype.h"
 #include "vcom_proto.h"
@@ -55,14 +56,17 @@ typedef struct	{
 	struct list_head list;
 }_client_info;
 
-int _create_sklist(struct list_head *sklist, char * addr, char * port)
+int _create_sklist(struct list_head *sklist, char * addr, char * port, struct ifaddrs *ifa)
 {
 	int sk;
 	int ret;
 	struct addrinfo hints;
-        struct addrinfo *result, *ptr;
+	struct addrinfo *result, *ptr;
+	int family;
 	_client_info * sk_info;
-	
+
+	family = ifa->ifa_addr?ifa->ifa_addr->sa_family:AF_UNSPEC;
+
 
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
@@ -70,19 +74,20 @@ int _create_sklist(struct list_head *sklist, char * addr, char * port)
 	hints.ai_flags = 0;
 	hints.ai_protocol = 0;
 
-        ret = getaddrinfo(addr , port, &hints, &result);
+	ret = getaddrinfo(addr , port, &hints, &result);
 	if (ret != 0){
 		printf("getaddrinfo: %s\n", gai_strerror(ret));
 		return -1;
 	}
 
-
+	sk = -1;
 	for (ptr = result; ptr != NULL; ptr = ptr->ai_next){
-		if(ptr->ai_family != AF_INET && 
-			ptr->ai_family != AF_INET6){
-			printf("unkown ai_family\n");
+
+		if(ptr->ai_family != family){
+			//printf("family missmatch\n");
 			continue;
 		}
+		printf("family match %d\n", family);
 
 		sk = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
 		if(sk < 0){
@@ -90,16 +95,26 @@ int _create_sklist(struct list_head *sklist, char * addr, char * port)
 			continue;
 		}
 		//printf("create socket(%d)\n", sk);
+		if(bind(sk, ifa->ifa_addr, 
+				(family == AF_INET)?sizeof(struct sockaddr_in):
+				sizeof(struct sockaddr_in6)) < 0){
+			close(sk);
+			printf("failed to bind socket\n");
+			continue;
+		}
+
 		vc_config_sock(sk, VC_SKOPT_NONBLOCK, 0);
 
 		ret = connect(sk, ptr->ai_addr, ptr->ai_addrlen);
 		if(ret < 0 && errno != EINPROGRESS){
-			printf("cannot connect %s\n", strerror(errno));
+			printf("cannot connect via %s:%s\n", 
+				ifa->ifa_name,
+				strerror(errno));
 			close(sk);
 			sk = -1;
 			continue;
 		}else if(ret == 0){
-			//printf("connected successfully on %d\n", sk);
+			printf("connected successfully on %d\n", sk);
 			break;
 		}
 		sk_info = malloc(sizeof(_client_info));
@@ -119,6 +134,8 @@ int _create_sklist(struct list_head *sklist, char * addr, char * port)
 int vc_connect(struct vc_attr * attr)
 {
 	struct timeval tv;
+	struct ifaddrs *ifaddr;
+	struct ifaddrs *ifa;
 	fd_set rfds;
 	char * addr = attr->ip_ptr;
 	char service[16];
@@ -130,19 +147,33 @@ int vc_connect(struct vc_attr * attr)
 	struct stk_vc * stk;
 	
 	stk = &attr->stk;
+
+	if(getifaddrs(&ifaddr) == -1){
+		_stk_log(stk, "getifaddrs failed: %s", strerror(errno));
+		return -1;
+	}
 	
 	snprintf(service, sizeof(service), "%hu", 
 			(unsigned short)VC_PROTO_PORT);
-	sk = _create_sklist(&clients, addr, service);
-	if(sk < 0 && attr->ip_red > 0){
-		addr = attr->ip_red;
-		sk = _create_sklist(&clients, addr, service);
+	//int i = 0;
+	for(ifa = ifaddr; ifa != 0; ifa = ifa->ifa_next){
+		//printf("ifa i %d %s\n", i++, ifa->ifa_name);
+		sk = _create_sklist(&clients, addr, service, ifa);
+		if(sk < 0 && attr->ip_red > 0){
+			addr = attr->ip_red;
+			sk = _create_sklist(&clients, addr, service, ifa);
+		}
+		if(sk >= 0){
+			printf("direct connect success\n");
+			break;
+		}
 	}
 
+	freeifaddrs(ifaddr);
 
 	if(list_empty(&clients)){
 		printf("all connections rejected directly\n");
-		_stk_log(stk, "connection rejected %s", strerror(errno));
+		_stk_log(stk, "all connections rejected directly");
 		return sk;
 	}
 
@@ -154,7 +185,7 @@ int vc_connect(struct vc_attr * attr)
 		int skmax;
 
 		if(sk >= 0){
-//			printf("already connected\n");
+			//printf("already connected\n");
 			break;
 		}
 
@@ -169,7 +200,7 @@ int vc_connect(struct vc_attr * attr)
 				skmax = cli_ptr->sk;
 			}
 		}
-		
+
 		ret = select(skmax + 1, 0, &rfds, 0, &tv);
 
 		if(ret <= 0){
