@@ -52,7 +52,7 @@ y_INCLUDE += $(shell find ./ -type d -printf ' -I ./%P ' )
 all: vcomd
 
 vcomd: ${ALLSRC} ${ALLHDR}
-	${CC} -Wall -Werror $(y_INCLUDE) -o $@ ${ALLSRC} ${y_LIBS} ${y_DEF}
+	${CC} -Wall -Werror ${y_INCLUDE} -o $@ ${ALLSRC} ${y_LIBS} ${y_DEF}
 
 clean:
 	find ./ -name 'vcomd' -exec rm {} \;
