@@ -44,14 +44,10 @@ _tree_node * _alloc_tree_node_len(int type, const char * data, int datalen)
 	_tree_node * node;
 	node = malloc(sizeof(_tree_node));
 	node->data.type = type;
-	if(data != 0){
-		if(datalen >= 0){
-			node->data.data = malloc(datalen + 1);
-			memcpy(node->data.data, data, datalen);
-			node->data.data[datalen] = '\0';
-		}else{
-			node->data.data = 0;
-		}
+	if(data != 0 && datalen >= 0){
+		node->data.data = malloc(datalen + 1);
+		memcpy(node->data.data, data, datalen);
+		node->data.data[datalen] = '\0';
 	}else{
 		node->data.data = 0;
 	}
@@ -76,7 +72,7 @@ int dumptree(_tree_node * tree, int indent)
 		printf("%s", t->data);
 		return 1;
 	} else if (t->type == JSMN_STRING) {
-		printf("'%s'", t->data);
+		printf("\"%s\"", t->data);
 		return 1;
 	} else if (t->type == JSMN_OBJECT) {
 		j = 0;
@@ -87,6 +83,9 @@ int dumptree(_tree_node * tree, int indent)
 			j += dumptree(tree_ptr, indent+1);
 			printf(":");
 			j += dumptree(tree_ptr->r, indent+1);
+			if(tree_ptr->l != 0){
+				printf(",");
+			}
 			printf("\n");
 			tree_ptr = tree_ptr->l;
 		};
@@ -103,9 +102,16 @@ int dumptree(_tree_node * tree, int indent)
 			for (k = 0; k < indent; k++) printf(" ");
 			//printf("- ");
 			j += dumptree(tree_ptr, indent+1);
+			if(tree_ptr->l != 0){
+				printf(",");
+			}
 			printf("\n");
 			tree_ptr = tree_ptr->l;
 		};
+
+		for (k = 0; k < indent; k++){
+			printf(" ");
+		}
 		printf("]");
 
 		return j+1;

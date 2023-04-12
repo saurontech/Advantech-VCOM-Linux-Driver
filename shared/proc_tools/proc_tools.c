@@ -1,5 +1,7 @@
 #include "proc_tools.h"
 
+// TCP_ESTABLISHED = 1,
+// TCP_LISTEN = 10
 int __search_lport_stat_inode(int ipfamily, unsigned short port,  unsigned short stat, ino_t *out)
 {
 	FILE *fp;
@@ -89,24 +91,26 @@ int __search_lport_stat_inode(int ipfamily, unsigned short port,  unsigned short
 
 }
 
-int __search_port_inode( unsigned short port, ino_t * out)
+int __search_port_inode( unsigned short port, int stat, ino_t * out)
 {
 	ino_t inode;
 	int ret;
 	do{
-		ret = __search_lport_stat_inode(4, port, 1, &inode);
+		ret = __search_lport_stat_inode(4, port, stat, &inode);
 		if(ret == 0){
 			//printf("found tcp4 inode = %d", inode);
 			break;
 		}
 
-		ret = __search_lport_stat_inode(6, port, 1, &inode);
+		ret = __search_lport_stat_inode(6, port, stat, &inode);
 		if(ret == 0){
 			//printf("found tcp4 inode = %d", inode);
 			break;
 		}
 		return -1;
 	}while(0);
+
+	*out = inode;
 
 	return 0;
 }
@@ -230,7 +234,7 @@ int __cmd_inode_search_pid(char * cmd, ino_t inode, char * buf, int buflen, int 
 			continue;
 		}
 
-		if(strstr(buf, cmd) > 0){
+		if(cmd == 0 || strstr(buf, cmd) > 0){
 			if(__pid_search_fd_inode(pid, inode) == 0){
 				*retlen = cmdlen;
 				

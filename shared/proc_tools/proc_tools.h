@@ -23,7 +23,7 @@
 #include <sys/select.h>
 
 int __search_lport_stat_inode(int ipfamily, unsigned short port,  unsigned short stat, ino_t *out);
-int __search_port_inode( unsigned short port, ino_t * out);
+int __search_port_inode( unsigned short port, int stat, ino_t * out);
 
 int __pidpath_get_cmd(char * pidpath, char * cmd, int cmdlen);
 int __pid_get_cmd(pid_t pid, char *cmd, int cmdlen);
