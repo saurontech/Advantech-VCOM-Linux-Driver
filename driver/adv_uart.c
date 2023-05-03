@@ -387,10 +387,10 @@ static void adv_uart_shutdown(struct uart_port *port)
 	}
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,0,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
 static void
 adv_uart_set_termios(struct uart_port *port, struct ktermios *termios,
-		       struct ktermios *old)
+		       const struct ktermios *old)
 {
 	struct adv_uart_port * up = (struct adv_uart_port *)port;
 	struct adv_port_att * adv_attr = up->attr;
