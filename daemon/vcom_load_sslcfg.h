@@ -112,7 +112,9 @@ static int loadconfig(char * filepath, vc_ssl_cfg * cfg)
 		printf("didn't find password\n");
 		cfg->password = nopass;
 	}else{
-		cfg->password = rnode->data.data;
+		int _len = jstree_string_decode(0, 0, rnode->data.data);
+		cfg->password = malloc(_len);
+		jstree_string_decode(cfg->password, _len, rnode->data.data);
 	}
 
 	printf("found password = %s\n", cfg->password);
