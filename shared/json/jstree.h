@@ -51,3 +51,5 @@ int tree2json(_tree_node * tree, char * buf, int bufsize);
 void freejstree(_tree_node * tree);
 
 int jstree_string_decode(char * out, int outlen, char * data);
+int jstree_string_encode(char *out, int outlen, char * data);
+
