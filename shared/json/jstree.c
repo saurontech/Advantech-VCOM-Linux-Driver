@@ -20,7 +20,7 @@ int jstree_string_encode(char *out, int outlen, char * data)
 		if(data[i] == '\\' ||
 			data[i] == '\"'){
 			if(out && outlen){
-				out[ptr] = '\';
+				out[ptr] = '\\';
 			}
 			ptr++;
 
