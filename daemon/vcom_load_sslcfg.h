@@ -113,7 +113,7 @@ static int loadconfig(char * filepath, vc_ssl_cfg * cfg)
 		cfg->password = nopass;
 	}else{
 		int _len = jstree_string_decode(0, 0, rnode->data.data);
-		cfg->password = malloc(_len);
+		cfg->password = malloc(_len + 1);
 		jstree_string_decode(cfg->password, _len, rnode->data.data);
 	}
 
