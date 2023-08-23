@@ -89,6 +89,30 @@ startDeamon()
 
 }
 
+syncDeamon()
+{
+	# for 2.4.x kernel, we should make node by myself
+	if [ $KERNEL = "2.4" ] 
+	then
+		i=1
+		while [[ $i -le 256 ]]
+		do
+			if [ -z $(awk '$2=="vttyAP"{print $1}' /proc/devices) ]
+			then
+				mknod /dev/vttyAP$i c $(awk '$2=="vttyap/%d"{print $1}' /proc/devices) $i
+			else			
+				mknod /dev/vttyAP$i c $(awk '$2=="vttyAP"{print $1}' /proc/devices) $i
+			fi			
+			((i = i + 1))
+		done
+	fi
+	echo "synchronizing local deamon..."
+	install -m 777 -d /tmp/advmon
+	$DEAMONFILE -d -w ${INSTALLPATH} -c
+
+}
+
+
 stopDeamon()
 {
 #	killall -s 9 $DEAMON
@@ -113,6 +137,7 @@ OPTIONS:
    		start 	- start advtty local service
 		stop 	- stop advtty local service
 		restart	- restart advtty local service
+		sync	- syncronize advtty service with config
 		insert	- insert $DRIVER.ko module
 		remove	- remove $DRIVER.ko module
 
@@ -160,15 +185,28 @@ case $OBJECTIVE in
 		if [ $RETURN -eq 1 ]
 		then
 			stopService
-			echo "starting service...."
+#			echo "starting service...."
 			startDeamon
 		else
-			echo "can not start service..."
+#			echo "starting service..."
 			insdriver
 			startDeamon
 		fi
 		exit 0
 
+	;;
+	sync)
+		hasdriver
+		if [ $RETURN -eq 1 ]
+		then
+			echo "sychronizing service...."
+			syncDeamon
+		else
+			echo "installing driver & synchronizing service..."
+			insdriver
+			syncDeamon
+		fi
+		exit 0
 	;;
 	stop)
 		echo stop
