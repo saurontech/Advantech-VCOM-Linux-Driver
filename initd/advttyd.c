@@ -67,9 +67,9 @@ void usage(char * cmd)
 	printf("-d	run as deamon\n");
 	printf("-t	run test, don't exec\n");
 	printf("-w	use custom work path\n");
-	printf("-c cleanup unused deamons\n");
 	printf("	work path is the DIR containing: ");
 	printf("%s %s and SSL keys\n", CF_CONFNAME, CF_SSLCONF);
+	printf("-c	cleanup unused deamons\n");
 	printf("-h	For help\n");
 }
 
