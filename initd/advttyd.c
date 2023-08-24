@@ -99,6 +99,7 @@ int setup_options(int argc, char *argv[])
 				break;
 			case 'w':
 				custom_wpath = optarg;
+				break;
 			case 'c':
 				daemon_cleanup = 1;
 				break;
