@@ -46,6 +46,8 @@ int _restart;
 
 static int  paser_config(char * conf_name, TTYINFO ttyinfo[]);
 static void spawn_ttyp(int nrport, TTYINFO ttyinfo[]);
+static void cleanup_ttyp(int nrport, TTYINFO ttyinfo[]);
+
 
 #ifdef ADVTTY_DEBUG
 static void log_msg(const char * msg);
@@ -65,6 +67,7 @@ void usage(char * cmd)
 	printf("-d	run as deamon\n");
 	printf("-t	run test, don't exec\n");
 	printf("-w	use custom work path\n");
+	printf("-c cleanup unused deamons\n");
 	printf("	work path is the DIR containing: ");
 	printf("%s %s and SSL keys\n", CF_CONFNAME, CF_SSLCONF);
 	printf("-h	For help\n");
@@ -74,6 +77,7 @@ void usage(char * cmd)
 #define _safe_strcpy(DEST, SRC) snprintf(DEST, sizeof(DEST), "%s", SRC)
 static char * custom_wpath = 0;
 static int run_as_daemon;
+static int daemon_cleanup;
 static int testrun;
 static char cmd[PATH_MAX];
 static char mon[PATH_MAX];
@@ -82,7 +86,7 @@ static char sslconf[PATH_MAX];
 int setup_options(int argc, char *argv[])
 {
 	int ch;
-	while((ch = getopt(argc, argv, "dhtw:")) != -1)  {
+	while((ch = getopt(argc, argv, "cdhtw:")) != -1)  {
 		switch(ch){
 			case 'h':
 				usage(argv[0]);
@@ -95,6 +99,8 @@ int setup_options(int argc, char *argv[])
 				break;
 			case 'w':
 				custom_wpath = optarg;
+			case 'c':
+				daemon_cleanup = 1;
 				break;
 
 		}
@@ -112,6 +118,7 @@ int main(int argc, char * argv[])
 
 	nrport = 0;
 	run_as_daemon = 0;
+	daemon_cleanup = 0;
 	testrun = 0;
 
 	if(setup_options(argc, argv)){
@@ -140,9 +147,13 @@ int main(int argc, char * argv[])
 	ADV_LOGMSG("Advantech Virtual TTY daemon program - %s\n", CF_VERSION);
 	snprintf(cmd, sizeof(cmd), "%s", CF_PORTPROG);
 	snprintf(sslconf, sizeof(sslconf), "%s/%s", work_path, CF_SSLCONF);
-	
+
+	if(daemon_cleanup){
+		cleanup_ttyp(nrport, ttyinfo);
+	}
 
 	spawn_ttyp(nrport, ttyinfo);
+
 
 	return 0;
 }
@@ -389,22 +400,57 @@ static int oldcmd_cmp(char *oldcmd, int oldcmdlen, TTYINFO * ttyinfo)
 	return diff;
 }
 
+static void cleanup_ttyp(int nrport, TTYINFO ttyinfo[])
+{
+	int i, j;
+	pid_t pid;
+	char ifname[1024];
+	char cmd[1024];
+	int cmdlen;
+	struct stat sb;	
+
+
+	for(i = 0; i < VCOM_PORTS; i++){
+
+		snprintf(ifname, sizeof(ifname), "/proc/vcom/advproc%d", i);
+
+		if(stat(ifname, &sb)){
+			printf("cannot access VCOM interface %s\n", ifname);
+			continue;
+		}
+
+		if(__cmd_inode_search_pid("vcomd", sb.st_ino, 
+					cmd, sizeof(cmd), &cmdlen, 
+					&pid)){
+			continue;
+		}
+		for(j = 0; j < nrport; j++){
+			if(atoi(ttyinfo[j].mpt_nameidx_str) == i){
+				break;
+			}
+		}
+		if(j == nrport){
+			printf("cleanup daemon on advTTY%d\n", i);
+
+			if(!testrun){
+				kill(pid, 9);
+			}
+		}
+		
+	}
+}
+
 
 static void spawn_ttyp(int nrport, TTYINFO ttyinfo[])
 {
 	int idx;
 	int oldpid;
 	int cmdidx;
-	//int sslproxy = 0;
 	int oldcmdlen;
 	
 	char oldcmd[2048];
 	char vcomif[1024];
 	char syscmd[1024];
-	char killcmd[256];
-
-
-	
 	
 	for(idx = 0; idx < nrport; ++idx) {
 		struct stat sb;
@@ -435,10 +481,8 @@ static void spawn_ttyp(int nrport, TTYINFO ttyinfo[])
 		cmdidx = _create_syscmd(syscmd, sizeof(syscmd), ttyinfo, idx);
 
 		if(oldpid > 0){
-			snprintf(killcmd, sizeof(killcmd), "kill -9 %d", oldpid);
-			printf("exec killcmd:%s\n", killcmd);
 			if(!testrun){
-				system(killcmd);
+				kill(oldpid, 9);
 			}
 		}
 

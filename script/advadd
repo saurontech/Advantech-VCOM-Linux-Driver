@@ -21,6 +21,7 @@ OPTIONS:
    -p      Set port willing to mount on the device server(>=1)
    -m      Minor number(0-255)
    -r      Redundant IP address of the device server (Optional)
+   -s      Synconize VCOM service.
 
 Example:
    $0 -t 1524 -a 10.0.0.1 -p 1 -m 1
@@ -33,6 +34,7 @@ ADDRESS=
 PORT=
 TYPE=
 RADDRESS=
+SYNC=false
 cleanUp()
 {
 sed '/^$/d' $CONFIGFILE > $INSTALLPTATH/advttyd.tmp
@@ -60,10 +62,9 @@ else
 	echo "Device $TYPE at $ADDRESS added to local serial port advtty$MINOR"
 fi
 cleanUp
-	echo 'You should now reset the local deamon by using "advman"'
 }
 
-while getopts “ht:a:p:m:r:” OPTION
+while getopts “ht:a:p:m:r:s” OPTION
 do
      case $OPTION in
          h)
@@ -85,6 +86,9 @@ do
          r)
          	 RADDRESS=$OPTARG
          	 ;;
+		 s)
+		 	SYNC=true
+			;;
          ?)
 	     usage
              exit
@@ -104,7 +108,15 @@ else
 		echo "Bad IP address:$ADDRESS"
 		exit 1
 	else
-	addDevice
-	exit 1
+		addDevice
+		if [ "$SYNC" = true ]
+		then
+			echo "Sync VCOM service"
+			advman -o sync
+		else
+			echo 'You should now reset the local deamon by using "advman"'
+		fi
+		exit 0
 	fi
+	
 fi

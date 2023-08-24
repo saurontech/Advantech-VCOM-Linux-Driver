@@ -10,6 +10,7 @@ User=root
 ExecStart=/sbin/advman -o start
 RemainAfterExit=yes
 ExecStop=/sbin/advman -o stop
+ExecReload=/sbin/advman -o sync
 
 # Other restart options: always, on-abort, etc
 

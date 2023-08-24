@@ -46,25 +46,25 @@ Utilize the **Search** Button to install the following packages:
 
 #### On CentOS/RHEL/Fedora/RockyLinux baed systems
 ```console
-foo@bar~:$ dnf install -y kernel-devel kernel-headers gcc make
-foo@bar~:$ dnf install -y openssl-devel
-foo@bar~:$ dnf install -y openssl
-foo@bar~:$ dnf install -y dkms
+foo@bar~:$ sudo dnf install -y kernel-devel kernel-headers gcc make
+foo@bar~:$ sudo dnf install -y openssl-devel
+foo@bar~:$ sudo dnf install -y openssl
+foo@bar~:$ sudo dnf install -y dkms
 ```
 
 Some systems include the **dkms** package in the **"Extra Packages for Enterprise Linux"(EPEL)**;  
 therefore, if dkms failed to install, consider installing **EPEL** before installing dkms.  
 ``` console
-foo@bar~:$ dnf install -y epel-release
-foo@bar~:$ dnf install -y dkms
+foo@bar~:$ sudo dnf install -y epel-release
+foo@bar~:$ sudo dnf install -y dkms
 ```
 Early RedHat systems (before CentOS 7/RHEL 7/Fedora 21) might require you to use **"yum"** instead of **"dnf"**.
 ```console
-foo@bar~:$ yum install -y epel-release
-foo@bar~:$ yum install -y kernel-devel kernel-headers gcc make
-foo@bar~:$ yum install -y openssl-devel
-foo@bar~:$ yum install -y openssl
-foo@bar~:$ yum install -y dkms
+foo@bar~:$ sudo yum install -y epel-release
+foo@bar~:$ sudo yum install -y kernel-devel kernel-headers gcc make
+foo@bar~:$ sudo yum install -y openssl-devel
+foo@bar~:$ sudo yum install -y openssl
+foo@bar~:$ sudo yum install -y dkms
 ```
 
 ### Configure the installation
@@ -82,7 +82,7 @@ foo@bar~: $ make
 ### Install Driver to system
 Use command **make install** to install the driver with|without DKMS according to the **Config.mk** file.
 ```console
-foo@bar~: $ make install
+foo@bar~: $ sudo make install
 ```
 
 ## Starting VCOM
@@ -94,6 +94,32 @@ To startup the VCOM service, follow these steps:
 On Secure Boot UEFI enabled systems, it is very important to setup the DKMS to auto-sign the kenel modules.  
 Otherwise, one may fail to load any custom moduels, including our vcom driver.  
 [check here](doc/secure_boot.md) for a guide on how to setup your DKMS.
+
+## Integration with Systemd 
+By default, a VCOM service is registered to **systemd**, to provide a standard interface for service managment.  
+One can disable service registration by editing **Config.mk** before **make install**.  
+Systemd should active the VCOM service after system reboot, as our default setup configure.  
+One can access the VCOM service manually, start, stop, or reload(for changing VCOM mapping) via **systemctl**:  
+1. Start VCOM service.
+```console
+foo@bar~: $ sudo systemctl start advvcom.service
+```
+2. Stop VCOM service.
+```console
+foo@bar~: $ sudo systemctl stop advvcom.service
+```
+3. Reload VCOM service(to activate a new VCOM mapping).
+```console
+foo@bar~: $ sudo systemctl reload advvcom.service
+```
+5. Disabel VCOM service(VCOM will not start on next system boot).
+```console
+foo@bar~: $ sudo systemctl disable advvcom.service
+```
+7. Enable VCOM service(VCOM will start on next system boot).
+```console
+foo@bar~: $ sudo systemctl enable advvcom.service
+```
 
 ## Appendex
 1. Create new "TLS files" or "key-pairs" needed for VCOM driver; click [here](doc/create_tls_files_driver.md)

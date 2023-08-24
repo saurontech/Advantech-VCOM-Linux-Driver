@@ -28,6 +28,7 @@ Use **advadd** to add a VCOM connection.
 | -m | MinorID of the driver node| starts from 0 |
 | -p | Port Number on the Device | starts from 1 |
 | -r | Redundent IP Address | |
+| -s | Synchronize added node to the active service| |
 
 the following examples shows how to add a connection with/without TLS.  
 * Add a VCOM connection connecting **/dev/ttyADV0** with a EKI-1524-CE's 1st serial port:
@@ -71,8 +72,9 @@ foo@bar~:$ sudo advman -o start
 **advman** has only one option **"-o"**, however, it can have the following input values:  
 | value | Discription |
 |:-----:|:------------|
-| start | start or update the system(Driver + Service) according to the offline connection map |
+| start | start the system(Driver + Service) according to the offline connection map |
 | stop | Stop the system(Driver + Service) |
+| sync | sync/update the system according to the offline connection map |
 | insert | Insert the driver, don't start the service |
 | remove | Remove the driver |
 | restart | Stop and then restart the service |
