@@ -20,6 +20,14 @@ $(SYSTEMD)_install += install_systemd
 $(SYSTEMD)_uninstall += uninstall_systemd
 
 UPGRADE_BRANCH ?= fun_update
+upgrade_type ?= stable
+ifeq ($upgrade_type, development)
+GET_UPDATE_SRC = get_dev
+UPGRADE_DIR = Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}
+else
+GET_UPDATE_SRC = get_stable
+UPGRADE_DIR = Advantech-VCOM-Linux-latest_release
+endif
 
 
 ifneq ($(DKMS), y)
@@ -130,10 +138,8 @@ uninstall_systemd:
 	systemctl disable advvcom.service
 	make uninstall -C ./misc/systemd
 
-upgrade:
-	- advman -o remove
-	wget https://github.com/saurontech/Advantech-VCOM-Linux-Driver/archive/refs/heads/${UPGRADE_BRANCH}.zip
-	unzip ${UPGRADE_BRANCH}.zip 
+upgrade: ${GET_UPDATE_SRC}
+	- advman -o remove 
 	- cp ./Config.mk ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/
 	- cp $(INSTALL_PATH)advttyd.conf ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/config/advttyd.conf
 	- cp $(INSTALL_PATH)ssl.json ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/config/ssl.json
@@ -142,5 +148,13 @@ upgrade:
 	- cp $(INSTALL_PATH)rootCA.srl ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/rootCA.srl
 	- cp $(INSTALL_PATH)vcom.pem ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/vcom.pem  
 	- make uninstall
-	bash -O extglob -c 'rm -v !("Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}") -R';ls;mv ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/* ./;rm ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/ -R;make;make install;advman -o start
+	bash -O extglob -c 'rm -v !("Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}"|.git) -R';ls;mv ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/* ./;rm ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/ -R;make;make install
 
+get_dev:
+	wget https://github.com/saurontech/Advantech-VCOM-Linux-Driver/archive/refs/heads/${UPGRADE_BRANCH}.zip
+	unzip ${UPGRADE_BRANCH}.zip
+get_stable:
+	mkdir ${UPGRADE_DIR}
+	cd ${UPGRADE_DIR};curl -s -L https://api.github.com/sauontech/Advantech-VCOM-Linux-Driver/releases/latest | grep "tarball_url" | tr -d \" | tr -d , | curl -qi - -O latest.tar.gz
+	cd ${UPGRADE_DIR};tar -xvf ./latest.tar.gz --strip-components=1;rm latest.tar.gz
+	
