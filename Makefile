@@ -19,7 +19,7 @@ $(DKMS)_uninstall	+= uninstall_dkms
 $(SYSTEMD)_install += install_systemd
 $(SYSTEMD)_uninstall += uninstall_systemd
 
-UPGRADE_BRANCH = fun_update
+UPGRADE_BRANCH ?= fun_update
 
 
 ifneq ($(DKMS), y)
