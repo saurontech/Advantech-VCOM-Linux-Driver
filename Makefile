@@ -140,15 +140,16 @@ uninstall_systemd:
 
 upgrade: ${GET_UPDATE_SRC}
 	- advman -o remove 
-	- cp ./Config.mk ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/
-	- cp $(INSTALL_PATH)advttyd.conf ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/config/advttyd.conf
-	- cp $(INSTALL_PATH)ssl.json ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/config/ssl.json
-	- cp $(INSTALL_PATH)rootCA.key ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/rootCA.key
-	- cp $(INSTALL_PATH)rootCA.pem ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/rootCA.pem
-	- cp $(INSTALL_PATH)rootCA.srl ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/rootCA.srl
-	- cp $(INSTALL_PATH)vcom.pem ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/vcom.pem  
+	- cp ./Config.mk ./${UPGRADE_DIR}/
+	make -C ./${UPGRADE_DIR}
+	- cp $(INSTALL_PATH)advttyd.conf ./${UPGRADE_DIR}/config/advttyd.conf
+	- cp $(INSTALL_PATH)ssl.json ./${UPGRADE_DIR}/config/ssl.json
+	- cp $(INSTALL_PATH)rootCA.key ./${UPGRADE_DIR}/keys/rootCA.key
+	- cp $(INSTALL_PATH)rootCA.pem ./${UPGRADE_DIR}/keys/rootCA.pem
+	- cp $(INSTALL_PATH)rootCA.srl ./${UPGRADE_DIR}/keys/rootCA.srl
+	- cp $(INSTALL_PATH)vcom.pem ./${UPGRADE_DIR}/keys/vcom.pem  
 	- make uninstall
-	bash -O extglob -c 'rm -v !("Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}"|.git) -R';ls;mv ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/* ./;rm ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/ -R;make;make install
+	bash -O extglob -c 'rm -v !("${UPGRADE_DIR}"|.git) -R';ls;mv ./${UPGRADE_DIR}/* ./;rm ./${UPGRADE_DIR} -R;make install
 
 get_dev:
 	wget https://github.com/saurontech/Advantech-VCOM-Linux-Driver/archive/refs/heads/${UPGRADE_BRANCH}.zip
