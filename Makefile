@@ -118,7 +118,7 @@ install_dkms:
 
 uninstall_dkms:
 	- dkms uninstall -m $(MODNAME) -v $(VERSION)
-	dkms remove -m $(MODNAME) -v $(VERSION) --all
+	- dkms remove -m $(MODNAME) -v $(VERSION) --all
 	rm -rf /usr/src/$(MODNAME)-$(VERSION)
 
 install_systemd:
