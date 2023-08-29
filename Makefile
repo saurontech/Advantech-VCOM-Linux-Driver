@@ -141,6 +141,6 @@ upgrade:
 	- cp $(INSTALL_PATH)rootCA.pem ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/rootCA.pem
 	- cp $(INSTALL_PATH)rootCA.srl ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/rootCA.srl
 	- cp $(INSTALL_PATH)vcom.pem ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/vcom.pem  
-	make uninstall
+	- make uninstall
 	bash -O extglob -c 'rm -v !("Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}") -R';ls;mv ./Advantech-VCOM-Linux-Driver-fun_update/* ./;rm ./Advantech-VCOM-Linux-Driver-fun_update/ -R;make;make install;advman -o start
 
