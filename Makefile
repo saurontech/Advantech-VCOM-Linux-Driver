@@ -19,6 +19,9 @@ $(DKMS)_uninstall	+= uninstall_dkms
 $(SYSTEMD)_install += install_systemd
 $(SYSTEMD)_uninstall += uninstall_systemd
 
+UPGRADE_BRANCH ?= fun_update
+
+
 ifneq ($(DKMS), y)
 y_install += install_driver
 endif
@@ -115,7 +118,7 @@ install_dkms:
 
 uninstall_dkms:
 	- dkms uninstall -m $(MODNAME) -v $(VERSION)
-	dkms remove -m $(MODNAME) -v $(VERSION) --all
+	- dkms remove -m $(MODNAME) -v $(VERSION) --all
 	rm -rf /usr/src/$(MODNAME)-$(VERSION)
 
 install_systemd:
@@ -126,4 +129,18 @@ uninstall_systemd:
 	systemctl stop advvcom.service
 	systemctl disable advvcom.service
 	make uninstall -C ./misc/systemd
-	
+
+upgrade:
+	- advman -o remove
+	wget https://github.com/saurontech/Advantech-VCOM-Linux-Driver/archive/refs/heads/${UPGRADE_BRANCH}.zip
+	unzip ${UPGRADE_BRANCH}.zip 
+	- cp ./Config.mk ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/
+	- cp $(INSTALL_PATH)advttyd.conf ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/config/advttyd.conf
+	- cp $(INSTALL_PATH)ssl.json ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/config/ssl.json
+	- cp $(INSTALL_PATH)rootCA.key ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/rootCA.key
+	- cp $(INSTALL_PATH)rootCA.pem ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/rootCA.pem
+	- cp $(INSTALL_PATH)rootCA.srl ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/rootCA.srl
+	- cp $(INSTALL_PATH)vcom.pem ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/vcom.pem  
+	- make uninstall
+	bash -O extglob -c 'rm -v !("Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}") -R';ls;mv ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/* ./;rm ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/ -R;make;make install;advman -o start
+
