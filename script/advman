@@ -16,7 +16,7 @@ DRIVERFILE=$INSTALLPATH/$DRIVER.o
 else
 DRIVERFILE=$INSTALLPATH/$DRIVER.ko
 fi
-
+UPGRADEOPT=
 
 RETURN=
 OBJECTIVE=
@@ -142,16 +142,24 @@ OPTIONS:
 		sync	- syncronize advtty service with config
 		insert	- insert $DRIVER.ko module
 		remove	- remove $DRIVER.ko module
-
+		upgrade - upgrade VCOM to a newer version
+   -D     Define options passed to the upgrade service
+			-D upgrade_type=stable
+				for latest stable release
+			-D upgrade_type=development 
+				for latest version under R&D
 Example:
 	$0 -o start
 	$0 -o restart
 	$0 -o stop
+	$0 -o sync
+	$0 -o upgrade
+	$0 -o upgrade -D upgrade_type=development
 
 EOF
 }
 
-while getopts “ho:” OPTION
+while getopts “ho:D:” OPTION
 do
      case $OPTION in
          h)
@@ -161,6 +169,9 @@ do
          o)
              OBJECTIVE=$OPTARG
              ;;
+		 D)
+		 	UPGRADEOPT+=$OPTARG
+			;;
          ?)
 	     usage
              exit
@@ -230,7 +241,8 @@ case $OBJECTIVE in
 		rm -fR ${UPGRADEPATH}
 		mkdir -m 660 -p ${UPGRADEPATH}
 		tar xjvf ${INSTALLPATH}/makefile.backup.tar.bz2 -C ${UPGRADEPATH}
-		make upgrade -C ${UPGRADEPATH}
+		echo "upgrade with options ${UPGRADEOPT}"
+		make upgrade -C ${UPGRADEPATH} ${UPGRADEOPT}
 		rm -fR ${UPGRADEPATH}
 		exit 0
 	;;
