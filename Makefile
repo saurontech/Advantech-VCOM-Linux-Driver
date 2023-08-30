@@ -29,7 +29,6 @@ GET_UPDATE_SRC = get_stable
 UPGRADE_DIR = Advantech-VCOM-Linux-latest_release
 endif
 
-
 ifneq ($(DKMS), y)
 y_install += install_driver
 endif
