@@ -153,7 +153,7 @@ upgrade: check_su ${GET_UPDATE_SRC}
 
 get_dev:
 	wget https://github.com/saurontech/Advantech-VCOM-Linux-Driver/archive/refs/heads/${UPGRADE_BRANCH}.zip
-	unzip ${UPGRADE_BRANCH}.zip
+	unzip -qq ${UPGRADE_BRANCH}.zip
 get_stable:
 	mkdir ${UPGRADE_DIR} -p
 	cd ${UPGRADE_DIR};curl -s -L https://api.github.com/repos/saurontech/Advantech-VCOM-Linux-driver/releases/latest | grep tarball_url |cut -d : -f 2,3|tr -d \" |tr -d , | wget -qi - -O latest.tar.gz
