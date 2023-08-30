@@ -145,7 +145,7 @@ OPTIONS:
 		upgrade - upgrade VCOM to a newer version
    -D     Define options passed to the upgrade service
 			-D upgrade_type=stable
-				for latest stable release
+				for latest stable release(default)
 			-D upgrade_type=development 
 				for latest version under R&D
 Example:
