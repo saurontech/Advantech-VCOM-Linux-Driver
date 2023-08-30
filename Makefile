@@ -99,7 +99,7 @@ install_daemon:
 	ln -sf $(INSTALL_PATH)vcinot /sbin/vcinot
 	ln -sf $(INSTALL_PATH)advps /sbin/advps
 	ln -sf $(INSTALL_PATH)vcomd /sbin/vcomd
-	tar -cjvf$(INSTALL_PATH)makefile.backup.tar.bz2 ./Config.mk ./Makefile 
+	tar -cjf$(INSTALL_PATH)makefile.backup.tar.bz2 ./Config.mk ./Makefile 
 	
 install_driver:
 	cp ./driver/advvcom.ko $(INSTALL_PATH)
@@ -157,7 +157,7 @@ get_dev:
 get_stable:
 	mkdir ${UPGRADE_DIR} -p
 	cd ${UPGRADE_DIR};curl -s -L https://api.github.com/repos/saurontech/Advantech-VCOM-Linux-driver/releases/latest | grep tarball_url |cut -d : -f 2,3|tr -d \" |tr -d , | wget -qi - -O latest.tar.gz
-	cd ${UPGRADE_DIR};tar -xvf ./latest.tar.gz --strip-components=1;rm latest.tar.gz
+	cd ${UPGRADE_DIR};tar -xf ./latest.tar.gz --strip-components=1;rm latest.tar.gz
 check_su:
 	if ! [ "$(shell id -u)" = 0 ];then\
 		echo "Need to be root to upgrade";\
