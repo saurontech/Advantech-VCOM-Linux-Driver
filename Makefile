@@ -20,7 +20,14 @@ $(SYSTEMD)_install += install_systemd
 $(SYSTEMD)_uninstall += uninstall_systemd
 
 UPGRADE_BRANCH ?= main
-
+upgrade_type ?= stable
+ifeq ($(upgrade_type), development)
+GET_UPDATE_SRC = get_dev
+UPGRADE_DIR = Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}
+else
+GET_UPDATE_SRC = get_stable
+UPGRADE_DIR = Advantech-VCOM-Linux-latest_release
+endif
 
 ifneq ($(DKMS), y)
 y_install += install_driver
@@ -130,18 +137,28 @@ uninstall_systemd:
 	systemctl disable advvcom.service
 	make uninstall -C ./misc/systemd
 
-upgrade:
-	- advman -o remove
-	wget https://github.com/saurontech/Advantech-VCOM-Linux-Driver/archive/refs/heads/${UPGRADE_BRANCH}.zip
-	unzip ${UPGRADE_BRANCH}.zip 
-	- cp ./Config.mk ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/
-	make -C ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}
-	- cp $(INSTALL_PATH)advttyd.conf ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/config/advttyd.conf
-	- cp $(INSTALL_PATH)ssl.json ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/config/ssl.json
-	- cp $(INSTALL_PATH)rootCA.key ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/rootCA.key
-	- cp $(INSTALL_PATH)rootCA.pem ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/rootCA.pem
-	- cp $(INSTALL_PATH)rootCA.srl ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/rootCA.srl
-	- cp $(INSTALL_PATH)vcom.pem ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/keys/vcom.pem  
+upgrade: check_su ${GET_UPDATE_SRC}
+	- advman -o remove 
+	- cp ./Config.mk ./${UPGRADE_DIR}/
+	make -C ./${UPGRADE_DIR}
+	- cp $(INSTALL_PATH)advttyd.conf ./${UPGRADE_DIR}/config/advttyd.conf
+	- cp $(INSTALL_PATH)ssl.json ./${UPGRADE_DIR}/config/ssl.json
+	- cp $(INSTALL_PATH)rootCA.key ./${UPGRADE_DIR}/keys/rootCA.key
+	- cp $(INSTALL_PATH)rootCA.pem ./${UPGRADE_DIR}/keys/rootCA.pem
+	- cp $(INSTALL_PATH)rootCA.srl ./${UPGRADE_DIR}/keys/rootCA.srl
+	- cp $(INSTALL_PATH)vcom.pem ./${UPGRADE_DIR}/keys/vcom.pem  
 	- make uninstall
-	bash -O extglob -c 'rm -v !("Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}"|.git) -R';ls;mv ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/* ./;rm ./Advantech-VCOM-Linux-Driver-${UPGRADE_BRANCH}/ -R;make install
+	bash -O extglob -c 'rm -v !("${UPGRADE_DIR}"|.git) -R';ls;mv ./${UPGRADE_DIR}/* ./;rm ./${UPGRADE_DIR} -R;make install
 
+get_dev:
+	wget https://github.com/saurontech/Advantech-VCOM-Linux-Driver/archive/refs/heads/${UPGRADE_BRANCH}.zip
+	unzip ${UPGRADE_BRANCH}.zip
+get_stable:
+	mkdir ${UPGRADE_DIR} -p
+	cd ${UPGRADE_DIR};curl -s -L https://api.github.com/repos/saurontech/Advantech-VCOM-Linux-driver/releases/latest | grep tarball_url |cut -d : -f 2,3|tr -d \" |tr -d , | wget -qi - -O latest.tar.gz
+	cd ${UPGRADE_DIR};tar -xvf ./latest.tar.gz --strip-components=1;rm latest.tar.gz
+check_su:
+	if ! [ "$(shell id -u)" = 0 ];then\
+		echo "Need to be root to upgrade";\
+		exit 1;\
+	fi
