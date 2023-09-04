@@ -100,7 +100,8 @@ install_daemon:
 	ln -sf $(INSTALL_PATH)vcinot /sbin/vcinot
 	ln -sf $(INSTALL_PATH)advps /sbin/advps
 	ln -sf $(INSTALL_PATH)vcomd /sbin/vcomd
-	tar -cjf$(INSTALL_PATH)makefile.backup.tar.bz2 ./Config.mk ./Makefile 
+	#tar -cjf$(INSTALL_PATH)makefile.backup.tar.bz2 ./Config.mk ./Makefile 
+	MFILE=$(find ./ -name Makefile);MFILE+=$(find ./ -name makefile);MFILE+=$(find ./ -name *.mk);tar -cjf$(INSTALL_PATH)makefile.backup.tar.bz2 ${MFILE}
 	
 install_driver:
 	cp ./driver/advvcom.ko $(INSTALL_PATH)
