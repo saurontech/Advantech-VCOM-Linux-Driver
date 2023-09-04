@@ -139,12 +139,12 @@ uninstall_systemd:
 	make uninstall -C ./misc/systemd
 
 upgrade: check_su ${GET_UPDATE_SRC}
-	if [ ${SHOW_P} ] then echo 10; echo "# backup/remove systehm";fi
+	if [ ${SHOW_P} ]; then echo 20; echo "# backup/remove systehm";fi
 	- advman -o remove 
 	- cp ./Config.mk ./${UPGRADE_DIR}/
-	if [ ${SHOW_P} ] then echo 30; echo "# building src";fi
+	if [ ${SHOW_P} ]; then echo 30; echo "# building src";fi
 	make -C ./${UPGRADE_DIR}
-	if [ ${SHOW_P} ] then echo 50; echo "# restoring config";fi
+	if [ ${SHOW_P} ]; then echo 50; echo "# restoring config";fi
 	- cp $(INSTALL_PATH)advttyd.conf ./${UPGRADE_DIR}/config/advttyd.conf
 	- cp $(INSTALL_PATH)ssl.json ./${UPGRADE_DIR}/config/ssl.json
 	- cp $(INSTALL_PATH)rootCA.key ./${UPGRADE_DIR}/keys/rootCA.key
@@ -152,12 +152,11 @@ upgrade: check_su ${GET_UPDATE_SRC}
 	- cp $(INSTALL_PATH)rootCA.srl ./${UPGRADE_DIR}/keys/rootCA.srl
 	- cp $(INSTALL_PATH)vcom.pem ./${UPGRADE_DIR}/keys/vcom.pem  
 	- make uninstall
-	if [ ${SHOW_P} ] then echo 70; echo "# install new driver";fi
+	if [ ${SHOW_P} ]; then echo 70; echo "# install new driver";fi
 	bash -O extglob -c 'rm -v !("${UPGRADE_DIR}"|.git) -R';ls;mv ./${UPGRADE_DIR}/* ./;rm ./${UPGRADE_DIR} -R;make install
-	if [ ${SHOW_P} ] then echo 100; echo "# done";fi
+	if [ ${SHOW_P} ]; then echo 100; echo "# done";fi
 
 get_dev:
-	if [ ${SHOW_P} ] then echo 20; echo "downloading devel src";fi
 	wget https://github.com/saurontech/Advantech-VCOM-Linux-Driver/archive/refs/heads/${UPGRADE_BRANCH}.zip
 	unzip -qq ${UPGRADE_BRANCH}.zip
 get_stable:
@@ -169,3 +168,4 @@ check_su:
 		echo "Need to be root to upgrade";\
 		exit 1;\
 	fi
+	if [ ${SHOW_P} ]; then echo 10; echo "downloading devel src";fi
