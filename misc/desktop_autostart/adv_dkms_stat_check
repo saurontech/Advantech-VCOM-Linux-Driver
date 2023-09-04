@@ -1,6 +1,6 @@
 #!/bin/bash
 
-dkms status | grep advvcom | grep installed
+dkms status | grep advvcom | grep added
 if [ $? = 0 ]
 then
 	zenity --question --title "Advantech VCOM driver DKMS" --text "Auto-rebuild failed against kernel:$(uname -r)\n\nDo you wish to upgrade VCOM driver?"
