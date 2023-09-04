@@ -1,36 +1,5 @@
 #!/bin/bash
 
-#export DISPLAY=":0"
-#INSTALLPATH=/usr/local/advtty
-
-
-#function dkms_check()
-#{
-#	dkms stat | grep advvcom | grep added
-#}
-
-#function print_msg()
-#{
-#	notify_send "Advantech VCOM driver needs upgrade!" \
-#	"DKMS failed to install: $(dkms stat| grep |grep add)\n" \
-#	"update with command: advman -o upgrade"
-#}
-
-#echo 123456
-#dkms_check
-#dkms status | grep advvcom | grep added;
-#echo $?
-
-SUDO_CMD=
-
-__do_advvcom_upgrade()
-{
-	echo $SUDO_CMD
-	$SUDO_CMD
-	#advman -o upgrade
-}
-
-
 dkms status | grep advvcom | grep installed
 if [ $? = 0 ]
 then
@@ -41,13 +10,15 @@ then
 		if [ $? ]
 		then
 			sudo -nv 2> /dev/null
-			zenity --password | sudo -S advman -o upgrade
-
+			if [ $? = 0 ]
+				zenity --password | sudo -S advman -o upgrade -D upgrade_type=development
+			exit 0
+			fi
+			#sudo cached
 		fi
-	else
-		advman -o upgrade
-	fi	
-#	echo 45667
-fi
-#echo 1234
-
+		# id -u !=0
+		sudo -S advman -o upgrade -D upgrade_type=development
+	fi
+	#zenfity question
+fi 
+# dkms status
