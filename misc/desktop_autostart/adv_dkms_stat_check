@@ -12,7 +12,7 @@ then
 			sudo -nv 2> /dev/null
 			if [ $? != 0 ]
 			then
-				PASSWORD=zenity --password --title "Advantech VCOM driver DKMS"
+				PASSWORD=$(zenity --password --title "Advantech VCOM driver DKMS")
 				${PASSWORD} | sudo -S advman -o upgrade -D upgrade_type=development
 			exit 0
 			fi
