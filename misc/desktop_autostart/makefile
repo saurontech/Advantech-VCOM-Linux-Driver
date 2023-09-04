@@ -7,7 +7,7 @@ install: check_su
 	mkdir -p ~/.config/autostart
 	cp ./advvcom_dkms.desktop ~/.config/autostart
 	sudo cp ./adv_dkms_stat_check /usr/local/advtty/
-	sudo chmod 771 /usr/local/advtty/adv_dkms_stat_check
+	sudo chmod 775 /usr/local/advtty/adv_dkms_stat_check
 
 
 uninstall: check_su
