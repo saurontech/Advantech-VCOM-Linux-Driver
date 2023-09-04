@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Advantech VCOM DKMS status check
+Exec=/usr/local/advtty/adv_dkms_stat_check
+X-GNOME-Autostart-enabled=true
