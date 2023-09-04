@@ -20,7 +20,7 @@ then
 		fi
 		# id -u !=0
 		sudo -S advman -o upgrade -D upgrade_type=development -D SHOW_P=1|zenity --progress --text="downloading SRC" --title="Advantech VCOM DKMS upgrade" --percentage=0 --auto-close 
-		advman -o start
+		sudo advman -o start
 	fi
 	#zenfity question
 fi 
