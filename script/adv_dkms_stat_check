@@ -3,7 +3,7 @@
 dkms status | grep advvcom | grep installed
 if [ $? = 0 ]
 then
-	zenity --question --title "Advantech VCOM driver" --text "Do you wish to upgrade VCOM driver?"
+	zenity --question --title "Advantech VCOM driver DKMS" --text "Auto-rebuild failed against kernel:$(uname -r)\n\nDo you wish to upgrade VCOM driver?"
 	if [ $? = 0 ]
 	then
 		id -u
@@ -11,7 +11,8 @@ then
 		then
 			sudo -nv 2> /dev/null
 			if [ $? = 0 ]
-				zenity --password | sudo -S advman -o upgrade -D upgrade_type=development
+				PASSWORD=zenity --password
+				${PASSWORD} | sudo -S advman -o upgrade -D upgrade_type=development
 			exit 0
 			fi
 			#sudo cached
