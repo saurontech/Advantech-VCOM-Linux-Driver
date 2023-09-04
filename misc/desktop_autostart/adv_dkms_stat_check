@@ -13,7 +13,7 @@ then
 			if [ $? != 0 ]
 			then
 				PASSWORD=$(zenity --password --title "Advantech VCOM driver DKMS")
-				echo ${PASSWORD} | sudo -S advman -o upgrade -D upgrade_type=development -D SHOW_P=1|zenity --progress
+				echo ${PASSWORD} | sudo -S advman -o upgrade -D upgrade_type=development -D SHOW_P=1|zenity --progress --text="downloading SRC" --title="Advantech VCOM DKMS upgrade" --percentage=0
 			exit 0
 			fi
 			#sudo cached

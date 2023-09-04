@@ -3,6 +3,7 @@ include Config.mk
 INSTALL_PATH = /usr/local/advtty/
 MODNAME = advvcom
 VERSION = 1
+SHOW_P ?= 0
 
 _build =
 _install =
@@ -168,4 +169,4 @@ check_su:
 		echo "Need to be root to upgrade";\
 		exit 1;\
 	fi
-	if [ ${SHOW_P} ]; then echo 10; echo "downloading devel src";fi
+#	if [ ${SHOW_P} ]; then echo 10; echo "downloading devel src";fi
