@@ -1,0 +1,55 @@
+#!/bin/bash
+
+USERS=()
+
+usage()
+{
+cat << EOF
+usage: $0 options
+
+This script addeds DKMS status notice to users
+
+OPTIONS:
+   -h      Show this message
+   -u      Add user to DKMS status notify
+   -s      Add yourself to DKMS status notify
+
+Example:
+   $0 -s 
+   $0 -s -u stella
+   $0 -u samuel -u tom -u lisa
+   
+EOF
+}
+
+while getopts “hsu:” OPTION
+do
+     case $OPTION in
+         h)
+             usage
+             exit 1
+             ;;
+         u)
+             USERS+=(${OPTARG})
+             ;;
+         s)
+             USERS+=(${SUDO_USER})
+             ;;
+         ?)
+	     	usage
+             exit
+             ;;
+     esac
+done
+
+if [ ${#USERS[@]} = 0 ]
+then
+	usage
+	exit
+fi
+
+
+for NAME in ${USERS[@]}
+do
+	sudo -u ${NAME} whoami
+done
