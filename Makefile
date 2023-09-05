@@ -33,6 +33,7 @@ endif
 ifneq ($(DKMS), y)
 y_install += install_driver
 endif
+MFILE=$(shell find ./ -name '[Mm]akefile' -o -iname '*.mk')
 
 all: $(y_build)
 	
@@ -101,7 +102,7 @@ install_daemon:
 	ln -sf $(INSTALL_PATH)advps /sbin/advps
 	ln -sf $(INSTALL_PATH)vcomd /sbin/vcomd
 	#tar -cjf$(INSTALL_PATH)makefile.backup.tar.bz2 ./Config.mk ./Makefile 
-	find ./ -name '[Mm]akefile' -o -iname '*.mk' -exec tar -cjf$(INSTALL_PATH)makefile.backup.tar.bz2 {} \;
+	tar -cjf$(INSTALL_PATH)makefile.backup.tar.bz2 ${MFILE}
 	
 install_driver:
 	cp ./driver/advvcom.ko $(INSTALL_PATH)
