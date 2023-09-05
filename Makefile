@@ -101,7 +101,6 @@ install_daemon:
 	ln -sf $(INSTALL_PATH)vcinot /sbin/vcinot
 	ln -sf $(INSTALL_PATH)advps /sbin/advps
 	ln -sf $(INSTALL_PATH)vcomd /sbin/vcomd
-	#tar -cjf$(INSTALL_PATH)makefile.backup.tar.bz2 ./Config.mk ./Makefile 
 	tar -cjf$(INSTALL_PATH)makefile.backup.tar.bz2 ${MFILE}
 	
 install_driver:
@@ -142,29 +141,33 @@ uninstall_systemd:
 	make uninstall -C ./misc/systemd
 
 upgrade: check_su ${GET_UPDATE_SRC}
-	if [ ${SHOW_P} ]; then echo 20; echo "# backup/remove systehm";fi
-	- advman -o remove 
+	if [ ${SHOW_P} ]; then echo 20; echo "# prepare build config";fi
 	- cp ./Config.mk ./${UPGRADE_DIR}/
-	if [ ${SHOW_P} ]; then echo 30; echo "# building src";fi
+	if [ ${SHOW_P} ]; then echo 30; echo "# build src";fi
 	make -C ./${UPGRADE_DIR}
-	if [ ${SHOW_P} ]; then echo 50; echo "# restoring config";fi
+	if [ ${SHOW_P} ]; then echo 20; echo "# stop service";fi
+	- advman -o remove 
+	if [ ${SHOW_P} ]; then echo 50; echo "# backup VCOM config";fi
 	- cp $(INSTALL_PATH)advttyd.conf ./${UPGRADE_DIR}/config/advttyd.conf
 	- cp $(INSTALL_PATH)ssl.json ./${UPGRADE_DIR}/config/ssl.json
 	- cp $(INSTALL_PATH)rootCA.key ./${UPGRADE_DIR}/keys/rootCA.key
 	- cp $(INSTALL_PATH)rootCA.pem ./${UPGRADE_DIR}/keys/rootCA.pem
 	- cp $(INSTALL_PATH)rootCA.srl ./${UPGRADE_DIR}/keys/rootCA.srl
 	- cp $(INSTALL_PATH)vcom.pem ./${UPGRADE_DIR}/keys/vcom.pem  
+	if [ ${SHOW_P} ]; then echo 60; echo "# remove old driver";fi
 	- make uninstall
-	if [ ${SHOW_P} ]; then echo 70; echo "# install new driver";fi
+	if [ ${SHOW_P} ]; then echo 70; echo "# install new driver & resotre VCOM config";fi
 	bash -O extglob -c 'rm -v !("${UPGRADE_DIR}"|.git) -R';ls;mv ./${UPGRADE_DIR}/* ./;rm ./${UPGRADE_DIR} -R;make install
 	if [ ${SHOW_P} ]; then echo 100; echo "# done";fi
 
 get_dev:
 	wget https://github.com/saurontech/Advantech-VCOM-Linux-Driver/archive/refs/heads/${UPGRADE_BRANCH}.zip
+	if [ ${SHOW_P} ]; then echo 10; echo "# unpack source code(development)";fi
 	unzip -qq ${UPGRADE_BRANCH}.zip
 get_stable:
 	mkdir ${UPGRADE_DIR} -p
 	cd ${UPGRADE_DIR};curl -s -L https://api.github.com/repos/saurontech/Advantech-VCOM-Linux-driver/releases/latest | grep tarball_url |cut -d : -f 2,3|tr -d \" |tr -d , | wget -qi - -O latest.tar.gz
+	if [ ${SHOW_P} ]; then echo 10; echo "# unpack source code(stable release)";fi
 	cd ${UPGRADE_DIR};tar -xf ./latest.tar.gz --strip-components=1;rm latest.tar.gz
 check_su:
 	if ! [ "$(shell id -u)" = 0 ];then\
