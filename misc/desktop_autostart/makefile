@@ -11,6 +11,6 @@ install:
 	chmod 775 /usr/local/advtty/adv_dkms_stat_check
 
 
-uninstall: check_su
+uninstall:
 	rm -f /usr/local/advtty/adv_dkms_stat_check
 
