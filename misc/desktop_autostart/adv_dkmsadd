@@ -51,6 +51,6 @@ fi
 
 for NAME in ${USERS[@]}
 do
-	sudo -u ${NAME} mkdir -o ~/.config/autostart
-	sudo -u ${NAME} cp /usr/local/advtty/advvcom_dkms.desktop ~/.config/autostart/
+	sudo -u ${NAME} mkdir -p /home/${NAME}/.config/autostart
+	sudo -u ${NAME} cp /usr/local/advtty/advvcom_dkms.desktop /home/${NAME}/.config/autostart/
 done
