@@ -19,6 +19,8 @@ $(DKMS)_install	+= install_dkms
 $(DKMS)_uninstall	+= uninstall_dkms
 $(SYSTEMD)_install += install_systemd
 $(SYSTEMD)_uninstall += uninstall_systemd
+$(DESKAUTOSTART)_install += install_deskautostart
+$(DESKAUTOSTART)_uninstall += uninstall_deskautostart
 
 UPGRADE_BRANCH ?= main
 upgrade_type ?= stable
@@ -174,4 +176,12 @@ check_su:
 		echo "Need to be root to upgrade";\
 		exit 1;\
 	fi
-#	if [ ${SHOW_P} ]; then echo 10; echo "downloading devel src";fi
+
+install_deskautostart:
+	make install -C ./misc/desktop_autostart
+
+uninstall_deskautostart:
+	make uninstall -C ./misc/desktop_autostart
+
+
+

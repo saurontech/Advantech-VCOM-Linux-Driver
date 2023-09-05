@@ -2,8 +2,10 @@
 TLS = y
 #install VCOM with DKMS (y/n)
 DKMS = y
-#install register VCOM to systemd (y/n)
+#register VCOM to systemd (y/n)
 SYSTEMD = y
+#register VCOM DKMS monitor to autostart.desktop (y/n)
+DESKAUTOSTART = y
 
 #DSA length for the rootCA.key(private key)
 CA_DSA_LEN = 2048
