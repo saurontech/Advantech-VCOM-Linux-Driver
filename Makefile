@@ -101,7 +101,7 @@ install_daemon:
 	ln -sf $(INSTALL_PATH)advps /sbin/advps
 	ln -sf $(INSTALL_PATH)vcomd /sbin/vcomd
 	#tar -cjf$(INSTALL_PATH)makefile.backup.tar.bz2 ./Config.mk ./Makefile 
-	find ./ -name '[Mm]akefile' -o -iname '*.mk' --exec tar -cjf$(INSTALL_PATH)makefile.backup.tar.bz2 {} \;
+	find ./ -name '[Mm]akefile' -o -iname '*.mk' -exec tar -cjf$(INSTALL_PATH)makefile.backup.tar.bz2 {} \;
 	
 install_driver:
 	cp ./driver/advvcom.ko $(INSTALL_PATH)
