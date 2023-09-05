@@ -16,7 +16,7 @@ DRIVERFILE=$INSTALLPATH/$DRIVER.o
 else
 DRIVERFILE=$INSTALLPATH/$DRIVER.ko
 fi
-UPGRADEOPT=
+UPGRADEOPT=()
 
 RETURN=
 OBJECTIVE=
@@ -170,7 +170,7 @@ do
              OBJECTIVE=$OPTARG
              ;;
 		 D)
-		 	UPGRADEOPT+=$OPTARG
+		 	UPGRADEOPT+=($OPTARG)
 			;;
          ?)
 	     usage
@@ -241,8 +241,7 @@ case $OBJECTIVE in
 		rm -fR ${UPGRADEPATH}
 		mkdir -m 660 -p ${UPGRADEPATH}
 		tar xjvf ${INSTALLPATH}/makefile.backup.tar.bz2 -C ${UPGRADEPATH}
-		#echo "upgrade with options ${UPGRADEOPT}"
-		make upgrade -C ${UPGRADEPATH} ${UPGRADEOPT}
+		make upgrade -C ${UPGRADEPATH} "${UPGRADEOPT[@]}"
 		rm -fR ${UPGRADEPATH}
 		exit 0
 	;;
