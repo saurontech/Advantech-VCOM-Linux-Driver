@@ -1,28 +1,37 @@
 #!/bin/bash
 
-dkms status | grep advvcom | grep added
-if [ $? = 0 ]
-then
-	zenity --question --title "Advantech VCOM driver DKMS" --text "Auto-rebuild failed against kernel:$(uname -r)\n\nDo you wish to upgrade VCOM driver?"
+while [ -f /var/lib/dkms/advvcom ]
+do
+	dkms status advvcom | grep added
 	if [ $? = 0 ]
 	then
-		id -u
-		if [ $? ]
+		zenity --question --title "Advantech VCOM driver DKMS" --text "Auto-rebuild failed against kernel:$(uname -r)\n\nDo you wish to upgrade VCOM driver?"
+		if [ $? = 0 ]
 		then
-			sudo -nv 2> /dev/null
-			if [ $? != 0 ]
+			id -u
+			if [ $? ]
 			then
-				PASSWORD=$(zenity --password --title "Advantech VCOM driver DKMS")
-				echo ${PASSWORD} | sudo -S advman -o upgrade -D upgrade_type=development -D SHOW_P=1|zenity --progress --text="downloading SRC" --title="Advantech VCOM DKMS upgrade" --percentage=0 --auto-close
-				echo ${PASSWORD} | sudo -S advman -o start
-			exit 0
+				sudo -nv 2> /dev/null
+				if [ $? != 0 ]
+				then
+					PASSWORD=$(zenity --password --title "Advantech VCOM driver DKMS")
+					echo ${PASSWORD} | sudo -S advman -o upgrade -D upgrade_type=development -D SHOW_P=1|zenity --progress --text="downloading SRC" --title="Advantech VCOM DKMS upgrade" --percentage=0 --auto-close
+					echo ${PASSWORD} | sudo -S advman -o start
+					continue
+				#exit 0
+				fi
+				#sudo cached
 			fi
-			#sudo cached
+			# id -u !=0
+			sudo -S advman -o upgrade -D upgrade_type=development -D SHOW_P=1|zenity --progress --text="downloading SRC" --title="Advantech VCOM DKMS upgrade" --percentage=0 --auto-close 
+			sudo advman -o start
+			continue
+		else
+			break
 		fi
-		# id -u !=0
-		sudo -S advman -o upgrade -D upgrade_type=development -D SHOW_P=1|zenity --progress --text="downloading SRC" --title="Advantech VCOM DKMS upgrade" --percentage=0 --auto-close 
-		sudo advman -o start
+		#zenfity question
 	fi
-	#zenfity question
-fi 
-# dkms status
+	# dkms status
+
+	inotifywait -r /var/lib/dkms/advvcom
+done
