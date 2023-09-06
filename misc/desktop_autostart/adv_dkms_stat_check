@@ -1,6 +1,6 @@
 #!/bin/bash
 
-while [ -f /var/lib/dkms/advvcom ]
+while [ -d /var/lib/dkms/advvcom ]
 do
 	dkms status advvcom | grep added
 	if [ $? = 0 ]
