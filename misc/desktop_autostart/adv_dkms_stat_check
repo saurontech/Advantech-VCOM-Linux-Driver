@@ -2,7 +2,7 @@
 
 while [ -d /var/lib/dkms/advvcom/ ]
 do
-	find /var/lib/dkms/advvcom/ -name 'make.log' -exec "Error 1" {} \;
+	find /var/lib/dkms/advvcom/ -name 'make.log' -exec grep "Error 1" {} \;
 #	dkms status advvcom | grep added
 	if [ $? = 0 ]
 	then
