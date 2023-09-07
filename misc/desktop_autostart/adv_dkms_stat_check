@@ -1,8 +1,14 @@
 #!/bin/bash
 
-while [ -d /var/lib/dkms/advvcom ]
+while [ -d /var/lib/dkms/advvcom/ ]
 do
-	dkms status advvcom | grep added
+	if ![ -f /var/lib/dkms/advvcom/1/build/make.log]
+	then
+		continue;
+	fi
+
+	grep "Error 2" /var/lib/dkms/advvcom/1/build/make.log
+#	dkms status advvcom | grep added
 	if [ $? = 0 ]
 	then
 		zenity --question --title "Advantech VCOM driver DKMS" --text "Auto-rebuild failed against kernel:$(uname -r)\n\nDo you wish to upgrade VCOM driver?"
