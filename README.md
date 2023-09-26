@@ -33,6 +33,21 @@ foo@bar~:$ sudo apt-get install build-essential linux-headers-generic
 foo@bar~:$ sudo apt-get install dkms
 foo@bar~:$ sudo apt-get install openssl libssl-dev
 ```
+#### Additional dependancy or auto-upgrade features with/without GUI
+This VCOM driver has built in functions to checkout latest source code from github.
+To enable these features, the additional packages need to be installed
+The command **advman -o upgrade** will allow one to upgrade the VCOM driver, while backing-up the current VCOM settings.  
+The following dependancies are required to make this commmand work.
+```console
+foo@bar~:$ foo@bar~:$ sudo apt-get install curl wget
+```   
+Advantech VCOM Linux Driver can be integrated with the desktop autostart service and notify the user if DKMS fails on the latest kernel update.  
+A GUI created by **zenity** will prompt for aproval to upgrade the driver.
+```console
+foo@bar~:$ foo@bar~:$ sudo apt-get install zenity inotify-tools
+```  
+To enable this feature, use **adv_dkmsadd** to add user-names to this service.
+Once a user is added, while the user is logged in to the GUI, a service is activated in the background for checking the DKMS build status.  
 #### On OpenSUSE
 Open YaST / Software / Software Management.  
 Select the **View** button on the top left and pick **Patterns**. 
