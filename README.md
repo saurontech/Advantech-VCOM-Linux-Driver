@@ -33,7 +33,7 @@ foo@bar~:$ sudo apt-get install build-essential linux-headers-generic
 foo@bar~:$ sudo apt-get install dkms
 foo@bar~:$ sudo apt-get install openssl libssl-dev
 ```
-#### Additional dependancy or auto-upgrade features with/without GUI
+#### Additional dependancy for auto-upgrade features with/without GUI
 This VCOM driver has built in functions to checkout latest source code from github.
 To enable these features, the additional packages need to be installed
 The command **advman -o upgrade** will allow one to upgrade the VCOM driver, while backing-up the current VCOM settings.  
