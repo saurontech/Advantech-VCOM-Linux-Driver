@@ -210,7 +210,8 @@ static int paser_config(char * conf_name, TTYINFO ttyinfo[])
 			continue;
 		}
 		//syslog(LOG_DEBUG,"matchCount = %d\n", matchCount);
-		if(atoi(mpt_nameidx_str) > CF_MAXPORTS)
+		if( mpt_nameidx_str[0] == '#' ||
+			atoi(mpt_nameidx_str) > CF_MAXPORTS)
 			continue;
 		
 		memset(&ttyinfo[nrport], 0, sizeof(TTYINFO));
