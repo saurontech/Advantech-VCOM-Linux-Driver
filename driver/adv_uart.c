@@ -578,7 +578,7 @@ static struct uart_driver adv_uart_driver = {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
 #include <linux/platform_device.h>
 
-static struct platform_devic * adv_vcom_dev;
+static struct platform_device * adv_vcom_dev;
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
