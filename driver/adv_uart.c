@@ -575,21 +575,46 @@ static struct uart_driver adv_uart_driver = {
 	.cons			= NULL,
 };
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
+#include <linux/platform_device.h>
+
+static struct platform_devic * adv_vcom_dev;
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
 int adv_uart_register(void)
 {
 	int ret;
 
 	ret = uart_register_driver(&adv_uart_driver);
 //	printk("uart_list =%x\n", &uart_list);
-
+	
 	if (ret < 0){
 		printk("ret < 0\n");
 		uart_unregister_driver(&adv_uart_driver);
+		goto failed;
+	}
+	
+	adv_vcom_dev = platform_device_alloc(PLATFORM_DEVID_NONE);
+	if(adv_vcom_dev == 0){
+		printk("failed to alloc platform_dev\n");
+		ret = -1;
+		goto failed;
 	}
 
+	ret = platform_device_add(adv_vcom_dev);
+	if(ret < 0){
+		platform_device_put(adv_vcom_dev);
+		goto failed;
+	}
+
+failed:
 	return ret;
 }
-
+#else
+#include "./legacy/uart/adv_uart_register.h"
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
 int adv_uart_init(struct adv_vcom * vcomdata, int index)
 {
 	int ret;
@@ -608,6 +633,7 @@ int adv_uart_init(struct adv_vcom * vcomdata, int index)
 	adv_serial_port->port.ops = &adv_uart_ops;
 	adv_serial_port->port.line = index;
 	adv_serial_port->port.fifosize = 2048;
+	adv_serial_port->port.dev = adv_vcom_devs;
 //	these values are set in set_termios, don't need to set here
 //	otherwise, we would need to make adv_uart_ops global, which we really don't want.
 //	adv_serial_port->port.status |= (UPSTAT_AUTOCTS|UPSTAT_AUTORTS|UPSTAT_AUTOXOFF);
@@ -624,6 +650,9 @@ int adv_uart_init(struct adv_vcom * vcomdata, int index)
 
 	return ret;	
 }
+#else
+#include "./legacy/uart/adv_uart_init.h"
+#endif
 
 int adv_uart_rm_port(int index)
 {
@@ -645,10 +674,15 @@ int adv_uart_rm_port(int index)
 
 	return 0;
 }
-
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,5,0)
 int adv_uart_release(void)
 {
+	platform_device_del(adv_vcom_dev);
+	platform_device_put(adv_vcom_dev);
 	uart_unregister_driver(&adv_uart_driver);
 
 	return 0;
 }
+#else
+#include "./legacy/uart/adv_uart_release.h"
+#endif
