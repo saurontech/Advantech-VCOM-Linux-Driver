@@ -2,7 +2,7 @@ include Config.mk
 
 INSTALL_PATH = /usr/local/advtty/
 MODNAME = advvcom
-VERSION = 1
+VERSION = $(shell cat ./driver/dkms.conf |grep PACKAGE_VERSION|cut -d'"' -f 2)
 SHOW_P ?= 0
 
 _build =
@@ -32,10 +32,16 @@ GET_UPDATE_SRC = get_stable
 UPGRADE_DIR = Advantech-VCOM-Linux-latest_release
 endif
 
+upgrade_uninstall := $(filter-out uninstall_dkms, ${y_uninstall})
+upgrade_uninstall := $(filter-out uninstall_systemd, ${upgrade_uninstall})
+
+upgrade_install = $(filter-out )
+
+
 ifneq ($(DKMS), y)
 y_install += install_driver
 endif
-MFILE=$(shell find ./ -name '[Mm]akefile' -o -iname '*.mk')
+MFILE=$(shell find ./ -name '[Mm]akefile' -o -iname '*.mk' -o -iname 'dkms.conf')
 
 all: $(y_build)
 	
@@ -138,7 +144,7 @@ install_systemd:
 	systemctl enable advvcom.service
 
 uninstall_systemd:
-	systemctl stop advvcom.service
+	#systemctl stop advvcom.service
 	systemctl disable advvcom.service
 	make uninstall -C ./misc/systemd
 
@@ -148,7 +154,7 @@ upgrade: check_su ${GET_UPDATE_SRC}
 	if [ ${SHOW_P} ]; then echo 30; echo "# build src";fi
 	make -C ./${UPGRADE_DIR}
 	if [ ${SHOW_P} ]; then echo 20; echo "# stop service";fi
-	- advman -o remove 
+	#- advman -o remove 
 	if [ ${SHOW_P} ]; then echo 50; echo "# backup VCOM config";fi
 	- cp $(INSTALL_PATH)advttyd.conf ./${UPGRADE_DIR}/config/advttyd.conf
 	- cp $(INSTALL_PATH)ssl.json ./${UPGRADE_DIR}/config/ssl.json
@@ -157,7 +163,7 @@ upgrade: check_su ${GET_UPDATE_SRC}
 	- cp $(INSTALL_PATH)rootCA.srl ./${UPGRADE_DIR}/keys/rootCA.srl
 	- cp $(INSTALL_PATH)vcom.pem ./${UPGRADE_DIR}/keys/vcom.pem  
 	if [ ${SHOW_P} ]; then echo 60; echo "# remove old driver";fi
-	- make uninstall
+	- make upgrade_uninstall
 	if [ ${SHOW_P} ]; then echo 70; echo "# install new driver & resotre VCOM config";fi
 	bash -O extglob -c 'rm -v !("${UPGRADE_DIR}"|.git) -R';ls;mv ./${UPGRADE_DIR}/* ./;rm ./${UPGRADE_DIR} -R;make install
 	if [ ${SHOW_P} ]; then echo 100; echo "# done";fi
