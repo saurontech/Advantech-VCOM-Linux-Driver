@@ -32,11 +32,11 @@ GET_UPDATE_SRC = get_stable
 UPGRADE_DIR = Advantech-VCOM-Linux-latest_release
 endif
 
+GET_UPDATE_SRC=
+UPGRADE_DIR=
+
 upgrade_uninstall := $(filter-out uninstall_dkms, ${y_uninstall})
 upgrade_uninstall := $(filter-out uninstall_systemd, ${upgrade_uninstall})
-
-upgrade_install = $(filter-out )
-
 
 ifneq ($(DKMS), y)
 y_install += install_driver
