@@ -32,11 +32,13 @@ GET_UPDATE_SRC = get_stable
 UPGRADE_DIR = Advantech-VCOM-Linux-latest_release
 endif
 
-GET_UPDATE_SRC=
-UPGRADE_DIR=
+#GET_UPDATE_SRC=
+#UPGRADE_DIR=
 
-upgrade_uninstall := $(filter-out uninstall_dkms, ${y_uninstall})
-upgrade_uninstall := $(filter-out uninstall_systemd, ${upgrade_uninstall})
+__upgrade_uninstall := $(filter-out uninstall_dkms,$(y_uninstall))
+__upgrade_uninstall := $(filter-out uninstall_systemd,$(__upgrade_uninstall))
+__upgrade_install := $(filter-out install_dkms,$(y_install))
+
 
 ifneq ($(DKMS), y)
 y_install += install_driver
@@ -147,14 +149,21 @@ uninstall_systemd:
 	#systemctl stop advvcom.service
 	systemctl disable advvcom.service
 	make uninstall -C ./misc/systemd
+upgrade_install:$(__upgrade_install)
+	echo $(__upgrade_install)
+
+upgrade_uninstall: $(__upgrade_uninstall)
+	echo $(__update_uninstall)
+	rm -Rf $(INSTALL_PATH)
 
 upgrade: check_su ${GET_UPDATE_SRC}
 	if [ ${SHOW_P} ]; then echo 20; echo "# prepare build config";fi
 	- cp ./Config.mk ./${UPGRADE_DIR}/
 	if [ ${SHOW_P} ]; then echo 30; echo "# build src";fi
 	make -C ./${UPGRADE_DIR}
-	if [ ${SHOW_P} ]; then echo 20; echo "# stop service";fi
+	if [ ${SHOW_P} ]; then echo 20; echo "# checking DKMS module version";fi
 	#- advman -o remove 
+	make -C ./${UPGRADE_DIR} install_dkms
 	if [ ${SHOW_P} ]; then echo 50; echo "# backup VCOM config";fi
 	- cp $(INSTALL_PATH)advttyd.conf ./${UPGRADE_DIR}/config/advttyd.conf
 	- cp $(INSTALL_PATH)ssl.json ./${UPGRADE_DIR}/config/ssl.json
@@ -165,7 +174,8 @@ upgrade: check_su ${GET_UPDATE_SRC}
 	if [ ${SHOW_P} ]; then echo 60; echo "# remove old driver";fi
 	- make upgrade_uninstall
 	if [ ${SHOW_P} ]; then echo 70; echo "# install new driver & resotre VCOM config";fi
-	bash -O extglob -c 'rm -v !("${UPGRADE_DIR}"|.git) -R';ls;mv ./${UPGRADE_DIR}/* ./;rm ./${UPGRADE_DIR} -R;make install
+	#bash -O extglob -c 'rm -v !("${UPGRADE_DIR}"|.git) -R';ls;mv ./${UPGRADE_DIR}/* ./;rm ./${UPGRADE_DIR} -R;make install
+	bash -O extglob -c 'rm -v !("${UPGRADE_DIR}"|.git) -R';ls;mv ./${UPGRADE_DIR}/* ./;rm ./${UPGRADE_DIR} -R;make upgrade_install
 	if [ ${SHOW_P} ]; then echo 100; echo "# done";fi
 
 get_dev:
