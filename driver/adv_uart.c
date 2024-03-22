@@ -592,23 +592,23 @@ int adv_uart_register(void)
 	if (ret < 0){
 		printk("ret < 0\n");
 		uart_unregister_driver(&adv_uart_driver);
-		goto failed;
+		goto out;
 	}
 	
 	adv_vcom_devs = platform_device_alloc("adv_vcom_plat_dev", PLATFORM_DEVID_NONE);
 	if(adv_vcom_devs == 0){
 		printk("failed to alloc platform_dev\n");
 		ret = -1;
-		goto failed;
+		goto out;
 	}
 
 	ret = platform_device_add(adv_vcom_devs);
 	if(ret < 0){
 		platform_device_put(adv_vcom_devs);
-		goto failed;
+		goto out;
 	}
 
-failed:
+out:
 	return ret;
 }
 #else
