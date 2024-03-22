@@ -146,7 +146,7 @@ install_systemd:
 	systemctl enable advvcom.service
 
 uninstall_systemd:
-	#systemctl stop advvcom.service
+	systemctl stop advvcom.service
 	systemctl disable advvcom.service
 	make uninstall -C ./misc/systemd
 upgrade_install:$(__upgrade_install)
@@ -176,6 +176,7 @@ upgrade: check_su ${GET_UPDATE_SRC}
 	if [ ${SHOW_P} ]; then echo 70; echo "# install new driver & resotre VCOM config";fi
 	#bash -O extglob -c 'rm -v !("${UPGRADE_DIR}"|.git) -R';ls;mv ./${UPGRADE_DIR}/* ./;rm ./${UPGRADE_DIR} -R;make install
 	bash -O extglob -c 'rm -v !("${UPGRADE_DIR}"|.git) -R';ls;mv ./${UPGRADE_DIR}/* ./;rm ./${UPGRADE_DIR} -R;make upgrade_install
+	make upgrade_install
 	if [ ${SHOW_P} ]; then echo 100; echo "# done";fi
 
 get_dev:

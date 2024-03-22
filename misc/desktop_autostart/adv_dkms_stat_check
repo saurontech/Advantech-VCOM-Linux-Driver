@@ -20,7 +20,8 @@ LINUX_CURRENT=$(uname -r)
 
 while [ -d /var/lib/dkms/advvcom/ ]
 do
-	grep "Error 1" /var/lib/dkms/advvcom/1/build/make.log
+	MODULE_VERSION=$(ls -t /var/lib/dkms/advvcom/ |head -1)
+	grep "Error 1" /var/lib/dkms/advvcom/${MODULE_VERSION}/build/make.log
 #	dkms status advvcom | grep added
 	if [ $? = 0 ]
 	then
