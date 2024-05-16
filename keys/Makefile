@@ -1,8 +1,9 @@
 include ../Config.mk
 
+
 all: keys
 
-keys: vcom.pem
+keys: vcom.pem 
 
 rootCA.key:
 	openssl dsaparam -genkey -out $@ $(CA_DSA_LEN)
@@ -25,9 +26,16 @@ vcom_cert.pem: vcom_pub.pem vcom.csr rootCA.key rootCA.pem
 
 vcom.pem: vcom_cert.pem vcom.key
 	cat $^ > $@
+
 clean:
 	rm -f *.pem
 	rm -f *.csr
 	rm -f *.key
 	rm -f *.srl
 	rm -f .srl
+
+rootCA_EC.key:
+	openssl ecparam -name prime256v1 -genkey -out $@
+rootCA_EC.pem:rootCA_EC.key
+	openssl req -x509 -new -nodes -key $^ -sha256 -days $(CA_DAYS) -out $@ -config ./rootca.conf
+
