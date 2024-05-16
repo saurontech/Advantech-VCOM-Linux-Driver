@@ -23,21 +23,24 @@
 #include <asm/uaccess.h>
 #include <linux/wait.h>
 #include <linux/version.h>
+#include <linux/serial_core.h>
 #include "advioctl.h"
 #include "advvcom.h"
+#include "adv_mmap.h"
+#include "adv_uart.h"
 
 //int _adv_portcount = 10;
 //int _adv_pagecount = 1;
 
-extern int adv_uart_init(struct adv_vcom *, int );
-extern int adv_uart_register(void);
-extern int adv_uart_release(void);
-extern int adv_uart_rm_port(int);
-extern void adv_uart_update_xmit(struct uart_port *);
-extern void adv_uart_recv_chars(struct uart_port *);
-extern void adv_main_interrupt(struct adv_vcom *, int);
-extern void adv_main_clear(struct adv_vcom * data, int mask);
-extern unsigned int adv_uart_ms(struct uart_port *, unsigned int);
+//extern int adv_uart_init(struct adv_vcom *, int );
+//extern int adv_uart_register(void);
+//extern int adv_uart_release(void);
+//extern int adv_uart_rm_port(int);
+//extern void adv_uart_update_xmit(struct uart_port *);
+//extern void adv_uart_recv_chars(struct uart_port *);
+static void adv_main_interrupt(struct adv_vcom *, int);
+static void adv_main_clear(struct adv_vcom * data, int mask);
+//extern unsigned int adv_uart_ms(struct uart_port *, unsigned int);
 
 //module_param(_adv_portcount, int, S_IRUGO|S_IWUSR);
 //module_param(_adv_pagecount, int, 1);
@@ -45,7 +48,7 @@ extern unsigned int adv_uart_ms(struct uart_port *, unsigned int);
 MODULE_LICENSE("GPL");
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0)
-long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+static long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	struct adv_vcom * data;
 	int err = 0;
@@ -171,7 +174,7 @@ long adv_proc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0)
-int adv_proc_open(struct inode *inode, struct file *filp)
+static int adv_proc_open(struct inode *inode, struct file *filp)
 {
 	struct adv_vcom * data;
 	
@@ -184,12 +187,12 @@ int adv_proc_open(struct inode *inode, struct file *filp)
 #include "./legacy/main/adv_proc_open.h"
 #endif
 
-int adv_proc_release(struct inode *inode, struct file *filp)
+static int adv_proc_release(struct inode *inode, struct file *filp)
 {
 	return 0;
 }
 
-unsigned int adv_proc_poll(struct file *filp, poll_table *wait)
+static unsigned int adv_proc_poll(struct file *filp, poll_table *wait)
 {
 	struct adv_vcom * data;
 	unsigned int mask;
@@ -236,7 +239,7 @@ unsigned int adv_proc_poll(struct file *filp, poll_table *wait)
 	return mask;
 }
 
-extern int adv_proc_mmap(struct file *filp, struct vm_area_struct *vma);
+//extern int adv_proc_mmap(struct file *filp, struct vm_area_struct *vma);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0)
 static const struct proc_ops adv_proc_fops = {
@@ -250,7 +253,7 @@ static const struct proc_ops adv_proc_fops = {
 #include "./legacy/main/adv_proc_fops.h"
 #endif
 
-void adv_main_interrupt(struct adv_vcom * data, int mask)
+static void adv_main_interrupt(struct adv_vcom * data, int mask)
 {
 	if(mask & ADV_INT_RX){
 		adv_uart_update_xmit(data->adv_uart);		
@@ -261,7 +264,7 @@ void adv_main_interrupt(struct adv_vcom * data, int mask)
 
 }
 
-void adv_main_clear(struct adv_vcom * data, int mask)
+static void adv_main_clear(struct adv_vcom * data, int mask)
 {
 	if(mask & ADV_CLR_RX){
 		spin_lock((&data->rx.lock));
@@ -282,7 +285,7 @@ void adv_main_clear(struct adv_vcom * data, int mask)
 LIST_HEAD(vcom_list);
 struct proc_dir_entry * proc_root = 0;
 
-struct adv_vcom * adv_main_init(int port)
+static struct adv_vcom * adv_main_init(int port)
 {
 	struct adv_vcom * vcomdata;
 	char filename[128];
@@ -334,7 +337,7 @@ struct adv_vcom * adv_main_init(int port)
 	return vcomdata;
 }
 
-int adv_main_release(int port)
+static int adv_main_release(int port)
 {
 	struct adv_vcom * vcomdata;
 	
@@ -371,7 +374,7 @@ int adv_main_release(int port)
 	return 0;
 }
 
-int adv_vcom_init(void)
+static int adv_vcom_init(void)
 {
 	struct adv_vcom * data;
 	int i;
@@ -387,7 +390,7 @@ int adv_vcom_init(void)
 	return 0;
 }
 
-void adv_vcom_exit(void)
+static void adv_vcom_exit(void)
 {
 	int i;
 

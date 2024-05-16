@@ -333,7 +333,7 @@ static void adv_uart_break_ctl(struct uart_port *port, int break_state)
 	printk("%s(%d)\n", __func__, __LINE__);
 
 }
-int adv_uart_startup(struct uart_port *port)
+static int adv_uart_startup(struct uart_port *port)
 {
 	struct adv_uart_port * up = (struct adv_uart_port *)port;
 	struct adv_port_att * attr = up->attr;
@@ -503,7 +503,7 @@ adv_uart_type(struct uart_port *port)
 	return "Advantech VCOM";
 }
 
-void adv_uart_throttle(struct uart_port *port)
+static void adv_uart_throttle(struct uart_port *port)
 {
 	struct adv_uart_port * adv_port;
 	struct adv_port_att * attr;
@@ -520,7 +520,7 @@ void adv_uart_throttle(struct uart_port *port)
 	}
 }
 
-void adv_uart_unthrottle(struct uart_port *port)
+static void adv_uart_unthrottle(struct uart_port *port)
 {
 	struct adv_uart_port * adv_port;
 	struct adv_port_att * attr;
