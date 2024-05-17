@@ -6,8 +6,7 @@ all: keys
 keys: vcom.pem 
 
 rootCA.key:
-	openssl dsaparam -genkey -out $@ $(CA_DSA_LEN)
-	
+	openssl ecparam -name prime256v1 -genkey -out $@
 rootCA.pem: rootCA.key
 	openssl req -x509 -new -nodes -key $^ -sha256 -days $(CA_DAYS) -out $@ -config ./rootca.conf
 
@@ -18,8 +17,8 @@ vcom_pub.pem: vcom.key
 	openssl ec -in $^ -pubout -out $@
 
 vcom.csr: 
-	openssl dsaparam -genkey -out vcomdsa.pem $(CERT_DSA_LEN)
-	openssl req -new -key vcomdsa.pem -out vcom.csr -config ./vcom.conf
+	openssl ecparam -name prime256v1 -genkey -out vcomec.pem
+	openssl req -new -key vcomec.pem -out vcom.csr -config ./vcom.conf
 
 vcom_cert.pem: vcom_pub.pem vcom.csr rootCA.key rootCA.pem
 	openssl x509 -req -in vcom.csr -days $(CERT_DAYS) -CAkey ./rootCA.key -CA ./rootCA.pem -force_pubkey vcom_pub.pem -out $@ -CAcreateserial
@@ -34,8 +33,4 @@ clean:
 	rm -f *.srl
 	rm -f .srl
 
-rootCA_EC.key:
-	openssl ecparam -name prime256v1 -genkey -out $@
-rootCA_EC.pem:rootCA_EC.key
-	openssl req -x509 -new -nodes -key $^ -sha256 -days $(CA_DAYS) -out $@ -config ./rootca.conf
 

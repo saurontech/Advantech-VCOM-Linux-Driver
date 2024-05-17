@@ -90,14 +90,7 @@ $(openssl ecparam -in s_prime256v1.pem -genkey |openssl ec -passout pass:"$PASSP
 fi
 
 #create CSR
-if [[ -z "$CSR_EC" ]]
-then
-echo "creating DSA CSR"
-$(openssl dsaparam -genkey -out servercsr.pem $CERT_DSA_LEN)
-else
-echo "createing EC CRS"
 $(openssl ecparam -name prime256v1 -genkey -out servercsr.pem)
-fi
 $(openssl req -new -key servercsr.pem -out $CSR)
 
 #create unsigned pub key
@@ -110,7 +103,7 @@ $(openssl x509 -req -days $CERT_DAYS -in $CSR -CAkey $ROOTCA_PRIV -CA $ROOTCA_PU
 $(cat $PUB_KEY  $PRIV_KEY> $KEYPAIR)
 }
 
-while getopts “hn:k:p:s:e:l:L:d:E” OPTION
+while getopts “hn:k:p:s:e:l:L:d:” OPTION
 do
 	case $OPTION in
 		h)
@@ -140,9 +133,6 @@ do
 			;;
 		L)
 			DH_LEN=$OPTARG
-			;;
-		E)
-			CSR_EC="true"
 			;;
 		?)
 			;;	
