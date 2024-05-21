@@ -10,6 +10,7 @@ PASSPHRASE=
 DH_LEN=1024
 CERT_DSA_LEN=2048
 CERT_DAYS=1024
+CSR_EC=
 
 usage()
 {
@@ -89,8 +90,8 @@ $(openssl ecparam -in s_prime256v1.pem -genkey |openssl ec -passout pass:"$PASSP
 fi
 
 #create CSR
-$(openssl dsaparam -genkey -out serverdsa.pem $CERT_DSA_LEN)
-$(openssl req -new -key serverdsa.pem -out $CSR)
+$(openssl ecparam -name prime256v1 -genkey -out servercsr.pem)
+$(openssl req -new -key servercsr.pem -out $CSR)
 
 #create unsigned pub key
 $(openssl ec -in $PRIV_KEY -passin pass:"$PASSPHRASE" -pubout -out $UNSIGNED_PUB)

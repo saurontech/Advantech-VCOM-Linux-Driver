@@ -6,18 +6,19 @@
 #include <asm/pgtable.h>
 #include <linux/version.h>
 #include "advvcom.h"
+#include "adv_mmap.h"
 
-void adv_vma_open(struct vm_area_struct *vma)
+static void adv_vma_open(struct vm_area_struct *vma)
 {
 //	printk("%s(%d)\n", __func__, __LINE__);
 }
 
-void adv_vma_close(struct vm_area_struct *vma)
+static void adv_vma_close(struct vm_area_struct *vma)
 {
 //	printk("%s(%d)\n", __func__, __LINE__);
 }
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,17,0)
-vm_fault_t adv_vma_nopage(struct vm_fault *vmf)
+static vm_fault_t adv_vma_nopage(struct vm_fault *vmf)
 {
 	unsigned long offset;
 	struct adv_vcom * data;
