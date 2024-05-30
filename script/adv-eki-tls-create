@@ -8,9 +8,10 @@ ROOTCA_SERIAL="$ROOTCA_PATH/$ROOTCA_NAME.srl"
 EKI=
 PASSPHRASE=
 DH_LEN=1024
-CERT_DSA_LEN=2048
 CERT_DAYS=1024
 CSR_EC=
+SANS=()
+PKS=
 
 usage()
 {
@@ -27,14 +28,72 @@ OPTIONS:
 	-s	RootCA serial(default:$ROOTCA_SERIAL)
 	-e	Encyption Pass-Phrase(Password) for the PEM output
 	-d	Certification validation period(in days; default:$CERT_DAYS)
-	-l	DSA length(default:$CERT_DSA_LEN)
 	-L	DH length(default:$DH_LEN)
+	-N	add SAN for HTTPS
+	-P	export PKCS12 file
 
 EXAMPLE:
 	$0 -n EKI1
 	$0 -n EKI1 -k ./rootCA.key -p ./rootCA.pem -s ./rootCA.srl
+	$0 -n EKI1 -N 10.0.0.1 -N 10.0.0.2
 
 EOF
+}
+
+create_conf()
+{
+CONFIG_FILE="${EKI}_config.config"
+EXT_FILE="${EKI}_ext.ext"
+
+cat << EOF > ${CONFIG_FILE}
+[ req ]
+default_bits       = 2048
+distinguished_name = req_distinguished_name
+req_extensions     = req_ext
+prompt             = yes
+
+[ req_distinguished_name ]
+C  = Country
+C_default = US
+ST = State or Province
+ST_default = NY
+L  = Location
+L_default = none
+O  = Organization
+O_default = advantech
+OU = 
+OU_default = RD
+CN = Common Name
+CN_default = none
+
+
+[ req_ext ]
+subjectAltName = @alt_names
+
+[ alt_names ]
+EOF
+_COUNT=1
+for _SAN in "${SANS[@]}"
+do
+	echo "IP.${_COUNT} = ${_SAN}" >> ${CONFIG_FILE}
+done
+
+cat << EOF > ${EXT_FILE}
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+
+[ alt_names ]
+EOF
+
+COUNT=1
+for _SAN in "${SANS[@]}"
+do
+	echo "IP.${_COUNT} = ${_SAN}" >> ${EXT_FILE}
+done
+
 }
 
 createkey()
@@ -48,7 +107,8 @@ PRIV_KEY="$EKI.key"
 CSR="$EKI.csr"
 DSA="${EKI}dsa.pem"
 KEYPAIR="$EKI.pem"
-
+CONFIG_FILE="${EKI}_config.config"
+EXT_FILE="${EKI}_ext.ext"
 
 #check for rootCA files
 echo "checking for rootCA files:"
@@ -91,19 +151,28 @@ fi
 
 #create CSR
 $(openssl ecparam -name prime256v1 -genkey -out servercsr.pem)
+if [ ${#SANS[@]} -eq 0 ]
+then
 $(openssl req -new -key servercsr.pem -out $CSR)
+else
+$(openssl req -new -key servercsr.pem -out $CSR -config $CONFIG_FILE)
+fi
 
 #create unsigned pub key
 $(openssl ec -in $PRIV_KEY -passin pass:"$PASSPHRASE" -pubout -out $UNSIGNED_PUB)
-
 #sign public key
+if [ ${#SANS[@]} -eq 0 ]
+then
 $(openssl x509 -req -days $CERT_DAYS -in $CSR -CAkey $ROOTCA_PRIV -CA $ROOTCA_PUB -force_pubkey $UNSIGNED_PUB -out $PUB_KEY -CAserial $ROOTCA_SERIAL)
+else
+$(openssl x509 -req -days $CERT_DAYS -in $CSR -CAkey $ROOTCA_PRIV -CA $ROOTCA_PUB -force_pubkey $UNSIGNED_PUB -out $PUB_KEY -CAserial $ROOTCA_SERIAL -extfile $EXT_FILE)
+fi
 
 #create key pair
 $(cat $PUB_KEY  $PRIV_KEY> $KEYPAIR)
 }
 
-while getopts “hn:k:p:s:e:l:L:d:” OPTION
+while getopts “hn:k:p:s:e:L:d:N:P” OPTION
 do
 	case $OPTION in
 		h)
@@ -128,11 +197,14 @@ do
 		d)
 			CERT_DAYS=$OPTARG
 			;;
-		l)
-			CERT_DSA_LEN=$OPTARG
-			;;
 		L)
 			DH_LEN=$OPTARG
+			;;
+		N)
+			SANS+=($OPTARG)
+			;;
+		P)
+			PKS="enable"
 			;;
 		?)
 			;;	
@@ -146,7 +218,18 @@ then
 	exit 1
 fi
 
+if ((${#SANS[@]})); then
+	create_conf
+fi
+
 createkey
+
+if [[ -n $PKS ]]
+then
+echo ""
+echo "----------------- creating PKCS12 -----------------"
+$(openssl pkcs12 -export -inkey ${EKI}.pem -in ${EKI}.pem -out ${EKI}.p12)
+fi
 
 echo ""
 echo "---"
