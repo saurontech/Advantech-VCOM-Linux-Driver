@@ -47,7 +47,6 @@ EXT_FILE="${EKI}_ext.ext"
 
 cat << EOF > ${CONFIG_FILE}
 [ req ]
-default_bits       = 2048
 distinguished_name = req_distinguished_name
 req_extensions     = req_ext
 prompt             = yes
@@ -76,6 +75,7 @@ _COUNT=1
 for _SAN in "${SANS[@]}"
 do
 	echo "IP.${_COUNT} = ${_SAN}" >> ${CONFIG_FILE}
+	((_COUNT++))
 done
 
 cat << EOF > ${EXT_FILE}
@@ -88,10 +88,11 @@ subjectAltName = @alt_names
 [ alt_names ]
 EOF
 
-COUNT=1
+_COUNT=1
 for _SAN in "${SANS[@]}"
 do
 	echo "IP.${_COUNT} = ${_SAN}" >> ${EXT_FILE}
+	((_COUNT++))
 done
 
 }
