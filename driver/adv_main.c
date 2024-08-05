@@ -38,8 +38,8 @@
 //extern int adv_uart_rm_port(int);
 //extern void adv_uart_update_xmit(struct uart_port *);
 //extern void adv_uart_recv_chars(struct uart_port *);
-static void adv_main_interrupt(struct adv_vcom *, int);
-static void adv_main_clear(struct adv_vcom * data, int mask);
+void adv_main_interrupt(struct adv_vcom *, int);
+void adv_main_clear(struct adv_vcom * data, int mask);
 //extern unsigned int adv_uart_ms(struct uart_port *, unsigned int);
 
 //module_param(_adv_portcount, int, S_IRUGO|S_IWUSR);
@@ -253,7 +253,7 @@ static const struct proc_ops adv_proc_fops = {
 #include "./legacy/main/adv_proc_fops.h"
 #endif
 
-static void adv_main_interrupt(struct adv_vcom * data, int mask)
+void adv_main_interrupt(struct adv_vcom * data, int mask)
 {
 	if(mask & ADV_INT_RX){
 		adv_uart_update_xmit(data->adv_uart);		
@@ -264,7 +264,7 @@ static void adv_main_interrupt(struct adv_vcom * data, int mask)
 
 }
 
-static void adv_main_clear(struct adv_vcom * data, int mask)
+void adv_main_clear(struct adv_vcom * data, int mask)
 {
 	if(mask & ADV_CLR_RX){
 		spin_lock((&data->rx.lock));
