@@ -19,6 +19,7 @@ Support extended featurs:
 For details on the infrastructure and main components of this VCOM driver, check [here](doc/components.md) .
 
 ### Quality
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f511006b783e4094bcd7b3009852fdff)](https://app.codacy.com/gh/saurontech/Advantech-VCOM-Linux-Driver?utm_source=github.com&utm_medium=referral&utm_content=saurontech/Advantech-VCOM-Linux-Driver&utm_campaign=Badge_Grade)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/66cde2a55b884e1e8a98adac7556e503)](https://www.codacy.com/gh/saurontech/Advantech-VCOM-Linux-Driver/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=saurontech/Advantech-VCOM-Linux-Driver&amp;utm_campaign=Badge_Grade)
 [![CodeFactor](https://www.codefactor.io/repository/github/saurontech/advantech-vcom-linux-driver/badge/main)](https://www.codefactor.io/repository/github/saurontech/advantech-vcom-linux-driver/overview/main)
 ## Installation Guide
