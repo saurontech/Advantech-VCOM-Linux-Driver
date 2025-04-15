@@ -8,7 +8,7 @@ keys: vcom.pem
 rootCA.key:
 	openssl ecparam -name prime256v1 -genkey -out $@
 rootCA.pem: rootCA.key
-	openssl req -x509 -new -nodes -key $^ -sha256 -days $(CA_DAYS) -out $@ -config ./rootca.conf
+	openssl req -x509 -new -nodes -key $^ -sha256 -days $(CA_DAYS) -out $@ -config ./rootca.conf -addext "basicConstraints=critical,CA:true" -addext "keyUsage=critical,keyCertSign,cRLSign"
 
 vcom.key:
 	openssl ecparam -name prime256v1 -out c_prime256v1.pem
